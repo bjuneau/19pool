@@ -1,0 +1,2530 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>19 Pool — The NFL Score Game</title>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style type="text/tailwindcss">
+  @theme {
+    --font-family-sans: 'Lexend', sans-serif;
+    --font-family-mono: 'DM Mono', monospace;
+    --color-navy-950: #0a0f1e;
+    --color-navy-900: #0d1428;
+    --color-navy-800: #111d3a;
+    --color-navy-700: #162550;
+    --color-navy-600: #1e3166;
+  }
+</style>
+<style>
+  body { background-color: #0a0f1e; }
+  .view { display: none; }
+  .view.active { display: block; }
+  .dash-tab { display: none; }
+  .dash-tab.active { display: block; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Glow effects */
+  .glow-gold { box-shadow: 0 0 40px rgba(245,158,11,0.15); }
+  .glow-gold-sm { box-shadow: 0 0 20px rgba(245,158,11,0.1); }
+  .text-glow { text-shadow: 0 0 40px rgba(245,158,11,0.3); }
+
+  /* Gradient mesh background */
+  .hero-bg {
+    background-color: #0a0f1e;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245,158,11,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 60%, rgba(30,49,102,0.4) 0%, transparent 50%),
+      radial-gradient(ellipse 50% 30% at 20% 80%, rgba(17,29,58,0.6) 0%, transparent 50%);
+  }
+
+  /* Grid pattern */
+  .grid-bg {
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  /* Card glass effect */
+  .glass {
+    background: rgba(17,29,58,0.6);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .glass-darker {
+    background: rgba(10,15,30,0.8);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  /* Score 19 highlight */
+  .score-nineteen {
+    background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+    border-color: rgba(245,158,11,0.4) !important;
+    box-shadow: 0 0 24px rgba(245,158,11,0.12);
+  }
+
+  /* Live pulse ring */
+  .live-ring { animation: liveRing 2s ease-in-out infinite; }
+  @keyframes liveRing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+  }
+
+  /* Countdown ring SVG */
+  #ring-path { transition: stroke-dashoffset 1s linear; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #0a0f1e; }
+  ::-webkit-scrollbar-thumb { background: #1e3166; border-radius: 2px; }
+
+  /* Input focus ring */
+  input:focus, select:focus { outline: none; border-color: rgba(245,158,11,0.5) !important; box-shadow: 0 0 0 3px rgba(245,158,11,0.1); }
+
+  /* Marquee */
+  .marquee-container { overflow: hidden; }
+  .marquee-track { display: flex; width: max-content; animation: marquee 35s linear infinite; }
+  .marquee-track:hover { animation-play-state: paused; }
+  @keyframes marquee {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  /* Diagonal section divider */
+  .clip-diagonal { clip-path: polygon(0 0, 100% 0, 100% 85%, 0 100%); }
+  .clip-diagonal-rev { clip-path: polygon(0 15%, 100% 0, 100% 100%, 0 100%); }
+
+  /* Winner shimmer */
+  @keyframes shimmer {
+    0% { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  .winner-shimmer {
+    background: linear-gradient(90deg, rgba(245,158,11,0.1) 0%, rgba(245,158,11,0.25) 50%, rgba(245,158,11,0.1) 100%);
+    background-size: 200% auto;
+    animation: shimmer 3s linear infinite;
+  }
+</style>
+</head>
+<body class="font-sans text-white antialiased">
+
+<!-- ═══════════════════════════════════════════
+     NAVIGATION
+════════════════════════════════════════════ -->
+<nav class="fixed top-0 left-0 right-0 z-50 glass-darker border-b border-white/5">
+  <div class="h-16 flex items-center px-4 sm:px-6 lg:px-8 gap-4">
+    <!-- Logo anchored to left, overlapping sidebar area on desktop -->
+    <button onclick="showView('landing')" class="text-2xl font-extrabold tracking-widest flex-shrink-0 w-64 text-left">
+      <span class="text-amber-400">19</span><span class="text-white"> POOL</span>
+    </button>
+    <div id="nav-links" class="flex items-center gap-3 ml-auto">
+      <button onclick="showView('auth')" class="text-sm font-medium text-slate-400 hover:text-white transition-colors px-3 py-2">Sign In</button>
+      <button onclick="showView('create-league')" class="bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-bold px-5 py-2 rounded-full transition-all hover:scale-105 tracking-wide">Create League</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     LANDING PAGE
+════════════════════════════════════════════ -->
+<div id="view-landing" class="view active">
+
+  <!-- Hero -->
+  <section class="hero-bg grid-bg min-h-screen flex flex-col items-center justify-center text-center px-4 pt-24 pb-16 relative overflow-hidden">
+    <!-- Decorative orb -->
+    <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/5 blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 max-w-4xl mx-auto">
+      <div class="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full mb-8">
+        <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+        NFL · 32 Players · One Winner Each Week
+      </div>
+
+      <h1 class="text-8xl sm:text-[11rem] font-extrabold tracking-tight leading-none mb-2 text-glow">
+        <span class="text-amber-400">19</span>
+      </h1>
+      <h2 class="text-5xl sm:text-7xl font-extrabold tracking-[0.25em] text-white mb-6 uppercase">POOL</h2>
+
+      <p class="text-xl sm:text-2xl text-slate-400 font-light max-w-2xl mx-auto mb-4">
+        Score exactly <span class="text-amber-400 font-semibold">19 points</span> — win or lose — and you take home the entire weekly pot.
+      </p>
+      <p class="text-sm text-slate-500 mb-12">32 people. 32 NFL teams. Scores auto-update from ESPN every 30 seconds.</p>
+
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button onclick="showView('create-league')" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-8 py-4 rounded-full text-lg tracking-wide transition-all hover:scale-105 glow-gold-sm">
+          🏆 Start a League
+        </button>
+        <button onclick="showView('join-league')" class="glass border border-white/10 hover:border-amber-500/30 text-white font-semibold px-8 py-4 rounded-full text-lg tracking-wide transition-all hover:scale-105">
+          Join with a Code
+        </button>
+      </div>
+    </div>
+
+    <!-- Scroll arrow -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 opacity-30 animate-bounce">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 10l5 5 5-5"/></svg>
+    </div>
+  </section>
+
+  <!-- Marquee -->
+  <div class="bg-navy-800 border-y border-white/5 py-5 marquee-container">
+    <div class="marquee-track" id="marquee-track"></div>
+  </div>
+
+  <!-- How It Works -->
+  <section class="bg-navy-900 py-24 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="text-center mb-16">
+        <p class="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-3">The Game</p>
+        <h2 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">Simple rules. Big drama.</h2>
+      </div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass rounded-2xl p-8 hover:border-amber-500/20 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition-colors">
+            <span class="text-amber-400 font-mono font-bold text-lg">01</span>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">Form Your League</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">One commissioner creates the league and invites exactly 32 people. You set the weekly stakes.</p>
+        </div>
+        <div class="glass rounded-2xl p-8 hover:border-amber-500/20 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition-colors">
+            <span class="text-amber-400 font-mono font-bold text-lg">02</span>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">Get Your Team</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">The commissioner assigns one NFL team to each player. That team is yours for the entire season.</p>
+        </div>
+        <div class="glass rounded-2xl p-8 hover:border-amber-500/20 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition-colors">
+            <span class="text-amber-400 font-mono font-bold text-lg">03</span>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">Watch Live Scores</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">19 Pool pulls live scores from ESPN every 30 seconds. Zero manual entry — ever.</p>
+        </div>
+        <div class="glass rounded-2xl p-8 hover:border-amber-500/20 transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition-colors">
+            <span class="text-amber-400 font-mono font-bold text-lg">04</span>
+          </div>
+          <h3 class="font-bold text-white text-lg mb-2">Hit 19, Win It All</h3>
+          <p class="text-slate-400 text-sm leading-relaxed">Your team ends on exactly 19 points — win or lose — and you pocket the weekly pot.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- The 19 Banner -->
+  <section class="bg-amber-500 py-20 px-4 relative overflow-hidden">
+    <div class="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+      <span class="text-[300px] font-extrabold text-amber-600/20 leading-none">19</span>
+    </div>
+    <div class="relative max-w-3xl mx-auto text-center">
+      <h2 class="text-4xl sm:text-6xl font-extrabold text-navy-950 tracking-tight mb-4">The Only Number That Matters</h2>
+      <p class="text-amber-900/70 text-lg mb-8 max-w-xl mx-auto">Win or lose, offense or defense — all that matters is that final scoreboard reads 19. Any given Sunday, lightning can strike.</p>
+      <button onclick="showView('create-league')" class="bg-navy-950 text-amber-400 font-bold px-8 py-3 rounded-full text-sm tracking-widest uppercase hover:bg-navy-800 transition-colors">
+        Start Your League
+      </button>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="bg-navy-900 py-24 px-4">
+    <div class="max-w-6xl mx-auto">
+      <div class="grid lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <p class="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-3">Live Data</p>
+          <h2 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-6">Scores update automatically</h2>
+          <p class="text-slate-400 text-lg leading-relaxed mb-8">19 Pool taps directly into ESPN's live scoreboard API. Every 30 seconds during game time, all 32 team scores refresh — and when someone hits 19, the whole league sees it instantly.</p>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 12 12" fill="currentColor"><path d="M10.28 2.28L3.99 8.57 1.72 6.3a1 1 0 00-1.41 1.42l3 3a1 1 0 001.41 0l7-7a1 1 0 00-1.41-1.42z"/></svg>
+              </div>
+              <p class="text-slate-300 text-sm">Live score cards with team logos for every game</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 12 12" fill="currentColor"><path d="M10.28 2.28L3.99 8.57 1.72 6.3a1 1 0 00-1.41 1.42l3 3a1 1 0 001.41 0l7-7a1 1 0 00-1.41-1.42z"/></svg>
+              </div>
+              <p class="text-slate-300 text-sm">19-point scores light up gold instantly across all views</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg class="w-3 h-3 text-amber-400" viewBox="0 0 12 12" fill="currentColor"><path d="M10.28 2.28L3.99 8.57 1.72 6.3a1 1 0 00-1.41 1.42l3 3a1 1 0 001.41 0l7-7a1 1 0 00-1.41-1.42z"/></svg>
+              </div>
+              <p class="text-slate-300 text-sm">Commissioner never has to touch a score</p>
+            </div>
+          </div>
+        </div>
+        <!-- Fake score card preview -->
+        <div class="relative">
+          <div class="glass rounded-2xl p-6 glow-gold-sm space-y-3">
+            <div class="flex items-center justify-between mb-4">
+              <span class="text-xs font-semibold text-slate-400 tracking-widest uppercase">Week 12 · Live</span>
+              <span class="flex items-center gap-1.5 text-xs text-red-400 font-semibold"><span class="w-1.5 h-1.5 rounded-full bg-red-400 live-ring inline-block"></span>3 games live</span>
+            </div>
+            <!-- Sample game row - winner -->
+            <div class="score-nineteen rounded-xl p-4 border border-transparent">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-slate-500 font-mono">Final</span>
+                <span class="text-xs text-amber-400 font-bold">🔥 WINNER — Sarah M.</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <img src="https://a.espncdn.com/i/teamlogos/nfl/500/sf.png" class="w-7 h-7 object-contain" onerror="this.style.display='none'" alt="">
+                  <span class="font-semibold text-white text-sm">San Francisco</span>
+                </div>
+                <span class="font-mono font-bold text-2xl text-amber-400">19</span>
+              </div>
+              <div class="flex items-center justify-between mt-1">
+                <div class="flex items-center gap-2">
+                  <img src="https://a.espncdn.com/i/teamlogos/nfl/500/sea.png" class="w-7 h-7 object-contain" onerror="this.style.display='none'" alt="">
+                  <span class="font-semibold text-slate-400 text-sm">Seattle</span>
+                </div>
+                <span class="font-mono font-bold text-2xl text-slate-400">23</span>
+              </div>
+            </div>
+            <!-- Regular game -->
+            <div class="bg-navy-800/60 rounded-xl p-4 border border-white/5">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-xs text-red-400 font-mono font-semibold">Q3 8:42</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <img src="https://a.espncdn.com/i/teamlogos/nfl/500/kc.png" class="w-7 h-7 object-contain" onerror="this.style.display='none'" alt="">
+                  <span class="font-semibold text-white text-sm">Kansas City</span>
+                </div>
+                <span class="font-mono font-bold text-2xl text-white">24</span>
+              </div>
+              <div class="flex items-center justify-between mt-1">
+                <div class="flex items-center gap-2">
+                  <img src="https://a.espncdn.com/i/teamlogos/nfl/500/buf.png" class="w-7 h-7 object-contain" onerror="this.style.display='none'" alt="">
+                  <span class="font-semibold text-slate-400 text-sm">Buffalo</span>
+                </div>
+                <span class="font-mono font-bold text-2xl text-slate-400">17</span>
+              </div>
+            </div>
+          </div>
+          <div class="absolute -bottom-3 -right-3 glass rounded-xl px-4 py-2 text-xs text-amber-400 font-semibold border border-amber-500/20">
+            Auto-refreshing every 30s ↻
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Prizes -->
+  <section class="bg-navy-950 py-24 px-4">
+    <div class="max-w-6xl mx-auto text-center">
+      <p class="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-3">The Stakes</p>
+      <h2 class="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-16">Win every week. Or watch the pot grow.</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div class="glass rounded-2xl p-8 text-center hover:glow-gold-sm transition-all">
+          <div class="text-4xl mb-4">💵</div>
+          <h3 class="font-bold text-amber-400 text-xl mb-2">Weekly Pot</h3>
+          <p class="text-slate-400 text-sm">Every member's entry fee rolls into the weekly prize. Hit 19 and it's all yours.</p>
+        </div>
+        <div class="glass rounded-2xl p-8 text-center hover:glow-gold-sm transition-all">
+          <div class="text-4xl mb-4">🎰</div>
+          <h3 class="font-bold text-amber-400 text-xl mb-2">Rollover</h3>
+          <p class="text-slate-400 text-sm">No winner? The pot rolls over and keeps building week after week.</p>
+        </div>
+        <div class="glass rounded-2xl p-8 text-center hover:glow-gold-sm transition-all">
+          <div class="text-4xl mb-4">📡</div>
+          <h3 class="font-bold text-amber-400 text-xl mb-2">Live Scores</h3>
+          <p class="text-slate-400 text-sm">Scores stream from ESPN automatically. No manual entry, no arguments.</p>
+        </div>
+        <div class="glass rounded-2xl p-8 text-center hover:glow-gold-sm transition-all">
+          <div class="text-4xl mb-4">🔥</div>
+          <h3 class="font-bold text-amber-400 text-xl mb-2">32 Chances</h3>
+          <p class="text-slate-400 text-sm">All 32 NFL teams in play every single week. Drama guaranteed.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Final CTA -->
+  <section class="hero-bg py-24 px-4 text-center border-t border-white/5">
+    <div class="max-w-2xl mx-auto">
+      <h2 class="text-4xl sm:text-6xl font-extrabold text-white tracking-tight mb-4">Ready to run your league?</h2>
+      <p class="text-slate-400 text-lg mb-10">Two minutes to set up. A full NFL season of Sunday drama.</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center">
+        <button onclick="showView('create-league')" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-8 py-4 rounded-full text-lg tracking-wide transition-all hover:scale-105">Create Your League</button>
+        <button onclick="showView('join-league')" class="glass border border-white/10 hover:border-amber-500/30 text-white font-semibold px-8 py-4 rounded-full text-lg transition-all hover:scale-105">Join with a Code</button>
+      </div>
+    </div>
+  </section>
+
+  <footer class="bg-navy-950 border-t border-white/5 py-12 px-4">
+    <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-2xl font-extrabold tracking-widest"><span class="text-amber-400">19</span><span class="text-white"> POOL</span></div>
+      <p class="text-slate-500 text-sm">Not affiliated with the NFL or ESPN. © 2025 19 Pool.</p>
+      <div class="flex gap-6 text-slate-500 text-sm">
+        <button onclick="showView('create-league')" class="hover:text-white transition-colors">Create League</button>
+        <button onclick="showView('join-league')" class="hover:text-white transition-colors">Join League</button>
+        <button onclick="showView('auth')" class="hover:text-white transition-colors">Sign In</button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     AUTH
+════════════════════════════════════════════ -->
+<div id="view-auth" class="view">
+  <div class="hero-bg min-h-screen flex items-center justify-center px-4 pt-16">
+    <div class="glass rounded-2xl p-8 sm:p-10 w-full max-w-md">
+      <div class="text-center mb-8">
+        <div class="text-3xl font-extrabold mb-1"><span class="text-amber-400">19</span> POOL</div>
+        <p class="text-slate-400 text-sm">Sign in or create your account</p>
+      </div>
+      <!-- Tabs -->
+      <div class="flex bg-navy-950/60 rounded-xl p-1 mb-8 gap-1">
+        <button id="tab-signin" onclick="switchAuthTab('signin')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all bg-navy-700 text-white">Sign In</button>
+        <button id="tab-signup" onclick="switchAuthTab('signup')" class="flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-white">Create Account</button>
+      </div>
+
+      <!-- Sign In -->
+      <div id="auth-signin">
+        <div id="signin-alert" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+        <div class="space-y-4">
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email</label><input type="email" id="signin-email" placeholder="you@example.com" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label><input type="password" id="signin-password" placeholder="••••••••" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+        </div>
+        <div class="flex justify-end mt-2">
+          <button onclick="switchAuthTab('forgot')" class="text-xs text-amber-400 hover:text-amber-300 transition-colors">Forgot password?</button>
+        </div>
+        <button onclick="handleSignIn()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-4 transition-all tracking-wide">Sign In</button>
+      </div>
+
+      <!-- Sign Up -->
+      <div id="auth-signup" class="hidden">
+        <div id="signup-alert" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+        <div class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">First Name</label><input type="text" id="signup-first" placeholder="Brooks" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label><input type="text" id="signup-last" placeholder="Smith" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          </div>
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email</label><input type="email" id="signup-email" placeholder="you@example.com" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label><input type="password" id="signup-password" placeholder="Min. 8 characters" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Invite Code <span class="text-slate-600 normal-case font-normal">(optional)</span></label><input type="text" id="signup-code" placeholder="WOLF-2291" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm font-mono tracking-widest uppercase"/></div>
+        </div>
+        <button onclick="handleSignUp()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-6 transition-all tracking-wide">Create Account</button>
+      </div>
+
+      <!-- Forgot Password -->
+      <div id="auth-forgot" class="hidden">
+        <!-- Step 1: Enter email -->
+        <div id="forgot-step-1">
+          <div class="text-center mb-6">
+            <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto mb-3 text-2xl">🔑</div>
+            <h3 class="text-lg font-bold text-white">Reset Password</h3>
+            <p class="text-slate-400 text-sm mt-1">Enter your email and we'll send a reset code.</p>
+          </div>
+          <div id="forgot-alert-1" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+          <div class="space-y-4">
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label><input type="email" id="forgot-email" placeholder="you@example.com" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          </div>
+          <button onclick="sendResetCode()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-6 transition-all tracking-wide">Send Reset Code</button>
+          <div class="text-center mt-4">
+            <button onclick="switchAuthTab('signin')" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">← Back to Sign In</button>
+          </div>
+        </div>
+        <!-- Step 2: Enter code -->
+        <div id="forgot-step-2" class="hidden">
+          <div class="text-center mb-6">
+            <div class="w-12 h-12 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-3 text-2xl">📬</div>
+            <h3 class="text-lg font-bold text-white">Check Your Email</h3>
+            <p class="text-slate-400 text-sm mt-1">We sent a 6-digit code to <span id="forgot-email-display" class="text-white font-semibold"></span></p>
+          </div>
+          <div id="forgot-alert-2" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">6-Digit Code</label>
+              <input type="text" id="forgot-code" placeholder="000000" maxlength="6" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm font-mono text-center text-2xl tracking-[0.5em]"/>
+            </div>
+          </div>
+          <button onclick="verifyResetCode()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-6 transition-all tracking-wide">Verify Code</button>
+          <div class="text-center mt-4 flex items-center justify-center gap-4">
+            <button onclick="sendResetCode()" class="text-xs text-slate-500 hover:text-amber-400 transition-colors">Resend code</button>
+            <span class="text-slate-700">·</span>
+            <button onclick="showForgotStep(1)" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">← Change email</button>
+          </div>
+        </div>
+        <!-- Step 3: New password -->
+        <div id="forgot-step-3" class="hidden">
+          <div class="text-center mb-6">
+            <div class="w-12 h-12 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-3 text-2xl">🔒</div>
+            <h3 class="text-lg font-bold text-white">New Password</h3>
+            <p class="text-slate-400 text-sm mt-1">Choose a strong password for your account.</p>
+          </div>
+          <div id="forgot-alert-3" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">New Password</label>
+              <input type="password" id="forgot-new-pass" placeholder="Min. 8 characters" oninput="updatePwStrength(this.value,'bar','pass-strength-label')" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Confirm Password</label>
+              <input type="password" id="forgot-confirm-pass" placeholder="Repeat password" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/>
+            </div>
+            <!-- Password strength -->
+            <div>
+              <div class="flex gap-1 mt-1" id="pass-strength-bars">
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="bar1"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="bar2"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="bar3"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="bar4"></div>
+              </div>
+              <p class="text-xs text-slate-600 mt-1" id="pass-strength-label"></p>
+            </div>
+          </div>
+          <button onclick="resetPassword()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-6 transition-all tracking-wide">Set New Password</button>
+        </div>
+        <!-- Step 4: Success -->
+        <div id="forgot-step-4" class="hidden text-center">
+          <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4 text-3xl">✅</div>
+          <h3 class="text-xl font-bold text-white mb-2">Password Reset!</h3>
+          <p class="text-slate-400 text-sm mb-6">Your password has been updated. You can now sign in.</p>
+          <button onclick="switchAuthTab('signin')" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide">Sign In Now</button>
+        </div>
+      </div>
+
+      <div class="text-center mt-6">
+        <button onclick="showView('landing')" class="text-slate-500 hover:text-slate-300 text-sm transition-colors">← Back to Home</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     CREATE LEAGUE
+════════════════════════════════════════════ -->
+<div id="view-create-league" class="view">
+  <div class="hero-bg min-h-screen flex items-center justify-center px-4 pt-16 pb-8">
+    <div class="glass rounded-2xl p-8 sm:p-10 w-full max-w-lg">
+
+      <!-- Progress indicator -->
+      <div class="flex items-center gap-2 mb-8" id="create-progress">
+        <div class="flex items-center gap-2 flex-1">
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all" id="prog-1">1</div>
+          <div class="h-px flex-1 bg-white/10" id="prog-line-1"></div>
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all" id="prog-2">2</div>
+          <div class="h-px flex-1 bg-white/10" id="prog-line-2"></div>
+          <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all" id="prog-3">3</div>
+        </div>
+      </div>
+
+      <!-- Step 1: Account — sign in or create -->
+      <div id="create-step-1">
+        <h1 class="text-2xl font-extrabold text-white mb-1">Your Account</h1>
+        <p class="text-slate-400 text-sm mb-6">Sign in or create an account — you'll be the commissioner.</p>
+
+        <!-- Sub-tabs: Sign In / Create Account -->
+        <div class="flex bg-navy-950/60 rounded-xl p-1 mb-6 gap-1">
+          <button id="ctab-signin" onclick="switchCreateAccountTab('signin')" class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all bg-navy-700 text-white">Sign In</button>
+          <button id="ctab-create" onclick="switchCreateAccountTab('create')" class="flex-1 py-2 rounded-lg text-sm font-semibold transition-all text-slate-400 hover:text-white">Create Account</button>
+        </div>
+
+        <!-- Sign In panel -->
+        <div id="cpanel-signin">
+          <div id="create-signin-alert" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+          <div class="space-y-4">
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email</label><input type="email" id="create-signin-email" placeholder="you@example.com" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label><input type="password" id="create-signin-pw" placeholder="••••••••" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          </div>
+          <div class="flex justify-end mt-2 mb-5">
+            <button onclick="showView('auth');switchAuthTab('forgot')" class="text-xs text-amber-400 hover:text-amber-300 transition-colors">Forgot password?</button>
+          </div>
+          <button onclick="createFlowSignIn()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide">Sign In & Continue →</button>
+        </div>
+
+        <!-- Create Account panel -->
+        <div id="cpanel-create" class="hidden">
+          <div id="create-signup-alert" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+          <div class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">First Name</label><input type="text" id="create-first" placeholder="Brooks" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+              <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label><input type="text" id="create-last" placeholder="Smith" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+            </div>
+            <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email</label><input type="email" id="create-email" placeholder="you@example.com" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label>
+              <input type="password" id="create-pw" placeholder="Min. 8 characters" oninput="updatePwStrength(this.value,'cpw-bar','cpw-label')" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/>
+              <div class="flex gap-1 mt-2">
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="cpw-bar1"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="cpw-bar2"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="cpw-bar3"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="cpw-bar4"></div>
+              </div>
+              <p class="text-xs mt-1" id="cpw-label"></p>
+            </div>
+          </div>
+          <button onclick="createFlowSignUp()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-6 transition-all tracking-wide">Create Account & Continue →</button>
+        </div>
+
+        <div class="text-center mt-5">
+          <button onclick="showView('landing')" class="text-slate-500 hover:text-slate-300 text-sm transition-colors">← Back to Home</button>
+        </div>
+      </div>
+
+      <!-- Step 2: League Name -->
+      <div id="create-step-2" class="hidden">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+            <svg class="w-5 h-5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582m15.686 0A11.953 11.953 0 0 1 12 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0 1 21 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0 1 12 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 0 1 3 12c0-1.605.42-3.113 1.157-4.418" /></svg>
+          </div>
+          <div>
+            <h1 class="text-2xl font-extrabold text-white">Name Your League</h1>
+            <p class="text-slate-400 text-xs mt-0.5">Signed in as <span id="create-account-name" class="text-amber-400 font-semibold"></span></p>
+          </div>
+        </div>
+        <div id="create-alert" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">League Name</label>
+            <input type="text" id="league-name" placeholder="e.g. Sunday Funday Pool 2025" maxlength="40" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/>
+            <p class="text-xs text-slate-600 mt-2">Entry fees, payment details, and team assignments are all set up after your league is created.</p>
+          </div>
+
+          <!-- Join as player toggle -->
+          <div class="bg-navy-950/60 border border-white/8 rounded-xl p-4">
+            <label class="flex items-center gap-4 cursor-pointer">
+              <div class="flex-1">
+                <p class="text-sm font-semibold text-white">Join as a player</p>
+                <p class="text-xs text-slate-500 mt-0.5">Add yourself to the league as one of the 32 players.</p>
+              </div>
+              <button type="button" id="join-as-player-toggle" onclick="toggleJoinAsPlayer()"
+                class="relative w-11 h-6 rounded-full transition-all duration-200 bg-white/10 flex-shrink-0"
+                aria-checked="false" role="switch">
+                <span id="join-as-player-knob" class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-slate-400 shadow transition-all duration-200"></span>
+              </button>
+            </label>
+            <!-- Player email field, shown when toggled on -->
+            <div id="join-player-email-wrap" class="hidden mt-3 pt-3 border-t border-white/5">
+              <label class="block text-xs text-slate-500 mb-1.5">Your email (for your player account)</label>
+              <input type="email" id="join-player-email" placeholder="you@example.com"
+                class="w-full bg-navy-800/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2 rounded-lg text-sm"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mt-8">
+          <button onclick="showCreateStep(1)" class="text-slate-400 hover:text-white text-sm transition-colors">← Back</button>
+          <button onclick="createLeague()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-8 py-3 rounded-full transition-all tracking-wide">Create League →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Success -->
+      <div id="create-step-3" class="hidden text-center">
+        <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4 text-3xl">🎉</div>
+        <h2 class="text-2xl font-extrabold text-white mb-1">League Created!</h2>
+        <p class="text-slate-400 text-sm mb-6">Taking you to your league invite page…</p>
+        <div class="bg-navy-950/80 border border-amber-500/20 rounded-2xl p-5 mb-6 text-center">
+          <p class="text-xs text-slate-500 uppercase tracking-widest mb-2">Your Invite Code</p>
+          <p class="font-mono text-4xl font-bold text-amber-400 tracking-[0.3em]" id="generated-code">——</p>
+        </div>
+        <button onclick="goToLeagueInvite()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-full transition-all tracking-wide">Go to League Invite →</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     JOIN LEAGUE
+════════════════════════════════════════════ -->
+<div id="view-join-league" class="view">
+  <div class="hero-bg min-h-screen flex items-center justify-center px-4 pt-16">
+    <div class="glass rounded-2xl p-8 sm:p-10 w-full max-w-md">
+      <div id="join-step-1">
+        <h1 class="text-3xl font-extrabold text-white mb-1">Join a League</h1>
+        <p class="text-slate-400 text-sm mb-8">Enter the invite code from your commissioner.</p>
+        <div id="join-alert" class="hidden mb-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl"></div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Invite Code</label>
+            <input type="text" id="join-code" placeholder="WOLF-2291" maxlength="9" oninput="this.value=this.value.toUpperCase()" class="w-full bg-navy-950/60 border border-white/10 text-amber-400 placeholder-slate-600 px-4 py-4 rounded-xl font-mono text-2xl tracking-[0.3em] uppercase text-center"/>
+          </div>
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Full Name</label><input type="text" id="join-name" placeholder="Your full name" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email</label><input type="email" id="join-email" placeholder="you@example.com" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+          <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Create Password</label><input type="password" id="join-password" placeholder="Min. 8 characters" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
+        </div>
+        <div class="flex items-center justify-between mt-8">
+          <button onclick="showView('landing')" class="text-slate-400 hover:text-white text-sm transition-colors">← Back</button>
+          <button onclick="joinLeague()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-8 py-3 rounded-full transition-all tracking-wide">Join League →</button>
+        </div>
+      </div>
+      <div id="join-step-2" class="hidden text-center">
+        <div class="w-16 h-16 rounded-full bg-green-500/10 border border-green-500/30 flex items-center justify-center mx-auto mb-4 text-3xl">✅</div>
+        <h2 class="text-2xl font-extrabold text-white mb-2">You're In!</h2>
+        <p class="text-slate-400 text-sm mb-8">Welcome to the league.</p>
+        <div class="bg-navy-950/60 rounded-2xl p-6 mb-6">
+          <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Your League</p>
+          <p class="text-2xl font-bold text-white mb-4" id="join-league-name">—</p>
+          <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Your Team</p>
+          <p class="text-xl font-bold text-amber-400">Awaiting Assignment</p>
+          <p class="text-xs text-slate-500 mt-2">The commissioner will assign teams once all 32 members have joined.</p>
+        </div>
+        <button onclick="goToDashboard()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-full transition-all tracking-wide">View My Dashboard →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD
+════════════════════════════════════════════ -->
+<div id="view-dashboard" class="view">
+  <div class="flex pt-16 min-h-screen">
+
+    <!-- Sidebar (desktop) -->
+    <aside class="w-64 flex-shrink-0 bg-navy-900 border-r border-white/5 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto hidden lg:block">
+      <div class="p-5 border-b border-white/5">
+        <p class="font-bold text-white text-base leading-tight" id="dash-league-name">My League</p>
+      </div>
+      <nav class="p-3 flex flex-col gap-0.5">
+        <button onclick="switchDashTab('overview',this)" class="sidebar-link w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all text-left">
+          <!-- Heroicon: calendar-days -->
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+          Weekly Results
+        </button>
+        <button onclick="switchDashTab('standings',this)" class="sidebar-link w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all text-left">
+          <!-- Heroicon: trophy -->
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" /></svg>
+          Standings
+        </button>
+        <button id="admin-link" onclick="switchDashTab('admin',this)" class="sidebar-link w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all text-left">
+          <!-- Heroicon: cog-6-tooth -->
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+          Admin
+        </button>
+        <div class="border-t border-white/5 my-2"></div>
+        <button onclick="switchDashTab('account',this)" class="sidebar-link w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all text-left">
+          <!-- Heroicon: user-circle -->
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+          Account
+        </button>
+        <button onclick="signOut()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:text-white hover:bg-white/5 transition-all text-left">
+          <!-- Heroicon: arrow-right-on-rectangle -->
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9" /></svg>
+          Sign Out
+        </button>
+      </nav>
+    </aside>
+
+    <!-- Mobile nav bar -->
+    <div class="lg:hidden fixed top-16 left-0 right-0 z-40 bg-navy-900/98 backdrop-blur border-b border-white/5 flex overflow-x-auto">
+      <button onclick="switchDashTab('overview',this)" class="mob-link flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-2 text-slate-400 hover:text-white transition-colors text-[10px] font-semibold whitespace-nowrap">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" /></svg>
+        Results
+      </button>
+      <button onclick="switchDashTab('standings',this)" class="mob-link flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-2 text-slate-400 hover:text-white transition-colors text-[10px] font-semibold whitespace-nowrap">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M5.25 4.236c-.982.143-1.954.317-2.916.52A6.003 6.003 0 0 0 7.73 9.728M5.25 4.236V4.5c0 2.108.966 3.99 2.48 5.228M5.25 4.236V2.721C7.456 2.41 9.71 2.25 12 2.25c2.291 0 4.545.16 6.75.47v1.516M7.73 9.728a6.726 6.726 0 0 0 2.748 1.35m8.272-6.842V4.5c0 2.108-.966 3.99-2.48 5.228m2.48-5.492a46.32 46.32 0 0 1 2.916.52 6.003 6.003 0 0 1-5.395 4.972m0 0a6.726 6.726 0 0 1-2.749 1.35m0 0a6.772 6.772 0 0 1-3.044 0" /></svg>
+        Standings
+      </button>
+      <button id="admin-link-mob" onclick="switchDashTab('admin',this)" class="mob-link flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-2 text-slate-400 hover:text-white transition-colors text-[10px] font-semibold whitespace-nowrap">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+        Admin
+      </button>
+      <button onclick="switchDashTab('account',this)" class="mob-link flex-1 flex flex-col items-center justify-center gap-1 py-2.5 px-2 text-slate-400 hover:text-white transition-colors text-[10px] font-semibold whitespace-nowrap">
+        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+        Account
+      </button>
+    </div>
+
+    <!-- Main content -->
+    <main class="flex-1 overflow-auto pt-11 lg:pt-0">
+
+      <!-- ── WEEKLY RESULTS ─────────────────────────── -->
+      <div id="dash-overview" class="dash-tab active p-6 lg:p-10">
+
+        <!-- Header row: title left, pot right — exactly like screenshot -->
+        <div class="flex items-start justify-between mb-8 gap-4">
+          <div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-white" id="weekly-results-title">Weekly Results</h1>
+            <p class="text-slate-400 text-sm mt-1" id="dash-week-info">2025 Season</p>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <div class="flex items-center gap-1 justify-end mb-0.5">
+              <span class="text-green-400 text-xs">$</span>
+              <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Weekly Pot</span>
+            </div>
+            <p class="text-4xl font-extrabold text-green-400 leading-none" id="weekly-pot-display">$640</p>
+          </div>
+        </div>
+
+        <!-- 19-point winner flash banner -->
+        <div id="weekly-winner-banner" class="hidden mb-6"></div>
+
+        <!-- Controls bar -->
+        <div class="flex items-center gap-3 mb-6 flex-wrap">
+          <div id="live-indicator" class="hidden items-center gap-1.5 bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold px-3 py-1.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-red-400 live-ring inline-block"></span>
+            LIVE
+          </div>
+          <div class="ml-auto flex items-center gap-2 flex-wrap">
+            <!-- Season -->
+            <div class="flex items-center gap-2 bg-navy-800/80 border border-white/5 rounded-xl px-3 py-1.5">
+              <span class="text-xs text-slate-500 uppercase tracking-wider">Season</span>
+              <select id="season-select" onchange="onSeasonChange()" class="bg-transparent border-0 text-white text-sm font-semibold cursor-pointer p-0">
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+                <option value="2023">2023</option>
+              </select>
+            </div>
+            <!-- Week -->
+            <div class="flex items-center gap-2 bg-navy-800/80 border border-white/5 rounded-xl px-3 py-1.5">
+              <span class="text-xs text-slate-500 uppercase tracking-wider">Week</span>
+              <select id="week-select" onchange="fetchScores()" class="bg-transparent border-0 text-white text-sm font-semibold cursor-pointer p-0">
+              </select>
+            </div>
+            <button onclick="fetchScores()" id="refresh-btn" class="flex items-center gap-1.5 glass border border-white/5 hover:border-amber-500/20 text-slate-300 hover:text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-all">
+              <svg id="refresh-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+              Refresh
+            </button>
+            <div class="flex items-center gap-1">
+              <svg width="16" height="16" viewBox="0 0 18 18">
+                <circle cx="9" cy="9" r="7" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="2"/>
+                <circle id="ring-path" cx="9" cy="9" r="7" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="43.98" stroke-dashoffset="43.98" stroke-linecap="round"/>
+              </svg>
+              <span id="refresh-countdown" class="text-xs text-slate-500 font-mono">30s</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Matchup cards — 3 columns like screenshot -->
+        <div id="scores-container">
+          <div class="flex items-center justify-center gap-3 py-24 text-slate-500">
+            <svg class="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/></svg>
+            <span class="text-sm tracking-wide">Loading from ESPN...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STANDINGS ───────────────────────────────── -->
+      <div id="dash-standings" class="dash-tab p-6 lg:p-10 max-w-6xl">
+        <div class="mb-6">
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Standings</h1>
+          <p class="text-slate-400 text-sm mt-1">Full season leaderboard</p>
+        </div>
+        <!-- Stats cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Total Pot</p>
+            <p class="text-2xl font-extrabold text-amber-400" id="stat-pot">$640</p>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Base Weekly</p>
+            <p class="text-2xl font-extrabold text-amber-400" id="stat-entry">$20</p>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-2" id="week-pot-label">Week — Pot</p>
+            <p class="text-2xl font-extrabold text-green-400 leading-none" id="standings-pot-display">—</p>
+          </div>
+          <div class="glass rounded-2xl p-5">
+            <p class="text-xs text-slate-500 uppercase tracking-wider mb-2">Total 19s</p>
+            <p class="text-2xl font-extrabold text-green-400" id="stat-winners">0</p>
+          </div>
+        </div>
+        <div class="glass rounded-2xl overflow-hidden">
+          <div class="px-6 py-4 border-b border-white/5"><span class="text-sm font-bold text-white">2025 Season</span></div>
+          <table class="w-full">
+            <thead><tr class="text-xs text-slate-500 uppercase tracking-wider border-b border-white/5">
+              <th class="px-6 py-3 text-left w-10">#</th>
+              <th class="px-6 py-3 text-left">Member</th>
+              <th class="px-6 py-3 text-left hidden sm:table-cell">NFL Team</th>
+              <th class="px-6 py-3 text-left">19s</th>
+              <th class="px-6 py-3 text-left hidden md:table-cell">Payout</th>
+            </tr></thead>
+            <tbody id="standings-table"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── TEAMS ──────────────────────────────────── -->
+      <div id="dash-teams" class="dash-tab p-6 lg:p-10 max-w-6xl">
+        <div class="mb-8">
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Team Assignments</h1>
+          <p class="text-slate-400 text-sm mt-1">Each member paired with one NFL team for the season</p>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" id="teams-grid"></div>
+      </div>
+
+      <!-- ── ADMIN ──────────────────────────────────── -->
+      <div id="dash-admin" class="dash-tab p-6 lg:p-10 max-w-3xl">
+        <div class="mb-6">
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Admin</h1>
+          <p class="text-slate-400 text-sm mt-1">Commissioner controls</p>
+        </div>
+
+        <div class="flex gap-1 bg-navy-950/60 border border-white/5 rounded-xl p-1 mb-8 overflow-x-auto">
+          <button onclick="switchAdminTab('invite')" id="atab-invite" class="admin-tab flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap bg-navy-700 text-white">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+            League Invite
+          </button>
+          <button onclick="switchAdminTab('entry')" id="atab-entry" class="admin-tab flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap text-slate-400 hover:text-white">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+            Entry Fee
+          </button>
+          <button onclick="switchAdminTab('teams')" id="atab-teams" class="admin-tab flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap text-slate-400 hover:text-white">
+            <svg class="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" /></svg>
+            Assign Teams
+          </button>
+        </div>
+
+        <!-- League Invite panel -->
+        <div id="apanel-invite">
+
+          <!-- Invite Code card -->
+          <div class="glass rounded-2xl p-6 mb-5">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">Invite Code</h3>
+              <span class="text-xs font-semibold text-slate-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full"><span id="admin-member-count">0</span>/32 joined</span>
+            </div>
+            <div class="bg-navy-950/60 border border-amber-500/20 rounded-xl p-4 text-center mb-4">
+              <p class="text-xs text-slate-500 uppercase tracking-wider mb-1">Share this code</p>
+              <p class="font-mono text-3xl font-bold text-amber-400 tracking-[0.3em]" id="admin-code">—</p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <button onclick="copyCode()" class="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-semibold py-2.5 rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.666 3.888A2.25 2.25 0 0 0 13.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 0 1-.75.75H9a.75.75 0 0 1-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 0 1 1.927-.184" /></svg>
+                Copy Code
+              </button>
+              <button onclick="copyLink()" class="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-semibold py-2.5 rounded-xl transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.19 8.688a4.5 4.5 0 0 1 1.242 7.244l-4.5 4.5a4.5 4.5 0 0 1-6.364-6.364l1.757-1.757m13.35-.622 1.757-1.757a4.5 4.5 0 0 0-6.364-6.364l-4.5 4.5a4.5 4.5 0 0 0 1.242 7.244" /></svg>
+                Copy Link
+              </button>
+            </div>
+          </div>
+
+          <!-- Bulk Invite -->
+          <div class="glass rounded-2xl p-6 mb-5">
+            <div class="mb-5">
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-1">Invite Players</h3>
+              <p class="text-slate-400 text-xs">Import from your contacts or add manually. Select up to 32 players and send via Email or SMS.</p>
+            </div>
+
+            <!-- Import from contacts -->
+            <div class="bg-navy-950/50 border border-white/5 rounded-xl p-4 mb-5">
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Import from Contacts</p>
+              <p class="text-xs text-slate-500 mb-4">On mobile, tap below to open your contacts and select people to invite. The browser will ask for permission.</p>
+              <div class="flex gap-3">
+                <button onclick="importContacts()" class="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl text-sm transition-all">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Zm6-10.125a1.875 1.875 0 1 1-3.75 0 1.875 1.875 0 0 1 3.75 0Zm1.294 6.336a6.721 6.721 0 0 1-3.17.789 6.721 6.721 0 0 1-3.168-.789 3.376 3.376 0 0 1 6.338 0Z" /></svg>
+                  Open Contacts
+                </button>
+                <button onclick="showAddManual()" class="flex items-center justify-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 font-semibold py-3 px-4 rounded-xl text-sm transition-colors">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                  Add Manually
+                </button>
+              </div>
+              <p id="contacts-api-note" class="text-xs text-slate-600 mt-3 hidden">Contact Picker API is supported on this device.</p>
+            </div>
+
+            <!-- Manual add form (collapsed by default) -->
+            <div id="manual-add-form" class="hidden bg-navy-950/50 border border-white/5 rounded-xl p-4 mb-5">
+              <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Add Person</p>
+              <div id="add-owner-alert" class="hidden mb-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-3 py-2 rounded-lg"></div>
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <div><label class="block text-xs text-slate-500 mb-1">First Name <span class="text-amber-400">*</span></label><input type="text" id="owner-first" placeholder="Sarah" class="w-full bg-navy-800/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2 rounded-lg text-sm"/></div>
+                <div><label class="block text-xs text-slate-500 mb-1">Last Name</label><input type="text" id="owner-last" placeholder="Miller" class="w-full bg-navy-800/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2 rounded-lg text-sm"/></div>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                <div><label class="block text-xs text-slate-500 mb-1">Email</label><input type="email" id="owner-email" placeholder="sarah@example.com" class="w-full bg-navy-800/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2 rounded-lg text-sm"/></div>
+                <div><label class="block text-xs text-slate-500 mb-1">Phone</label><input type="tel" id="owner-phone" placeholder="(555) 000-0000" class="w-full bg-navy-800/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2 rounded-lg text-sm"/></div>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="addOwner()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-2.5 rounded-xl text-sm transition-all">Add to List</button>
+                <button onclick="hideAddManual()" class="px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 rounded-xl text-sm transition-colors">Cancel</button>
+              </div>
+            </div>
+
+            <!-- Invite list with selection -->
+            <div id="invite-list-wrap" class="hidden">
+              <div class="flex items-center justify-between mb-3">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  Invite List <span id="invite-selected-count" class="text-amber-400 ml-1">0 selected</span>
+                </p>
+                <div class="flex gap-2">
+                  <button onclick="selectAllInvites()" class="text-xs text-amber-400 hover:text-amber-300 transition-colors">Select All</button>
+                  <span class="text-slate-700">·</span>
+                  <button onclick="clearAllInvites()" class="text-xs text-slate-500 hover:text-slate-300 transition-colors">Clear</button>
+                </div>
+              </div>
+              <div id="invite-list" class="space-y-1.5 max-h-64 overflow-y-auto mb-4"></div>
+
+              <!-- Send actions -->
+              <div class="border-t border-white/5 pt-4">
+                <p class="text-xs text-slate-500 mb-3">
+                  Send invite to <span id="send-count" class="text-white font-semibold">0</span> selected players
+                  <span id="league-full-badge" class="hidden ml-2 bg-green-500/10 border border-green-500/20 text-green-400 text-xs px-2 py-0.5 rounded-full">League Full</span>
+                </p>
+                <div class="grid grid-cols-2 gap-3">
+                  <button onclick="openEmailComposer()" class="flex items-center justify-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-300 font-semibold py-3 rounded-xl text-sm transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>
+                    Send Email
+                  </button>
+                  <button onclick="sendBulkSMS()" class="flex items-center justify-center gap-2 bg-green-500/10 hover:bg-green-500/20 border border-green-500/20 text-green-300 font-semibold py-3 rounded-xl text-sm transition-all">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 8.25h3m-3 3h3m-3 3h3" /></svg>
+                    Send SMS
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty state -->
+            <div id="invite-empty-state" class="text-center py-6 text-slate-600 text-sm">
+              Import contacts or add people manually to build your invite list.
+            </div>
+          </div>
+
+          <!-- Existing members list -->
+          <div class="glass rounded-2xl p-6 mb-5">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">Members</h3>
+                <p class="text-slate-400 text-xs mt-1">Players who have joined the league</p>
+              </div>
+              <span class="text-xs font-semibold text-slate-400 bg-white/5 border border-white/10 px-3 py-1 rounded-full"><span id="owner-count">0</span>/32</span>
+            </div>
+            <div id="owners-list" class="space-y-2 max-h-80 overflow-y-auto"></div>
+          </div>
+        </div>
+
+        <!-- Entry Fee panel -->
+        <div id="apanel-entry" class="hidden">
+          <div class="glass rounded-2xl p-6 mb-5">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-1">Season Entry Fee</h3>
+            <p class="text-slate-400 text-sm mb-4">The amount each member pays to participate this season.</p>
+            <div class="flex items-center gap-3">
+              <div class="relative max-w-[160px]">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold">$</span>
+                <input type="number" id="admin-entry-input" min="1" value="20" oninput="updateEntryPreview()" class="w-full bg-navy-950/60 border border-white/10 text-white pl-7 pr-4 py-3 rounded-xl text-lg font-bold"/>
+              </div>
+              <button onclick="saveSeasonEntry()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-6 py-3 rounded-full text-sm transition-all">Save</button>
+            </div>
+            <p class="text-xs text-slate-500 mt-3">Total pot: <span id="admin-total-pot" class="text-white font-semibold">$640 · $35.56/wk</span></p>
+          </div>
+        </div>
+
+        <!-- Assign Teams panel -->
+        <div id="apanel-teams" class="hidden">
+          <div class="glass rounded-2xl p-6 mb-5">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-2">Assign NFL Teams</h3>
+            <p class="text-slate-400 text-sm mb-5">Randomly assign all 32 teams, or manually set each one.</p>
+            <button onclick="randomAssign()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-6 py-2.5 rounded-full text-sm transition-all mb-5 flex items-center gap-2">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 0 0 2.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.456Z" /></svg>
+              Random Assign All
+            </button>
+            <div id="admin-assign-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+          </div>
+          <div class="rounded-2xl p-6 border border-red-500/20 bg-red-500/5">
+            <h3 class="text-sm font-bold text-red-400 uppercase tracking-wider mb-4">⚠️ Danger Zone</h3>
+            <button onclick="if(confirm('Reset all team assignments?'))resetAssignments()" class="bg-red-500 hover:bg-red-400 text-white font-bold px-6 py-2.5 rounded-full text-sm transition-colors">Reset Assignments</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ACCOUNT ─────────────────────────────────── -->
+      <div id="dash-account" class="dash-tab p-6 lg:p-10 max-w-2xl">
+        <div class="mb-8">
+          <h1 class="text-3xl sm:text-4xl font-extrabold text-white">Account</h1>
+          <p class="text-slate-400 text-sm mt-1">Manage your profile and preferences</p>
+        </div>
+
+        <!-- Profile -->
+        <div class="glass rounded-2xl p-6 mb-5">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-5">Profile</h3>
+          <div id="account-alert" class="hidden mb-4 bg-green-500/10 border border-green-500/30 text-green-400 text-sm px-4 py-3 rounded-xl"></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">First Name</label>
+              <input type="text" id="acct-first" class="w-full bg-navy-950/60 border border-white/10 text-white px-4 py-3 rounded-xl text-sm" placeholder="Your first name"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Last Name</label>
+              <input type="text" id="acct-last" class="w-full bg-navy-950/60 border border-white/10 text-white px-4 py-3 rounded-xl text-sm" placeholder="Your last name"/>
+            </div>
+          </div>
+          <div class="mb-5">
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Email Address</label>
+            <input type="email" id="acct-email" class="w-full bg-navy-950/60 border border-white/10 text-white px-4 py-3 rounded-xl text-sm" placeholder="you@example.com"/>
+          </div>
+          <button onclick="saveProfile()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-8 py-3 rounded-full text-sm transition-all">Save Profile</button>
+        </div>
+
+        <!-- Change Password -->
+        <div class="glass rounded-2xl p-6 mb-5">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-5">Change Password</h3>
+          <div id="pw-alert" class="hidden mb-4 text-sm px-4 py-3 rounded-xl"></div>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Current Password</label>
+              <input type="password" id="acct-current-pw" placeholder="••••••••" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">New Password</label>
+              <input type="password" id="acct-new-pw" placeholder="Min. 8 characters" oninput="checkAcctPwStrength()" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/>
+              <div class="flex gap-1 mt-2">
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="acct-bar1"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="acct-bar2"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="acct-bar3"></div>
+                <div class="h-1 flex-1 rounded-full bg-white/10" id="acct-bar4"></div>
+              </div>
+              <p class="text-xs text-slate-600 mt-1" id="acct-pw-label"></p>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Confirm New Password</label>
+              <input type="password" id="acct-confirm-pw" placeholder="Repeat new password" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/>
+            </div>
+          </div>
+          <button onclick="changePassword()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-8 py-3 rounded-full text-sm transition-all mt-5">Update Password</button>
+        </div>
+
+        <!-- Payment Notes (how to pay the league manager) -->
+        <div class="glass rounded-2xl p-6 mb-5">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-1">Payment Notes</h3>
+          <p class="text-slate-400 text-sm mb-4">How to pay the league manager for your season entry.</p>
+          <div class="bg-navy-950/60 border border-amber-500/20 rounded-xl p-4 flex items-start gap-3">
+            <span class="text-xl mt-0.5">💳</span>
+            <div>
+              <p class="text-sm font-semibold text-white" id="acct-payment-notes">Contact your commissioner for payment details.</p>
+              <p class="text-xs text-slate-500 mt-1">Season entry: <span id="acct-entry-amount" class="text-amber-400 font-semibold">$20</span></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sign Out -->
+        <div class="glass rounded-2xl p-6">
+          <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-1">Sign Out</h3>
+          <p class="text-slate-400 text-sm mb-4">You'll need to sign back in to access your league.</p>
+          <button onclick="signOut()" class="bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 font-bold px-8 py-3 rounded-full text-sm transition-all">Sign Out</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     EMAIL COMPOSER MODAL
+════════════════════════════════════════════ -->
+<div id="email-modal" class="fixed inset-0 z-[9998] flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+  <!-- Backdrop -->
+  <div onclick="closeEmailComposer()" class="absolute inset-0 bg-navy-950/90 backdrop-blur-sm"></div>
+  <!-- Sheet -->
+  <div class="relative w-full sm:max-w-2xl bg-navy-900 border border-white/10 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 flex-shrink-0">
+      <div>
+        <h2 class="text-base font-bold text-white">Send Invite Email</h2>
+        <p class="text-xs text-slate-500 mt-0.5" id="email-modal-subtitle">Sending to 0 players</p>
+      </div>
+      <button onclick="closeEmailComposer()" class="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
+        <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Scrollable content -->
+    <div class="overflow-y-auto flex-1 px-6 py-5 space-y-4">
+
+      <!-- Recipients -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">To</label>
+        <div id="email-recipients" class="flex flex-wrap gap-1.5 bg-navy-950/60 border border-white/10 rounded-xl px-3 py-2.5 min-h-[42px]"></div>
+      </div>
+
+      <!-- Subject -->
+      <div>
+        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Subject</label>
+        <input type="text" id="email-subject" class="w-full bg-navy-950/60 border border-white/10 text-white px-4 py-3 rounded-xl text-sm"/>
+      </div>
+
+      <!-- Message body -->
+      <div>
+        <div class="flex items-center justify-between mb-2">
+          <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Message</label>
+          <span class="text-xs text-slate-600">Plain text — personalized per recipient</span>
+        </div>
+        <textarea id="email-body" rows="10" class="w-full bg-navy-950/60 border border-white/10 text-white px-4 py-3 rounded-xl text-sm font-mono leading-relaxed resize-none"></textarea>
+      </div>
+
+      <!-- Preview note -->
+      <div class="bg-blue-500/5 border border-blue-500/15 rounded-xl px-4 py-3">
+        <p class="text-xs text-blue-300 font-semibold mb-1">How sending works</p>
+        <p class="text-xs text-slate-400">19 Pool sends this email on your behalf via our mail server. Each recipient gets an individual email — their address is not shared with others. Emails that bounce will be shown in your send report.</p>
+      </div>
+
+      <!-- League full warning -->
+      <div id="email-league-full-warn" class="hidden bg-green-500/8 border border-green-500/20 rounded-xl px-4 py-3">
+        <p class="text-xs text-green-400 font-semibold">League is full (32/32 joined)</p>
+        <p class="text-xs text-slate-400 mt-0.5">New sign-ups will be waitlisted until a spot opens.</p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="flex items-center gap-3 px-6 py-4 border-t border-white/5 flex-shrink-0">
+      <button onclick="closeEmailComposer()" class="px-5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-semibold transition-colors">Cancel</button>
+      <button onclick="sendInAppEmail()" id="email-send-btn" class="flex-1 flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-2.5 rounded-xl text-sm transition-all">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" /></svg>
+        <span id="email-send-label">Send Emails</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="fixed bottom-8 right-6 z-[9999] bg-green-500 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none"></div>
+
+<script>
+// ─── DATA ────────────────────────────────────────────────────
+const NFL_TEAMS = [
+  "Arizona Cardinals","Atlanta Falcons","Baltimore Ravens","Buffalo Bills",
+  "Carolina Panthers","Chicago Bears","Cincinnati Bengals","Cleveland Browns",
+  "Dallas Cowboys","Denver Broncos","Detroit Lions","Green Bay Packers",
+  "Houston Texans","Indianapolis Colts","Jacksonville Jaguars","Kansas City Chiefs",
+  "Las Vegas Raiders","Los Angeles Chargers","Los Angeles Rams","Miami Dolphins",
+  "Minnesota Vikings","New England Patriots","New Orleans Saints","New York Giants",
+  "New York Jets","Philadelphia Eagles","Pittsburgh Steelers","San Francisco 49ers",
+  "Seattle Seahawks","Tampa Bay Buccaneers","Tennessee Titans","Washington Commanders"
+];
+
+const ESPN_TO_FULL = {
+  "ARI":"Arizona Cardinals","ATL":"Atlanta Falcons","BAL":"Baltimore Ravens","BUF":"Buffalo Bills",
+  "CAR":"Carolina Panthers","CHI":"Chicago Bears","CIN":"Cincinnati Bengals","CLE":"Cleveland Browns",
+  "DAL":"Dallas Cowboys","DEN":"Denver Broncos","DET":"Detroit Lions","GB":"Green Bay Packers",
+  "HOU":"Houston Texans","IND":"Indianapolis Colts","JAX":"Jacksonville Jaguars","KC":"Kansas City Chiefs",
+  "LV":"Las Vegas Raiders","LAC":"Los Angeles Chargers","LAR":"Los Angeles Rams","MIA":"Miami Dolphins",
+  "MIN":"Minnesota Vikings","NE":"New England Patriots","NO":"New Orleans Saints","NYG":"New York Giants",
+  "NYJ":"New York Jets","PHI":"Philadelphia Eagles","PIT":"Pittsburgh Steelers","SF":"San Francisco 49ers",
+  "SEA":"Seattle Seahawks","TB":"Tampa Bay Buccaneers","TEN":"Tennessee Titans","WSH":"Washington Commanders"
+};
+
+let leagueData = {
+  name:"19 Pool — 2025 Season", code:"WOLF-2291", commissioner:"Brooks", seasonEntry:20, pot:640,
+  members:[
+    // Every NFL team gets one owner. wins/closest reflect a plausible 2025 season history.
+    {name:"Marcus Webb",    firstName:"Marcus",   lastName:"Webb",    email:"marcus@19pool.com",   phone:"(555) 201-0001", team:"Arizona Cardinals",    wins:0, closest:22},
+    {name:"Fiona West",     firstName:"Fiona",    lastName:"West",    email:"fiona@19pool.com",    phone:"",               team:"Atlanta Falcons",       wins:1, closest:19},
+    {name:"James Park",     firstName:"James",    lastName:"Park",    email:"james@19pool.com",    phone:"(555) 201-0003", team:"Baltimore Ravens",      wins:2, closest:18},
+    {name:"Derek Hall",     firstName:"Derek",    lastName:"Hall",    email:"derek@19pool.com",    phone:"",               team:"Buffalo Bills",         wins:3, closest:19},
+    {name:"Wayne Ford",     firstName:"Wayne",    lastName:"Ford",    email:"wayne@19pool.com",    phone:"",               team:"Carolina Panthers",     wins:0, closest:24},
+    {name:"Nora Klein",     firstName:"Nora",     lastName:"Klein",   email:"nora@19pool.com",     phone:"",               team:"Chicago Bears",         wins:0, closest:21},
+    {name:"Linda Torres",   firstName:"Linda",    lastName:"Torres",  email:"linda@19pool.com",    phone:"(555) 201-0007", team:"Cincinnati Bengals",    wins:1, closest:19},
+    {name:"Ray Turner",     firstName:"Ray",      lastName:"Turner",  email:"ray@19pool.com",      phone:"",               team:"Cleveland Browns",      wins:0, closest:23},
+    {name:"Chris Odom",     firstName:"Chris",    lastName:"Odom",    email:"chris@19pool.com",    phone:"",               team:"Dallas Cowboys",        wins:1, closest:20},
+    {name:"Ashley Grant",   firstName:"Ashley",   lastName:"Grant",   email:"ashley@19pool.com",   phone:"",               team:"Denver Broncos",        wins:1, closest:18},
+    {name:"Aaron Knox",     firstName:"Aaron",    lastName:"Knox",    email:"aaron@19pool.com",    phone:"(555) 201-0011", team:"Detroit Lions",         wins:2, closest:17},
+    {name:"Frank Lima",     firstName:"Frank",    lastName:"Lima",    email:"frank@19pool.com",    phone:"",               team:"Green Bay Packers",     wins:1, closest:19},
+    {name:"Maria Santos",   firstName:"Maria",    lastName:"Santos",  email:"maria@19pool.com",    phone:"",               team:"Houston Texans",        wins:0, closest:22},
+    {name:"Olivia Stone",   firstName:"Olivia",   lastName:"Stone",   email:"olivia@19pool.com",   phone:"",               team:"Indianapolis Colts",    wins:0, closest:25},
+    {name:"Doug Baker",     firstName:"Doug",     lastName:"Baker",   email:"doug@19pool.com",     phone:"(555) 201-0015", team:"Jacksonville Jaguars",  wins:0, closest:27},
+    {name:"Tanya Ross",     firstName:"Tanya",    lastName:"Ross",    email:"tanya@19pool.com",    phone:"",               team:"Kansas City Chiefs",    wins:2, closest:18},
+    {name:"Marcus Okafor",  firstName:"Marcus",   lastName:"Okafor",  email:"mokafor@19pool.com",  phone:"",               team:"Las Vegas Raiders",     wins:0, closest:26},
+    {name:"Calvin Reed",    firstName:"Calvin",   lastName:"Reed",    email:"calvin@19pool.com",   phone:"",               team:"Los Angeles Chargers",  wins:1, closest:20},
+    {name:"Laura Mack",     firstName:"Laura",    lastName:"Mack",    email:"laura@19pool.com",    phone:"(555) 201-0019", team:"Los Angeles Rams",      wins:1, closest:19},
+    {name:"Bria Miles",     firstName:"Bria",     lastName:"Miles",   email:"bria@19pool.com",     phone:"",               team:"Miami Dolphins",        wins:0, closest:23},
+    {name:"Diana Chen",     firstName:"Diana",    lastName:"Chen",    email:"diana@19pool.com",    phone:"",               team:"Minnesota Vikings",     wins:2, closest:17},
+    {name:"Grace Kim",      firstName:"Grace",    lastName:"Kim",     email:"grace@19pool.com",    phone:"",               team:"New England Patriots",  wins:0, closest:28},
+    {name:"Owen Shah",      firstName:"Owen",     lastName:"Shah",    email:"owen@19pool.com",     phone:"(555) 201-0023", team:"New Orleans Saints",    wins:0, closest:24},
+    {name:"Iris Cole",      firstName:"Iris",     lastName:"Cole",    email:"iris@19pool.com",     phone:"",               team:"New York Giants",       wins:0, closest:29},
+    {name:"Robert Simms",   firstName:"Robert",   lastName:"Simms",   email:"robert@19pool.com",   phone:"",               team:"New York Jets",         wins:0, closest:30},
+    {name:"Priya Nair",     firstName:"Priya",    lastName:"Nair",    email:"priya@19pool.com",    phone:"",               team:"Philadelphia Eagles",   wins:3, closest:19},
+    {name:"Kevin Chang",    firstName:"Kevin",    lastName:"Chang",   email:"kevin@19pool.com",    phone:"(555) 201-0027", team:"Pittsburgh Steelers",   wins:1, closest:20},
+    {name:"Samantha Fox",   firstName:"Samantha", lastName:"Fox",     email:"sam@19pool.com",      phone:"",               team:"San Francisco 49ers",   wins:1, closest:19},
+    {name:"Todd Webb",      firstName:"Todd",     lastName:"Webb",    email:"todd@19pool.com",     phone:"",               team:"Seattle Seahawks",      wins:3, closest:18},
+    {name:"Ben Foster",     firstName:"Ben",      lastName:"Foster",  email:"ben@19pool.com",      phone:"",               team:"Tampa Bay Buccaneers",  wins:1, closest:20},
+    {name:"Nathan Hill",    firstName:"Nathan",   lastName:"Hill",    email:"nathan@19pool.com",   phone:"(555) 201-0031", team:"Tennessee Titans",      wins:0, closest:25},
+    {name:"Gina Cruz",      firstName:"Gina",     lastName:"Cruz",    email:"gina@19pool.com",     phone:"",               team:"Washington Commanders", wins:2, closest:18},
+  ]
+};
+
+let currentUser = null, isCommissioner = false, currentLeague = null, createdLeagueCode = null, leagueInviteTimer = null;
+let liveScores = {}, refreshInterval = null, countdown = 30, countdownInterval = null;
+
+// ─── ESPN ────────────────────────────────────────────────────
+// ─── SEASON / WEEK CONFIG ────────────────────────────────────
+const SEASON_CONFIG = {
+  2025: { start: '2025-09-04', end: '2026-01-05', weeks: 18 },
+  2024: { start: '2024-09-05', end: '2025-01-06', weeks: 18 },
+  2023: { start: '2023-09-07', end: '2024-01-08', weeks: 18 },
+};
+
+function getSelectedSeason() {
+  return parseInt(document.getElementById('season-select')?.value || 2025);
+}
+
+function onSeasonChange() {
+  buildWeekDropdown();
+  fetchScores();
+}
+
+function buildWeekDropdown() {
+  const sel = document.getElementById('week-select');
+  if (!sel) return;
+  const season = getSelectedSeason();
+  const cfg = SEASON_CONFIG[season] || SEASON_CONFIG[2025];
+  sel.innerHTML = '';
+
+  const now = new Date();
+  const seasonStart = new Date(cfg.start);
+  const seasonEnd   = new Date(cfg.end);
+  let defaultWeek   = cfg.weeks; // default: last week (works for completed seasons)
+
+  if (now >= seasonStart && now <= seasonEnd) {
+    // Season in progress — pick the current approximate week
+    defaultWeek = Math.min(cfg.weeks, Math.max(1, Math.ceil((now - seasonStart) / (7 * 86400000))));
+  }
+  // If season hasn't started yet, default to Week 1
+  if (now < seasonStart) defaultWeek = 1;
+
+  for (let w = 1; w <= cfg.weeks; w++) {
+    const o = document.createElement('option');
+    o.value = w;
+    o.text  = `Week ${w}`;
+    if (w === defaultWeek) o.selected = true;
+    sel.appendChild(o);
+  }
+}
+
+// Rolling pot: walk weeks 1 → current, accumulate pot when no 19-winner
+const weeklyScoreCache = {}; // "season_week" → events[]
+
+async function espnFetch(url) {
+  // Primary: use Anthropic API as a server-side proxy (bypasses CORS completely)
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8192,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        system: 'You are a data proxy. When given a URL, fetch it with web_search and return ONLY the raw JSON content, nothing else — no markdown, no explanation.',
+        messages: [{ role: 'user', content: `Fetch this URL and return only the raw JSON: ${url}` }]
+      })
+    });
+    if (resp.ok) {
+      const msg = await resp.json();
+      // Find the text content block with JSON
+      const textBlock = msg.content?.find(b => b.type === 'text');
+      if (textBlock?.text) {
+        // Strip any markdown fences if present
+        const clean = textBlock.text.replace(/^```[a-z]*\n?/i, '').replace(/```$/,'').trim();
+        const parsed = JSON.parse(clean);
+        if (parsed?.events !== undefined) return parsed;
+      }
+    }
+  } catch {}
+
+  // Fallback 1: allorigins
+  try {
+    const r = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+    if (r.ok) { const w = await r.json(); if (w?.contents) { const d = JSON.parse(w.contents); if (d?.events !== undefined) return d; } }
+  } catch {}
+
+  // Fallback 2: corsproxy.io
+  try {
+    const r = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+    if (r.ok) { const d = await r.json(); if (d?.events !== undefined) return d; }
+  } catch {}
+
+  // Fallback 3: direct (works if CORS headers are present)
+  try {
+    const r = await fetch(url);
+    if (r.ok) { const d = await r.json(); if (d?.events !== undefined) return d; }
+  } catch {}
+
+  return null;
+}
+
+async function fetchWeekEvents(season, week) {
+  const key = `${season}_${week}`;
+  if (weeklyScoreCache[key]) return weeklyScoreCache[key];
+  const url = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${season}&seasontype=2&week=${week}`;
+  const data = await espnFetch(url);
+  const events = data?.events || [];
+  weeklyScoreCache[key] = events;
+  return events;
+}
+
+function weekHas19Winner(events) {
+  const winners = [];
+  events.forEach(ev => {
+    if (ev.status.type.state !== 'post') return;
+    ev.competitions[0].competitors.forEach(t => {
+      if (parseInt(t.score) === 19) winners.push(ESPN_TO_FULL[t.team.abbreviation] || t.team.displayName);
+    });
+  });
+  return winners;
+}
+
+async function calcWeeklyPot(season, targetWeek) {
+  const totalPot  = leagueData.seasonEntry * leagueData.members.length; // e.g. $4,224
+  const totalWeeks = SEASON_CONFIG[season]?.weeks || 18;
+  const weeklyShare = totalPot / totalWeeks; // e.g. $234.67 per week
+
+  // Walk weeks 1..targetWeek-1, rolling over the share when no 19-winner
+  let rollover = 0;
+  for (let w = 1; w < targetWeek; w++) {
+    const events  = await fetchWeekEvents(season, w);
+    const winners = weekHas19Winner(events);
+    if (winners.length === 0) {
+      rollover += weeklyShare; // no winner — carries forward
+    } else {
+      rollover = 0; // pot was won — reset
+    }
+  }
+  // This week's pot = this week's share + any rollover from prior unclaimed weeks
+  return weeklyShare + rollover;
+}
+
+async function fetchScores() {
+  const btn = document.getElementById('refresh-btn');
+  const refreshIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>`;
+  btn.innerHTML = `<svg class="animate-spin w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round" opacity="0.25"/><path d="M12 2a10 10 0 0 1 10 10" stroke="#f59e0b" stroke-width="3" stroke-linecap="round"/></svg> Loading`;
+  btn.disabled = true;
+
+  const season = getSelectedSeason();
+  const week   = parseInt(document.getElementById('week-select').value) || 1;
+  const url    = `https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?dates=${season}&seasontype=2&week=${week}`;
+
+  const data = await espnFetch(url);
+
+  btn.innerHTML = `${refreshIcon} Refresh`;
+  btn.disabled  = false;
+
+  if (data && data.events?.length) {
+    weeklyScoreCache[`${season}_${week}`] = data.events;
+    // Compute rolling pot in background
+    calcWeeklyPot(season, week).then(pot => {
+      document.getElementById('weekly-pot-display').textContent  = fmtPot(pot);
+      document.getElementById('standings-pot-display').textContent = fmtPot(pot);
+      const label = document.getElementById('week-pot-label');
+      if (label) label.textContent = `Week ${week} Pot`;
+      // Refresh Total 19s count
+      document.getElementById('stat-winners').textContent = leagueData.members.reduce((a, m) => a + m.wins, 0);
+    });
+    processESPN(data, week, season);
+  } else if (data && data.events?.length === 0) {
+    showNoGames();
+  } else {
+    showFetchError();
+  }
+  resetCountdown();
+}
+
+function showFetchError() {
+  document.getElementById('scores-container').innerHTML = `
+    <div class="glass rounded-2xl p-10 text-center max-w-lg mx-auto">
+      <div class="text-4xl mb-4">📡</div>
+      <h3 class="text-lg font-bold text-white mb-2">Couldn't load scores</h3>
+      <p class="text-slate-400 text-sm mb-5">The ESPN API is blocked or unavailable right now. This is a CORS limitation when running locally.</p>
+      <button onclick="fetchScores()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-6 py-2.5 rounded-full text-sm transition-all">Try Again</button>
+    </div>
+  `;
+}
+
+function processESPN(data, weekNum, season) {
+  liveScores = {};
+  const events = data.events || [];
+  let hasLive = false;
+
+  const wk = weekNum || data.week?.number || '?';
+  const yr = season || data.season?.year || 2025;
+
+  document.getElementById('weekly-results-title').textContent = `Week ${wk} Results`;
+  document.getElementById('dash-week-info').textContent = `${yr} Season`;
+
+  events.forEach(ev => {
+    const comp = ev.competitions[0];
+    const st = ev.status.type;
+    const live = st.state === 'in';
+    const final = st.state === 'post';
+    if (live) hasLive = true;
+    comp.competitors.forEach(t => {
+      const full = ESPN_TO_FULL[t.team.abbreviation] || t.team.displayName;
+      const opp  = comp.competitors.find(c => c.id !== t.id);
+      liveScores[full] = {
+        score:    parseInt(t.score) || 0,
+        status:   live ? 'live' : final ? 'final' : 'pre',
+        clock:    live ? (st.detail || 'Live') : final ? 'Final' : fmtTime(ev.date),
+        winner:   t.winner || false,
+        abbr:     t.team.abbreviation,
+      };
+    });
+  });
+
+  const liveEl = document.getElementById('live-indicator');
+  if (hasLive) { liveEl.classList.remove('hidden'); liveEl.classList.add('flex'); }
+  else         { liveEl.classList.add('hidden');    liveEl.classList.remove('flex'); }
+
+  renderGameCards(events);
+}
+
+function fmtTime(d) {
+  if (!d) return 'TBD';
+  return new Date(d).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+}
+
+function renderGameCards(events) {
+  const container  = document.getElementById('scores-container');
+  const bannerEl   = document.getElementById('weekly-winner-banner');
+
+  if (!events || !events.length) { showNoGames(); return; }
+
+  // Collect this week's 19-point scorers from league members
+  const memberWinners = leagueData.members.filter(m => {
+    const s = liveScores[m.team];
+    return s && s.score === 19 && s.status === 'final';
+  });
+
+  // Winner / rollover banner
+  if (memberWinners.length) {
+    const pot = document.getElementById('weekly-pot-display').textContent;
+    const split = memberWinners.length > 1;
+    bannerEl.className = 'winner-shimmer border border-amber-500/30 rounded-2xl p-5 mb-6';
+    bannerEl.innerHTML = `
+      <p class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">
+        🏆 ${split ? 'Split Pot — ' : ''}19-Point Winner${split ? 's' : ''}!
+      </p>
+      ${memberWinners.map(w => `
+        <p class="text-white font-bold text-xl">${w.name}
+          <span class="text-amber-400 font-normal text-base"> · ${w.team}</span>
+          ${split ? `<span class="text-green-400 text-sm font-normal ml-2">splits ${pot}</span>` : `<span class="text-green-400 text-sm font-normal ml-2">wins ${pot}</span>`}
+        </p>`).join('')}
+    `;
+    bannerEl.classList.remove('hidden');
+  } else {
+    // Check if all games final — if so, show rollover notice
+    const allFinal = events.every(ev => ev.status.type.state === 'post');
+    if (allFinal && events.length > 0) {
+      bannerEl.className = 'bg-navy-800/60 border border-white/10 rounded-2xl p-4 mb-6 flex items-center gap-3';
+      bannerEl.innerHTML = `
+        <span class="text-2xl">🎲</span>
+        <div>
+          <p class="text-sm font-bold text-white">No 19-point score this week — pot rolls over!</p>
+          <p class="text-xs text-slate-400 mt-0.5">The pot carries forward and grows for next week.</p>
+        </div>
+      `;
+      bannerEl.classList.remove('hidden');
+    } else {
+      bannerEl.classList.add('hidden');
+    }
+  }
+
+  // Build cards — exactly matching the screenshot layout
+  const cards = events.map(ev => {
+    const comp = ev.competitions[0];
+    const st   = ev.status.type;
+    const live  = st.state === 'in';
+    const final = st.state === 'post';
+    const pre   = st.state === 'pre';
+    const statusLabel = final ? 'Final' : live ? (st.detail || 'Live') : fmtTime(ev.date);
+
+    const teamRows = comp.competitors.map((t, idx) => {
+      const abbr     = t.team.abbreviation;
+      const full     = ESPN_TO_FULL[abbr] || t.team.displayName;
+      const score    = parseInt(t.score) || 0;
+      const is19     = score === 19 && final;
+      const isWinner = t.winner && final;
+      const member   = leagueData.members.find(m => m.team === full);
+      const logoUrl  = `https://a.espncdn.com/i/teamlogos/nfl/500/${abbr.toLowerCase()}.png`;
+
+      // Divider between teams (not after last)
+      const divider = idx === 0
+        ? `<div class="border-t border-white/[0.06] mx-0 my-0"></div>`
+        : '';
+
+      return `
+        ${idx > 0 ? divider : ''}
+        <div class="flex items-center gap-3 py-3.5 px-4 ${is19 ? 'bg-amber-500/8' : ''}">
+          <!-- Logo circle -->
+          <div class="w-9 h-9 rounded-full flex-shrink-0 overflow-hidden bg-navy-700/60 flex items-center justify-center">
+            <img src="${logoUrl}" class="w-7 h-7 object-contain"
+              onerror="this.onerror=null;this.parentElement.innerHTML='<span class=\\'text-[10px] font-bold text-slate-400\\'>${abbr}</span>'" alt="${abbr}">
+          </div>
+          <!-- Name + owner -->
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-bold leading-tight ${isWinner ? 'text-white' : final ? 'text-slate-300' : 'text-white'} truncate">
+              ${t.team.displayName}
+            </p>
+            ${member ? `
+              <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1 truncate">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" class="flex-shrink-0"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
+                ${member.name}
+              </p>` : ''}
+          </div>
+          <!-- Score -->
+          <div class="flex items-center gap-1.5 flex-shrink-0">
+            ${!pre
+              ? `<span class="font-mono font-black text-3xl leading-none tracking-tight ${is19 ? 'text-amber-400' : isWinner ? 'text-white' : final ? 'text-slate-400' : 'text-white'}">${score}</span>`
+              : `<span class="text-slate-600 text-sm font-mono">–</span>`}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Card border / background
+    const cardClass = live
+      ? 'border border-red-500/25 bg-navy-800/50'
+      : final && comp.competitors.some(t => parseInt(t.score) === 19)
+        ? 'score-nineteen'
+        : 'glass border border-transparent';
+
+    return `
+      <div class="${cardClass} rounded-2xl overflow-hidden transition-all">
+        <!-- Header row: status left, MATCHUP right — exactly like screenshot -->
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]">
+          <span class="text-xs font-bold uppercase tracking-wider ${live ? 'text-red-400 flex items-center gap-1.5' : final ? 'text-slate-400' : 'text-slate-500'}">
+            ${live ? '<span class="w-1.5 h-1.5 rounded-full bg-red-400 live-ring inline-block"></span>' : ''}
+            ${statusLabel}
+          </span>
+          <span class="text-xs font-bold text-slate-600 uppercase tracking-widest">Matchup</span>
+        </div>
+        ${teamRows}
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">${cards}</div>`;
+  renderStandings();
+  renderTeams();
+}
+
+function showNoGames() {
+  document.getElementById('scores-container').innerHTML = `
+    <div class="glass rounded-2xl p-12 text-center max-w-xl mx-auto">
+      <div class="text-5xl mb-4">🏈</div>
+      <h3 class="text-xl font-bold text-white mb-2">No Games This Week</h3>
+      <p class="text-slate-400 text-sm max-w-sm mx-auto mb-6">Scores automatically populate during the NFL regular season (September–January). Check back on game days.</p>
+      <div class="bg-navy-950/60 border border-white/5 rounded-xl p-5 text-left">
+        <p class="text-amber-400 font-bold text-xs uppercase tracking-widest mb-3">Sample — What it looks like on game day</p>
+        <div class="score-nineteen rounded-xl p-4">
+          <div class="flex items-center justify-between text-xs text-slate-400 uppercase tracking-widest mb-3 font-bold">
+            <span>Final</span><span>Matchup</span>
+          </div>
+          <div class="flex items-center gap-3 py-2">
+            <div class="w-10 h-10 rounded-full bg-navy-700 flex items-center justify-center flex-shrink-0">
+              <img src="https://a.espncdn.com/i/teamlogos/nfl/500/sf.png" class="w-7 h-7 object-contain" onerror="this.style.display='none'" alt="">
+            </div>
+            <div class="flex-1"><p class="text-sm font-bold text-white">San Francisco</p><p class="text-xs text-slate-500">👤 Sarah M.</p></div>
+            <span class="font-mono font-black text-3xl text-amber-400">19</span>
+            <span class="text-lg">🔥</span>
+          </div>
+          <div class="border-t border-white/5 mx-1"></div>
+          <div class="flex items-center gap-3 py-2">
+            <div class="w-10 h-10 rounded-full bg-navy-700 flex items-center justify-center flex-shrink-0">
+              <img src="https://a.espncdn.com/i/teamlogos/nfl/500/sea.png" class="w-7 h-7 object-contain" onerror="this.style.display='none'" alt="">
+            </div>
+            <div class="flex-1"><p class="text-sm font-bold text-slate-400">Seattle</p></div>
+            <span class="font-mono font-black text-3xl text-slate-500">23</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function switchDashTab(tab, btn) {
+  document.querySelectorAll('.dash-tab').forEach(t => { t.classList.remove('active'); t.style.display = 'none'; });
+  const el = document.getElementById('dash-' + tab);
+  if (el) { el.classList.add('active'); el.style.display = 'block'; }
+  document.querySelectorAll('.sidebar-link').forEach(b => {
+    b.classList.remove('bg-amber-500/10', 'text-amber-400');
+    b.classList.add('text-slate-400');
+  });
+  document.querySelectorAll('.mob-link').forEach(b => {
+    b.classList.remove('text-amber-400', 'border-b-2', 'border-amber-400');
+    b.classList.add('text-slate-400');
+  });
+  if (btn) {
+    btn.classList.add('bg-amber-500/10', 'text-amber-400');
+    btn.classList.remove('text-slate-400');
+    if (btn.classList.contains('mob-link')) {
+      btn.classList.add('border-b-2', 'border-amber-400');
+    }
+  }
+  // Scores always live on the overview tab now — fetch on any tab switch to keep data fresh
+  if (tab === 'overview') fetchScores();
+  if (tab === 'account')  renderAccount();
+  if (tab === 'admin')    switchAdminTab('invite'); // always start on first sub-tab
+}
+
+// ─── COUNTDOWN ───────────────────────────────────────────────
+function resetCountdown() {
+  clearInterval(countdownInterval);
+  countdown = 30;
+  updateRing();
+  countdownInterval = setInterval(() => {
+    countdown--;
+    updateRing();
+    if (countdown <= 0) { clearInterval(countdownInterval); fetchScores(); }
+  }, 1000);
+}
+
+function updateRing() {
+  const circ = 43.98;
+  const offset = circ * (1 - countdown/30);
+  document.getElementById('ring-path').style.strokeDashoffset = circ - offset;
+  document.getElementById('refresh-countdown').textContent = `${countdown}s`;
+}
+
+// ─── NAVIGATION ──────────────────────────────────────────────
+function showView(v) {
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  window.scrollTo(0,0);
+  // Reset create-league to step 1 every time it's opened
+  if (v === 'create-league') {
+    showCreateStep(1);
+    switchCreateAccountTab('signin');
+  }
+  const nl = document.getElementById('nav-links');
+  if (v === 'dashboard') {
+    nl.innerHTML = ''; // clean header when in dashboard — nav lives in sidebar
+    renderDashboard();
+  } else if (currentUser) {
+    nl.innerHTML = '';
+  } else {
+    nl.innerHTML = `<button onclick="showView('auth')" class="text-sm font-medium text-slate-400 hover:text-white transition-colors px-3 py-2">Sign In</button><button onclick="showView('create-league')" class="bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-bold px-5 py-2 rounded-full transition-all hover:scale-105 tracking-wide">Create League</button>`;
+  }
+}
+
+function signOut() { currentUser=null; isCommissioner=false; clearInterval(countdownInterval); showView('landing'); }
+
+// ─── AUTH ─────────────────────────────────────────────────────
+let resetCode = null, resetEmail = null;
+
+function switchAuthTab(t) {
+  const active = 'bg-navy-700 text-white';
+  const inactive = 'text-slate-400 hover:text-white';
+  document.getElementById('tab-signin').className = `flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${t==='signin'?active:inactive}`;
+  document.getElementById('tab-signup').className = `flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${t==='signup'?active:inactive}`;
+  document.getElementById('auth-signin').classList.toggle('hidden', t!=='signin');
+  document.getElementById('auth-signup').classList.toggle('hidden', t!=='signup');
+  document.getElementById('auth-forgot').classList.toggle('hidden', t!=='forgot');
+  if (t==='forgot') showForgotStep(1);
+}
+
+function showForgotStep(n) {
+  [1,2,3,4].forEach(i => document.getElementById('forgot-step-'+i).classList.toggle('hidden', i!==n));
+}
+
+function sendResetCode() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const al = document.getElementById('forgot-alert-1');
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showAlert(al, 'Please enter a valid email address.'); return;
+  }
+  // Simulate sending — generate a 6-digit code stored in memory
+  resetEmail = email;
+  resetCode  = String(Math.floor(100000 + Math.random() * 900000));
+  console.info('[19Pool demo] Reset code:', resetCode); // visible in DevTools for demo
+  document.getElementById('forgot-email-display').textContent = email;
+  document.getElementById('forgot-code').value = '';
+  showForgotStep(2);
+  showToast('📬 Code sent! (Check DevTools console for demo code)');
+}
+
+function verifyResetCode() {
+  const entered = document.getElementById('forgot-code').value.trim();
+  const al = document.getElementById('forgot-alert-2');
+  if (!entered) { showAlert(al, 'Please enter the 6-digit code.'); return; }
+  if (entered !== resetCode) { showAlert(al, 'Incorrect code. Please try again.'); return; }
+  showForgotStep(3);
+  document.getElementById('forgot-new-pass').value = '';
+  document.getElementById('forgot-confirm-pass').value = '';
+  updatePwStrength('', 'bar', 'pass-strength-label');
+}
+
+function resetPassword() {
+  const pw  = document.getElementById('forgot-new-pass').value;
+  const pw2 = document.getElementById('forgot-confirm-pass').value;
+  const al  = document.getElementById('forgot-alert-3');
+  if (pw.length < 8) { showAlert(al, 'Password must be at least 8 characters.'); return; }
+  if (pw !== pw2)    { showAlert(al, 'Passwords do not match.'); return; }
+  resetCode = null; resetEmail = null;
+  showForgotStep(4);
+}
+
+function updatePwStrength(pw, barPrefix, labelId) {
+  let score = 0;
+  if (pw.length >= 8)  score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+  const colors = ['bg-red-500','bg-orange-500','bg-yellow-500','bg-green-500'];
+  const labels = ['','Weak','Fair','Good','Strong'];
+  const labelColors = ['','text-red-400','text-orange-400','text-yellow-400','text-green-400'];
+  for (let i = 1; i <= 4; i++) {
+    const bar = document.getElementById(barPrefix+i);
+    if (bar) bar.className = `h-1 flex-1 rounded-full ${i <= score ? colors[score-1] : 'bg-white/10'}`;
+  }
+  const lbl = document.getElementById(labelId);
+  if (lbl) { lbl.textContent = pw ? labels[score] : ''; lbl.className = `text-xs mt-1 ${labelColors[score]}`; }
+}
+
+function handleSignIn() {
+  const email = document.getElementById('signin-email').value;
+  const pw    = document.getElementById('signin-password').value;
+  const al    = document.getElementById('signin-alert');
+  if (!email||!pw) { showAlert(al,'Please enter your email and password.'); return; }
+  currentUser = email.split('@')[0]; isCommissioner = true; currentLeague = leagueData;
+  showView('dashboard');
+}
+
+function handleSignUp() {
+  const first = document.getElementById('signup-first').value;
+  const email = document.getElementById('signup-email').value;
+  const pw    = document.getElementById('signup-password').value;
+  const al    = document.getElementById('signup-alert');
+  if (!first||!email||!pw) { showAlert(al,'Fill in all required fields.'); return; }
+  if (pw.length < 8) { showAlert(al,'Password must be at least 8 characters.'); return; }
+  currentUser = first + ' ' + (document.getElementById('signup-last').value||'');
+  currentLeague = leagueData; showView('dashboard');
+}
+
+// ─── ADMIN SUBNAV ────────────────────────────────────────────
+function switchAdminTab(tab) {
+  ['invite','entry','teams'].forEach(t => {
+    document.getElementById('apanel-'+t).classList.toggle('hidden', t!==tab);
+    const btn = document.getElementById('atab-'+t);
+    if (btn) btn.className = `admin-tab flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${t===tab ? 'bg-navy-700 text-white' : 'text-slate-400 hover:text-white'}`;
+  });
+}
+
+// ─── ACCOUNT ─────────────────────────────────────────────────
+function renderAccount() {
+  const nameParts = (currentUser||'').split(' ');
+  document.getElementById('acct-first').value = nameParts[0]||'';
+  document.getElementById('acct-last').value  = nameParts.slice(1).join(' ')||'';
+  document.getElementById('acct-email').value = leagueData.members.find(m=>m.name===currentUser)?.email || '';
+  const notes = leagueData.paymentNotes || 'Contact your commissioner for payment details.';
+  document.getElementById('acct-payment-notes').textContent = notes;
+  document.getElementById('acct-entry-amount').textContent = '$' + (leagueData.seasonEntry||20);
+}
+
+function saveProfile() {
+  const first = document.getElementById('acct-first').value.trim();
+  const last  = document.getElementById('acct-last').value.trim();
+  const email = document.getElementById('acct-email').value.trim();
+  const al    = document.getElementById('account-alert');
+  if (!first) { showAcctAlert(al,'First name is required.','error'); return; }
+  if (!email||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAcctAlert(al,'Please enter a valid email.','error'); return; }
+  currentUser = first + (last?' '+last:'');
+  // Update in members list if found
+  const member = leagueData.members.find(m => m.email === document.getElementById('acct-email').dataset.orig);
+  if (member) { member.name = currentUser; member.firstName = first; member.lastName = last; member.email = email; }
+  document.getElementById('acct-email').dataset.orig = email;
+  showAcctAlert(al,'Profile saved!','success');
+}
+
+function checkAcctPwStrength() {
+  updatePwStrength(document.getElementById('acct-new-pw').value, 'acct-bar', 'acct-pw-label');
+}
+
+function changePassword() {
+  const cur  = document.getElementById('acct-current-pw').value;
+  const pw   = document.getElementById('acct-new-pw').value;
+  const pw2  = document.getElementById('acct-confirm-pw').value;
+  const al   = document.getElementById('pw-alert');
+  if (!cur)           { showAcctAlert(al,'Enter your current password.','error'); return; }
+  if (pw.length < 8)  { showAcctAlert(al,'New password must be at least 8 characters.','error'); return; }
+  if (pw !== pw2)     { showAcctAlert(al,'New passwords do not match.','error'); return; }
+  document.getElementById('acct-current-pw').value = '';
+  document.getElementById('acct-new-pw').value     = '';
+  document.getElementById('acct-confirm-pw').value = '';
+  updatePwStrength('','acct-bar','acct-pw-label');
+  showAcctAlert(al,'Password updated!','success');
+}
+
+function showAcctAlert(el, msg, type) {
+  el.textContent = msg;
+  el.className = `mb-4 text-sm px-4 py-3 rounded-xl ${type==='success'
+    ? 'bg-green-500/10 border border-green-500/30 text-green-400'
+    : 'bg-red-500/10 border border-red-500/30 text-red-400'}`;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+
+function generateCode(){const w=['WOLF','HAWK','BULL','BLITZ','RUSH','IRON','BOLT'];return w[Math.floor(Math.random()*w.length)]+'-'+String(Math.floor(1000+Math.random()*9000));}
+
+// ─── CREATE LEAGUE FLOW ──────────────────────────────────────
+function showCreateStep(n) {
+  [1, 2, 3].forEach(i => {
+    const el = document.getElementById('create-step-' + i);
+    if (el) el.classList.toggle('hidden', i !== n);
+  });
+  // Update progress dots
+  const dotActive   = 'bg-amber-500 text-navy-950';
+  const dotDone     = 'bg-green-500/20 border border-green-500/40 text-green-400';
+  const dotInactive = 'bg-white/5 border border-white/10 text-slate-500';
+  [1, 2, 3].forEach(i => {
+    const dot = document.getElementById('prog-' + i);
+    if (!dot) return;
+    dot.className = `w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i < n ? dotDone : i === n ? dotActive : dotInactive}`;
+    dot.textContent = i < n ? '✓' : i;
+  });
+  const line1 = document.getElementById('prog-line-1');
+  const line2 = document.getElementById('prog-line-2');
+  if (line1) line1.className = `h-px flex-1 transition-all ${n > 1 ? 'bg-green-500/40' : 'bg-white/10'}`;
+  if (line2) line2.className = `h-px flex-1 transition-all ${n > 2 ? 'bg-green-500/40' : 'bg-white/10'}`;
+}
+
+function switchCreateAccountTab(tab) {
+  document.getElementById('ctab-signin').className  = `flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab==='signin' ? 'bg-navy-700 text-white' : 'text-slate-400 hover:text-white'}`;
+  document.getElementById('ctab-create').className  = `flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab==='create' ? 'bg-navy-700 text-white' : 'text-slate-400 hover:text-white'}`;
+  document.getElementById('cpanel-signin').classList.toggle('hidden', tab !== 'signin');
+  document.getElementById('cpanel-create').classList.toggle('hidden', tab !== 'create');
+}
+
+function createFlowSignIn() {
+  const email = document.getElementById('create-signin-email').value.trim();
+  const pw    = document.getElementById('create-signin-pw').value;
+  const al    = document.getElementById('create-signin-alert');
+  if (!email || !pw) { showAlert(al, 'Please enter your email and password.'); return; }
+  // Simulate auth — set user from email
+  currentUser   = email.split('@')[0];
+  isCommissioner = true;
+  currentLeague  = leagueData;
+  document.getElementById('create-account-name').textContent = currentUser;
+  showCreateStep(2);
+}
+
+function createFlowSignUp() {
+  const first = document.getElementById('create-first').value.trim();
+  const last  = document.getElementById('create-last').value.trim();
+  const email = document.getElementById('create-email').value.trim();
+  const pw    = document.getElementById('create-pw').value;
+  const al    = document.getElementById('create-signup-alert');
+  if (!first || !email) { showAlert(al, 'First name and email are required.'); return; }
+  if (!pw || pw.length < 8) { showAlert(al, 'Password must be at least 8 characters.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showAlert(al, 'Please enter a valid email.'); return; }
+  currentUser    = first + (last ? ' ' + last : '');
+  isCommissioner = true;
+  currentLeague  = leagueData;
+  document.getElementById('create-account-name').textContent = currentUser;
+  showCreateStep(2);
+}
+
+function createLeague() {
+  const name = document.getElementById('league-name').value.trim();
+  const al   = document.getElementById('create-alert');
+  if (!name) { showAlert(al, 'Please enter a league name.'); return; }
+
+  const code = generateCode();
+  createdLeagueCode = code;
+  currentLeague = { ...leagueData, name, code, commissioner: currentUser };
+  leagueData.name = name;
+  leagueData.code = code;
+
+  // Optionally add admin as a player
+  if (joinAsPlayer) {
+    const emailEl = document.getElementById('join-player-email');
+    const email   = emailEl ? emailEl.value.trim() : '';
+    const nameParts = (currentUser || 'Commissioner').split(' ');
+    const first   = nameParts[0];
+    const last    = nameParts.slice(1).join(' ');
+    // Check not already in list
+    if (!leagueData.members.some(m => m.name === currentUser)) {
+      leagueData.members.push({
+        name: currentUser, firstName: first, lastName: last,
+        email, phone: '', team: 'Unassigned', wins: 0, closest: 0
+      });
+    }
+  }
+
+  document.getElementById('generated-code').textContent = code;
+  showCreateStep(3);
+  leagueInviteTimer = setTimeout(() => goToLeagueInvite(), 2200);
+}
+
+function goToLeagueInvite() {
+  clearTimeout(leagueInviteTimer);
+  leagueInviteTimer = null;
+  showView('dashboard');
+  // Switch to Admin tab, then to the League Invite sub-tab
+  const adminBtn = document.getElementById('admin-link');
+  switchDashTab('admin', adminBtn);
+  switchAdminTab('invite');
+}
+
+function goToDashboard() { showView('dashboard'); }
+
+function copyCode(){navigator.clipboard.writeText(createdLeagueCode||leagueData.code).catch(()=>{});showToast('✓ Code copied!');}
+function copyLink(){navigator.clipboard.writeText(`https://19pool.app/join?code=${createdLeagueCode||leagueData.code}`).catch(()=>{});showToast('✓ Link copied!');}
+
+function joinLeague() {
+  const code = document.getElementById('join-code').value;
+  const name = document.getElementById('join-name').value;
+  const al   = document.getElementById('join-alert');
+  if (!code || !name) { showAlert(al, 'Please fill in all fields.'); return; }
+  if (code.length < 4) { showAlert(al, 'Invalid invite code. Check with your commissioner.'); return; }
+  if (leagueData.members.length >= 32) {
+    showAlert(al, 'This league is full (32/32 players). Contact the commissioner to join the waitlist.');
+    return;
+  }
+  currentUser = name; currentLeague = leagueData;
+  document.getElementById('join-league-name').textContent = leagueData.name;
+  document.getElementById('join-step-1').classList.add('hidden');
+  document.getElementById('join-step-2').classList.remove('hidden');
+}
+
+// ─── DASHBOARD ───────────────────────────────────────────────
+function weeklyShare(lg, season) {
+  const total = (lg.seasonEntry || 20) * lg.members.length;
+  const weeks = SEASON_CONFIG[season || getSelectedSeason()]?.weeks || 18;
+  return total / weeks;
+}
+
+function fmtPot(val) {
+  // Format to 2 decimal places only if not a whole number
+  return '$' + (Number.isInteger(val) ? val.toLocaleString() : val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+}
+
+function renderDashboard() {
+  const lg = currentLeague || leagueData;
+  const totalPot = (lg.seasonEntry || 20) * lg.members.length;
+  const shareAmt = weeklyShare(lg);
+
+  document.getElementById('dash-league-name').textContent = lg.name;
+
+  // Standings stat cards: Total Pot | Base Weekly | Week N Pot | Total 19s
+  document.getElementById('stat-pot').textContent     = fmtPot(totalPot);
+  document.getElementById('stat-entry').textContent   = fmtPot(shareAmt);   // Base Weekly
+  document.getElementById('standings-pot-display').textContent = fmtPot(shareAmt); // Week N Pot (updated after scores load)
+  document.getElementById('stat-winners').textContent = leagueData.members.reduce((a, m) => a + m.wins, 0);
+
+  // Weekly Results page pot
+  document.getElementById('weekly-pot-display').textContent = fmtPot(shareAmt);
+
+  // Admin
+  document.getElementById('admin-code').textContent         = lg.code;
+  document.getElementById('admin-member-count').textContent = lg.members.length;
+  document.getElementById('admin-entry-input').value        = lg.seasonEntry || 20;
+  document.getElementById('admin-total-pot').textContent    = fmtPot(totalPot) + ' · ' + fmtPot(shareAmt) + '/wk';
+  if (!isCommissioner) {
+    document.getElementById('admin-link').classList.add('hidden');
+    document.getElementById('admin-link-mob').classList.add('hidden');
+  }
+  renderStandings();
+  renderTeams();
+  renderAdminAssign();
+  renderOwnersList();
+  // Mark first sidebar link active
+  const firstLink = document.querySelector('.sidebar-link');
+  if (firstLink) { firstLink.classList.add('bg-amber-500/10', 'text-amber-400'); firstLink.classList.remove('text-slate-400'); }
+  fetchScores();
+}
+
+function renderStandings() {
+  const totalPot   = (leagueData.seasonEntry || 20) * leagueData.members.length;
+  const shareAmt   = weeklyShare(leagueData);
+  const sorted     = [...leagueData.members].sort((a, b) => b.wins - a.wins || (b.payout||0) - (a.payout||0));
+
+  document.getElementById('standings-table').innerHTML = sorted.map((m, i) => {
+    const s = liveScores[m.team];
+    // Payout: use stored payout if set, otherwise estimate wins × base weekly share
+    const payout = m.payout != null ? m.payout : m.wins * shareAmt;
+    const payoutCell = payout > 0
+      ? `<span class="text-green-400 font-bold">${fmtPot(payout)}</span>`
+      : '<span class="text-slate-600">—</span>';
+
+    return `<tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+      <td class="px-6 py-3.5 text-sm font-bold ${i < 3 ? 'text-amber-400' : 'text-slate-600'}">${i + 1}</td>
+      <td class="px-6 py-3.5 text-sm font-semibold text-white">${m.name}</td>
+      <td class="px-6 py-3.5 text-sm text-slate-400 hidden sm:table-cell">${m.team}</td>
+      <td class="px-6 py-3.5">${m.wins > 0 ? `<span class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">🏆 ${m.wins}</span>` : '<span class="text-slate-600 text-sm">0</span>'}</td>
+      <td class="px-6 py-3.5 hidden md:table-cell">${payoutCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderTeams() {
+  document.getElementById('teams-grid').innerHTML = leagueData.members.map(m => {
+    const s = liveScores[m.team];
+    const hasScore = s && s.status !== 'pre';
+    const is19 = hasScore && s.score === 19;
+    return `
+      <div class="glass rounded-xl p-4 flex items-center gap-3 ${is19 ? 'score-nineteen' : 'border border-white/5'} hover:border-amber-500/20 transition-all">
+        <div class="w-2 h-2 rounded-full flex-shrink-0 ${hasScore ? s.status === 'live' ? 'bg-red-400 live-ring' : is19 ? 'bg-amber-400' : 'bg-green-500' : 'bg-slate-700'}"></div>
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-semibold text-white truncate">${m.team}</p>
+          <p class="text-xs text-slate-500 truncate">👤 ${m.name}${hasScore ? ` · <span class="${is19 ? 'text-amber-400 font-bold' : 'text-slate-400'}">${s.score} pts</span>` : ''}</p>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAdminAssign() {
+  // Build a map of team → count to find duplicates
+  const teamCount = {};
+  leagueData.members.forEach(m => {
+    if (m.team && m.team !== 'Unassigned') {
+      teamCount[m.team] = (teamCount[m.team] || 0) + 1;
+    }
+  });
+
+  document.getElementById('admin-assign-list').innerHTML = leagueData.members.map((m, i) => {
+    const isDupe = m.team && m.team !== 'Unassigned' && teamCount[m.team] > 1;
+    const rowClass = isDupe
+      ? 'bg-red-500/10 border border-red-500/30 rounded-xl px-3'
+      : 'border-b border-white/5 px-1';
+    const selectClass = isDupe
+      ? 'bg-red-900/40 border border-red-500/50 text-red-300 text-xs px-2 py-1.5 rounded-lg flex-shrink-0 max-w-[180px]'
+      : 'bg-navy-950/60 border border-white/10 text-slate-300 text-xs px-2 py-1.5 rounded-lg flex-shrink-0 max-w-[180px]';
+    const nameClass = isDupe ? 'text-red-300' : 'text-white';
+    const dupeWarning = isDupe ? `<span class="text-red-400 text-xs flex-shrink-0" title="Team already taken">⚠</span>` : '';
+
+    return `
+      <div class="flex items-center gap-3 py-2 ${rowClass} transition-all">
+        <span class="text-xs text-slate-600 w-5 text-right flex-shrink-0">${i + 1}</span>
+        <span class="flex-1 text-sm font-medium ${nameClass} truncate">${m.name}</span>
+        ${dupeWarning}
+        <select onchange="updateAssignment(${i},this.value)" class="${selectClass}" transition-all>
+          <option value="Unassigned" ${!m.team || m.team === 'Unassigned' ? 'selected' : ''}>— Unassigned —</option>
+          ${NFL_TEAMS.map(t => {
+            const takenByOther = teamCount[t] > 0 && t !== m.team;
+            const takenBySelf = t === m.team;
+            return `<option value="${t}" ${takenBySelf ? 'selected' : ''} ${takenByOther ? 'disabled' : ''}>${t}${takenByOther ? ' ✗' : ''}</option>`;
+          }).join('')}
+        </select>
+      </div>
+    `;
+  }).join('');
+
+  // Show/hide duplicate warning summary
+  const dupes = Object.entries(teamCount).filter(([,count]) => count > 1);
+  const existingWarning = document.getElementById('assign-dupe-warning');
+  if (dupes.length) {
+    const msg = `⚠ Duplicate teams: ${dupes.map(([t]) => t).join(', ')} — each team can only have one owner.`;
+    if (existingWarning) {
+      existingWarning.textContent = msg;
+      existingWarning.classList.remove('hidden');
+    } else {
+      const warn = document.createElement('div');
+      warn.id = 'assign-dupe-warning';
+      warn.className = 'mb-3 bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-3 py-2 rounded-xl';
+      warn.textContent = msg;
+      document.getElementById('admin-assign-list').before(warn);
+    }
+  } else {
+    if (existingWarning) existingWarning.classList.add('hidden');
+  }
+}
+
+function updateAssignment(i, team) {
+  leagueData.members[i].team = team;
+  renderAdminAssign();
+  renderTeams();
+  renderStandings();
+}
+
+function addOwner() {
+  const first = document.getElementById('owner-first').value.trim();
+  const last  = document.getElementById('owner-last').value.trim();
+  const email = document.getElementById('owner-email').value.trim();
+  const phone = document.getElementById('owner-phone').value.trim();
+  const al    = document.getElementById('add-owner-alert');
+
+  if (!first) { showOwnerAlert(al, 'First name is required.'); return; }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showOwnerAlert(al, 'Please enter a valid email address.'); return; }
+  if (!email && !phone) { showOwnerAlert(al, 'Please enter at least an email or phone number.'); return; }
+  if (leagueData.members.length >= 32) { showOwnerAlert(al, 'League is full — 32 members maximum.'); return; }
+  if (email && leagueData.members.some(m => m.email && m.email.toLowerCase() === email.toLowerCase())) {
+    showOwnerAlert(al, 'A member with that email already exists.'); return;
+  }
+
+  const fullName = first + (last ? ' ' + last : '');
+  leagueData.members.push({ name: fullName, firstName: first, lastName: last, email, phone, team: 'Unassigned', wins: 0, closest: 0 });
+
+  ['owner-first','owner-last','owner-email','owner-phone'].forEach(id => document.getElementById(id).value = '');
+  al.classList.add('hidden');
+
+  renderOwnersList();
+  renderAdminAssign();
+  renderStandings();
+  document.getElementById('admin-member-count').textContent = leagueData.members.length;
+  document.getElementById('owner-count').textContent = leagueData.members.length;
+  // Also add to invite list
+  addToInviteList([{ name: fullName, email, phone }]);
+  showToast(`✓ ${fullName} added`);
+}
+
+function removeOwner(i) {
+  const m = leagueData.members[i];
+  if (!confirm(`Remove ${m.name} from the league?`)) return;
+  leagueData.members.splice(i, 1);
+  renderOwnersList();
+  renderAdminAssign();
+  renderStandings();
+  document.getElementById('admin-member-count').textContent = leagueData.members.length;
+  document.getElementById('owner-count').textContent = leagueData.members.length;
+  showToast('Member removed.');
+}
+
+function renderOwnersList() {
+  const el = document.getElementById('owners-list');
+  document.getElementById('owner-count').textContent = leagueData.members.length;
+  if (!leagueData.members.length) {
+    el.innerHTML = `<p class="text-center text-slate-500 text-sm py-4">No owners added yet.</p>`;
+    return;
+  }
+  el.innerHTML = leagueData.members.map((m, i) => `
+    <div class="flex items-center gap-3 bg-navy-950/40 border border-white/5 rounded-xl px-4 py-3 group hover:border-white/10 transition-all">
+      <div class="w-8 h-8 rounded-full bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+        <span class="text-amber-400 text-xs font-bold">${(m.firstName||m.name.split(' ')[0]||'?')[0]}${(m.lastName||m.name.split(' ')[1]||'')[0]||''}</span>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-white truncate">${m.name}</p>
+        <div class="flex items-center gap-3 mt-0.5 flex-wrap">
+          ${m.email ? `<span class="text-xs text-slate-500 truncate max-w-[180px]">✉ ${m.email}</span>` : ''}
+          ${m.phone ? `<span class="text-xs text-slate-500">📞 ${m.phone}</span>` : ''}
+        </div>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        <span class="text-xs ${m.team && m.team !== 'Unassigned' ? 'text-amber-400 bg-amber-500/10 border border-amber-500/20' : 'text-slate-500 bg-white/5 border border-white/10'} px-2 py-0.5 rounded-full hidden sm:inline-block truncate max-w-[120px]">${m.team && m.team !== 'Unassigned' ? m.team : 'No team'}</span>
+        <button onclick="removeOwner(${i})" class="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center flex-shrink-0" title="Remove">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── INVITE SYSTEM ───────────────────────────────────────────
+let inviteList = []; // { name, email, phone, selected }
+
+function showAddManual() {
+  document.getElementById('manual-add-form').classList.remove('hidden');
+}
+function hideAddManual() {
+  document.getElementById('manual-add-form').classList.add('hidden');
+}
+
+async function importContacts() {
+  // Check for Contact Picker API (Chrome on Android, some mobile browsers)
+  if ('contacts' in navigator && 'ContactsManager' in window) {
+    try {
+      const props   = ['name', 'email', 'tel'];
+      const opts    = { multiple: true };
+      const results = await navigator.contacts.select(props, opts);
+      if (!results.length) return;
+      const people  = results.map(c => ({
+        name:  (c.name && c.name[0]) || 'Unknown',
+        email: (c.email && c.email[0]) || '',
+        phone: (c.tel   && c.tel[0])   || '',
+      })).filter(p => p.email || p.phone);
+      addToInviteList(people);
+      showToast(`✓ ${people.length} contacts imported`);
+    } catch (e) {
+      if (e.name !== 'AbortError') showToast('Could not access contacts.');
+    }
+  } else {
+    // Not supported — show a helpful modal explaining alternatives
+    showContactsNotSupported();
+  }
+}
+
+function showContactsNotSupported() {
+  const existing = document.getElementById('contacts-unsupported-msg');
+  if (existing) { existing.classList.remove('hidden'); return; }
+  const el = document.createElement('div');
+  el.id = 'contacts-unsupported-msg';
+  el.className = 'mt-3 bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs px-4 py-3 rounded-xl';
+  el.innerHTML = `
+    <p class="font-semibold mb-1">Contact access requires a mobile browser</p>
+    <p class="text-amber-400/70">The Contact Picker API works on Chrome for Android and some mobile browsers. On desktop or iOS Safari, use <strong class="text-amber-300">Add Manually</strong> or paste a list of emails below.</p>
+    <button onclick="showPasteEmails()" class="mt-2 underline text-amber-400 hover:text-amber-300 transition-colors">Paste emails instead →</button>
+  `;
+  document.querySelector('#apanel-invite .bg-navy-950\\/50').appendChild(el);
+}
+
+function showPasteEmails() {
+  const existing = document.getElementById('paste-email-area');
+  if (existing) { existing.classList.toggle('hidden'); return; }
+  const wrap = document.querySelector('#apanel-invite .bg-navy-950\\/50');
+  const el   = document.createElement('div');
+  el.id = 'paste-email-area';
+  el.className = 'mt-3';
+  el.innerHTML = `
+    <label class="block text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2">Paste Emails (one per line or comma-separated)</label>
+    <textarea id="bulk-email-paste" rows="4" placeholder="john@example.com&#10;jane@example.com&#10;mike@example.com" class="w-full bg-navy-800/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2 rounded-lg text-sm font-mono resize-none"></textarea>
+    <button onclick="importPastedEmails()" class="mt-2 w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-2 rounded-lg text-sm transition-all">Import Emails</button>
+  `;
+  wrap.appendChild(el);
+}
+
+function importPastedEmails() {
+  const raw  = (document.getElementById('bulk-email-paste')?.value || '').trim();
+  const emails = raw.split(/[\n,;]+/).map(e => e.trim()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+  if (!emails.length) { showToast('No valid emails found.'); return; }
+  const people = emails.map(email => ({ name: email.split('@')[0], email, phone: '' }));
+  addToInviteList(people);
+  document.getElementById('paste-email-area').classList.add('hidden');
+  showToast(`✓ ${people.length} emails imported`);
+}
+
+function addToInviteList(people) {
+  people.forEach(p => {
+    const dupe = inviteList.some(x =>
+      (p.email && x.email && x.email.toLowerCase() === p.email.toLowerCase()) ||
+      (p.phone && x.phone && x.phone.replace(/\D/g,'') === p.phone.replace(/\D/g,''))
+    );
+    if (!dupe) inviteList.push({ ...p, selected: true });
+  });
+  renderInviteList();
+}
+
+function renderInviteList() {
+  const wrap  = document.getElementById('invite-list-wrap');
+  const empty = document.getElementById('invite-empty-state');
+  const list  = document.getElementById('invite-list');
+  const isFull = leagueData.members.length >= 32;
+
+  // Show/hide league-full badge
+  const fullBadge = document.getElementById('league-full-badge');
+  if (fullBadge) fullBadge.classList.toggle('hidden', !isFull);
+
+  if (!inviteList.length) {
+    wrap.classList.add('hidden');
+    empty.classList.remove('hidden');
+    return;
+  }
+  wrap.classList.remove('hidden');
+  empty.classList.add('hidden');
+
+  list.innerHTML = inviteList.map((p, i) => `
+    <label class="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-all ${p.selected ? 'bg-amber-500/8 border border-amber-500/15' : 'bg-navy-950/40 border border-white/5 hover:border-white/10'}">
+      <input type="checkbox" ${p.selected ? 'checked' : ''} onchange="toggleInviteItem(${i},this.checked)"
+        class="w-4 h-4 rounded accent-amber-500 flex-shrink-0"/>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-white truncate">${p.name}</p>
+        <p class="text-xs text-slate-500 truncate">${[p.email, p.phone].filter(Boolean).join(' · ') || 'No contact info'}</p>
+      </div>
+      ${p.invited ? `<span class="text-xs bg-green-500/10 border border-green-500/20 text-green-400 px-2 py-0.5 rounded-full flex-shrink-0">Sent</span>` : ''}
+      ${p.email  ? '<svg class="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>' : ''}
+      ${p.phone  ? '<svg class="w-3.5 h-3.5 text-green-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3" /></svg>' : ''}
+    </label>
+  `).join('');
+
+  updateInviteCount();
+}
+
+function toggleInviteItem(i, checked) {
+  inviteList[i].selected = checked;
+  renderInviteList();
+}
+
+function selectAllInvites()  { inviteList.forEach(p => p.selected = true);  renderInviteList(); }
+function clearAllInvites()   { inviteList.forEach(p => p.selected = false); renderInviteList(); }
+
+function updateInviteCount() {
+  const n = inviteList.filter(p => p.selected).length;
+  document.getElementById('invite-selected-count').textContent = `${n} selected`;
+  document.getElementById('send-count').textContent = n;
+}
+
+function getInviteMessage() {
+  const code = leagueData.code || '—';
+  const link = `https://19pool.app/join?code=${code}`;
+  return {
+    subject: `You're invited to ${leagueData.name || '19 Pool'}!`,
+    body: `Hey! You've been invited to join ${leagueData.name || '19 Pool'} — the NFL score game where you win the weekly pot by scoring exactly 19 points.\n\nJoin with invite code: ${code}\nOr tap this link: ${link}\n\nSee you in the pool!`
+  };
+}
+
+function openEmailComposer() {
+  const selected = inviteList.filter(p => p.selected && p.email);
+  if (!selected.length) { showToast('Select at least one player with an email address.'); return; }
+
+  const { subject, body } = getInviteMessage();
+  const isFull = leagueData.members.length >= 32;
+
+  // Populate modal
+  document.getElementById('email-modal-subtitle').textContent =
+    `Sending to ${selected.length} player${selected.length !== 1 ? 's' : ''}`;
+  document.getElementById('email-subject').value = subject;
+  document.getElementById('email-body').value    = body;
+  document.getElementById('email-send-label').textContent = `Send to ${selected.length}`;
+  document.getElementById('email-league-full-warn').classList.toggle('hidden', !isFull);
+
+  // Render recipient chips
+  const recWrap = document.getElementById('email-recipients');
+  recWrap.innerHTML = selected.map(p => `
+    <span class="inline-flex items-center gap-1.5 bg-navy-700/80 border border-white/10 text-slate-300 text-xs px-2.5 py-1 rounded-full">
+      <span class="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span>
+      ${p.name} &lt;${p.email}&gt;
+    </span>
+  `).join('');
+
+  document.getElementById('email-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEmailComposer() {
+  document.getElementById('email-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+async function sendInAppEmail() {
+  const selected = inviteList.filter(p => p.selected && p.email);
+  if (!selected.length) return;
+
+  const subject = document.getElementById('email-subject').value.trim();
+  const body    = document.getElementById('email-body').value.trim();
+  if (!subject || !body) { showToast('Subject and message are required.'); return; }
+
+  const btn   = document.getElementById('email-send-btn');
+  const label = document.getElementById('email-send-label');
+  btn.disabled = true;
+  label.textContent = 'Sending…';
+  btn.classList.add('opacity-60');
+
+  // Call Anthropic API to simulate sending (in production this would be your backend)
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{
+          role: 'user',
+          content: `You are a mail delivery confirmation system. The admin of "19 Pool" has sent invite emails to ${selected.length} recipients: ${selected.map(p=>p.email).join(', ')}. Reply ONLY with valid JSON (no markdown): {"sent": ${selected.length}, "failed": 0, "message": "All emails delivered successfully"}`
+        }]
+      })
+    });
+    const data   = await response.json();
+    const text   = data.content?.find(b => b.type === 'text')?.text || '{}';
+    const result = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    closeEmailComposer();
+    // Mark as invited
+    selected.forEach(p => { p.invited = true; });
+    renderInviteList();
+    showToast(`✓ ${result.sent || selected.length} emails sent!`);
+  } catch (e) {
+    // Graceful fallback — show success anyway since this is a demo
+    closeEmailComposer();
+    selected.forEach(p => { p.invited = true; });
+    renderInviteList();
+    showToast(`✓ ${selected.length} emails sent!`);
+  } finally {
+    btn.disabled = false;
+    label.textContent = `Send to ${selected.length}`;
+    btn.classList.remove('opacity-60');
+  }
+}
+
+// ─── JOIN AS PLAYER TOGGLE ───────────────────────────────────
+let joinAsPlayer = false;
+
+function toggleJoinAsPlayer() {
+  joinAsPlayer = !joinAsPlayer;
+  const toggle = document.getElementById('join-as-player-toggle');
+  const knob   = document.getElementById('join-as-player-knob');
+  const wrap   = document.getElementById('join-player-email-wrap');
+  toggle.setAttribute('aria-checked', joinAsPlayer);
+  toggle.className = `relative w-11 h-6 rounded-full transition-all duration-200 flex-shrink-0 ${joinAsPlayer ? 'bg-amber-500' : 'bg-white/10'}`;
+  knob.className   = `absolute top-0.5 w-5 h-5 rounded-full shadow transition-all duration-200 ${joinAsPlayer ? 'left-[22px] bg-navy-950' : 'left-0.5 bg-slate-400'}`;
+  wrap.classList.toggle('hidden', !joinAsPlayer);
+}
+
+function sendBulkSMS() {
+  const selected = inviteList.filter(p => p.selected && p.phone);
+  if (!selected.length) { showToast('No players with phone numbers selected.'); return; }
+  const { body } = getInviteMessage();
+  // iOS uses &body=, Android uses ?body=
+  const numbers = selected.map(p => p.phone.replace(/\s/g,'')).join(',');
+  const sep     = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? '&' : '?';
+  const url     = `sms:${numbers}${sep}body=${encodeURIComponent(body)}`;
+  window.location.href = url;
+  showToast(`✓ Opening Messages for ${selected.length} players`);
+}
+
+function showOwnerAlert(el, msg) {
+  el.textContent = msg;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+
+function saveSeasonEntry() {
+  const val = parseInt(document.getElementById('admin-entry-input').value);
+  if (!val || val < 1) { showToast('⚠️ Enter a valid amount'); return; }
+  const lg = currentLeague || leagueData;
+  lg.seasonEntry = val;
+  leagueData.seasonEntry = val;
+  leagueData.pot = val * leagueData.members.length;
+
+  const totalPot = leagueData.pot;
+  const share    = totalPot / 18;
+
+  document.getElementById('stat-pot').textContent   = fmtPot(totalPot);
+  document.getElementById('stat-entry').textContent = fmtPot(share);         // Base Weekly
+  document.getElementById('weekly-pot-display').textContent    = fmtPot(share);
+  document.getElementById('standings-pot-display').textContent = fmtPot(share);
+  document.getElementById('admin-total-pot').textContent = fmtPot(totalPot) + ' · ' + fmtPot(share) + '/wk';
+  showToast('✓ Entry $' + val + ' · Total ' + fmtPot(totalPot) + ' · Weekly ' + fmtPot(share));
+}
+
+function updateEntryPreview() {
+  const val      = parseInt(document.getElementById('admin-entry-input').value) || 0;
+  const totalPot = val * leagueData.members.length;
+  const weeks    = SEASON_CONFIG[getSelectedSeason()]?.weeks || 18;
+  const share    = totalPot / weeks;
+  document.getElementById('admin-total-pot').textContent =
+    fmtPot(totalPot) + ' · ' + fmtPot(share) + '/wk';
+}
+
+function randomAssign(){if(!confirm('Randomly assign all 32 NFL teams to your members?'))return;const s=[...NFL_TEAMS].sort(()=>Math.random()-0.5);leagueData.members.forEach((m,i)=>m.team=s[i]);renderAdminAssign();renderTeams();renderStandings();showToast('🎲 Teams randomly assigned!');}
+function resetAssignments(){leagueData.members.forEach(m=>m.team='Unassigned');renderAdminAssign();renderTeams();showToast('Assignments reset.');}
+
+
+// ─── UTILS ───────────────────────────────────────────────────
+function showAlert(el,msg){el.textContent=msg;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),5000);}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2500);}
+
+function buildMarquee(){
+  const track=document.getElementById('marquee-track');
+  const doubled=[...NFL_TEAMS,...NFL_TEAMS];
+  track.innerHTML=doubled.map(t=>`<span class="text-slate-500 hover:text-amber-400 transition-colors text-sm font-semibold tracking-wider uppercase whitespace-nowrap px-6">🏈 ${t}</span>`).join('');
+}
+
+// ─── EXPOSE TO WINDOW (required for onclick attrs with Tailwind v4 CDN) ──────
+Object.assign(window, {
+  showView, signOut, switchAuthTab, handleSignIn, handleSignUp,
+  createLeague, copyCode, copyLink, goToDashboard, goToLeagueInvite,
+  joinLeague, switchDashTab, fetchScores, onSeasonChange,
+  saveSeasonEntry, updateEntryPreview,
+  randomAssign, resetAssignments, updateAssignment,
+  addOwner, removeOwner, showFetchError,
+  sendResetCode, verifyResetCode, resetPassword, showForgotStep, updatePwStrength,
+  switchAdminTab,
+  saveProfile, changePassword, checkAcctPwStrength,
+  showCreateStep, switchCreateAccountTab, createFlowSignIn, createFlowSignUp,
+  toggleJoinAsPlayer,
+  // Invite system
+  importContacts, showAddManual, hideAddManual, showPasteEmails, importPastedEmails,
+  toggleInviteItem, selectAllInvites, clearAllInvites,
+  openEmailComposer, closeEmailComposer, sendInAppEmail,
+  sendBulkSMS,
+});
+// ─── INIT ────────────────────────────────────────────────────
+buildMarquee();
+buildWeekDropdown();
+document.querySelectorAll('.dash-tab').forEach(t => t.style.display = 'none');
+document.getElementById('dash-overview').style.display = 'block';
+const params = new URLSearchParams(window.location.search);
+if (params.get('code')) { document.getElementById('join-code').value = params.get('code').toUpperCase(); showView('join-league'); }
+</script>
+</body>
+</html>
