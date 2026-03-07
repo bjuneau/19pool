@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/", "destination": "/19pool_12.html" }]
+    "rewrites": [
+          { "source": "/api/:path*", "destination": "/api/:path*" },
+          { "source": "/", "destination": "/19pool_12.html" }
+    ]
 }
