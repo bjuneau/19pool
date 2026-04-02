@@ -419,7 +419,13 @@
           <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Password</label><input type="password" id="signup-password" placeholder="Min. 8 characters" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm"/></div>
           <div><label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Invite Code <span class="text-slate-600 normal-case font-normal">(optional)</span></label><input type="text" id="signup-code" placeholder="WOLF-2291" class="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm font-mono tracking-widest uppercase"/></div>
         </div>
-        <button onclick="handleSignUp()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-6 transition-all tracking-wide">Create Account</button>
+        <div class="flex items-start gap-3 mt-5 p-3 bg-white/3 border border-white/8 rounded-xl">
+          <input type="checkbox" id="signup-tos" class="mt-0.5 w-4 h-4 accent-amber-500 flex-shrink-0 cursor-pointer"/>
+          <label for="signup-tos" class="text-xs text-slate-400 leading-relaxed cursor-pointer">
+            I agree to the <button type="button" onclick="showTerms()" class="text-amber-400 hover:text-amber-300 underline underline-offset-2 font-semibold">Terms &amp; Conditions</button> and confirm I am 18 years of age or older.
+          </label>
+        </div>
+        <button onclick="handleSignUp()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl mt-3 transition-all tracking-wide">Create Account</button>
       </div>
 
       <!-- Forgot Password -->
@@ -1218,11 +1224,171 @@
   </div>
 </div>
 
+<!-- TERMS & CONDITIONS VIEW -->
+<div id="view-terms" class="hidden fixed inset-0 z-[8000] bg-navy-950 overflow-y-auto">
+  <div class="max-w-2xl mx-auto px-6 py-10 pb-24">
+    <div class="flex items-center gap-3 mb-8">
+      <button onclick="closeTerms()" class="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 transition-colors text-lg">&larr;</button>
+      <div>
+        <h1 class="text-xl font-bold text-white">Terms &amp; Conditions</h1>
+        <p class="text-xs text-slate-500 mt-0.5">Last updated: April 2, 2026</p>
+      </div>
+    </div>
+
+    <div class="space-y-7 text-sm text-slate-300 leading-relaxed">
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">1. What Is 19 Pool?</h2>
+        <p>19 Pool is a golf league management platform that helps commissioners organize fantasy-style golf leagues, assign players to PGA Tour teams, track standings, and communicate with league members. 19 Pool is a software tool only &mdash; it does not operate a gambling service, lottery, or financial product of any kind.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">2. No Financial Services</h2>
+        <p>19 Pool does not collect, hold, process, transfer, or distribute money on behalf of any user. Any entry fees, prize pools, or monetary arrangements within a league exist solely between the league commissioner and its members. 19 Pool has no access to, responsibility for, or liability relating to those funds under any circumstances.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">3. Commissioner Responsibility</h2>
+        <p>The commissioner of each league is solely responsible for all financial and administrative decisions within their league, including but not limited to: collecting entry fees, maintaining pot funds, distributing winnings, and resolving disputes. 19 Pool does not vet, certify, or endorse any commissioner.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">4. Player Acknowledgment for Paid Leagues</h2>
+        <p>If you join a league with an entry fee, you acknowledge that you are doing so based on a personal relationship of trust with your commissioner. You have independently verified the commissioner's identity and trustworthiness. 19 Pool is not a party to any financial agreement between you and your commissioner, and cannot mediate, recover, or compensate for any funds in dispute.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">5. Eligibility</h2>
+        <p>You must be at least 18 years of age to create an account or participate in any league on 19 Pool. By creating an account you represent and warrant that you meet this age requirement and that your participation complies with all applicable laws in your jurisdiction.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">6. Service Fee</h2>
+        <p>19 Pool reserves the right to charge a service fee of up to 3% of any transaction facilitated through the platform in connection with future payment features. Any fee will be clearly disclosed before it is applied. Current functionality does not include payment processing, and no fees are charged at this time.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">7. User Conduct</h2>
+        <p>You agree not to use 19 Pool to engage in fraud, harassment, or any unlawful activity. You are responsible for maintaining the confidentiality of your account credentials. You agree to provide accurate information when creating your account and joining leagues.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">8. Scores &amp; Data Accuracy</h2>
+        <p>PGA Tour scores and standings displayed within 19 Pool are sourced from third-party providers and may be delayed, incomplete, or inaccurate. 19 Pool makes no guarantee of accuracy and shall not be liable for decisions made based on score data shown in the app.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">9. Privacy</h2>
+        <p>We collect only the information necessary to operate the service (name, email address, league membership). We do not sell your personal data to third parties. Your email address may be used to send league-related communications and service notices. By creating an account you consent to this use.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">10. Disclaimer of Warranties</h2>
+        <p>19 Pool is provided "as is" and "as available" without warranties of any kind, express or implied. We do not warrant that the service will be uninterrupted, error-free, or free from harmful components.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">11. Limitation of Liability</h2>
+        <p>To the maximum extent permitted by law, 19 Pool and its operators shall not be liable for any indirect, incidental, special, consequential, or punitive damages, including without limitation loss of funds, loss of data, or loss of profits, arising out of or related to your use of the service, even if advised of the possibility of such damages.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">12. Changes to These Terms</h2>
+        <p>We may update these Terms at any time. When we do, we will notify you within the app and require renewed acceptance before you can continue using the service. Continued use after acceptance of updated terms constitutes agreement to the revised terms.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">13. Governing Law</h2>
+        <p>These Terms are governed by the laws of the State of Texas, without regard to its conflict of law provisions. Any disputes arising under these Terms shall be resolved in the courts of Texas.</p>
+      </section>
+
+      <section>
+        <h2 class="text-base font-bold text-white mb-2">14. Contact</h2>
+        <p>Questions about these Terms may be directed to <a href="mailto:legal@19pool.com" class="text-amber-400 hover:text-amber-300 underline underline-offset-2">legal@19pool.com</a>.</p>
+      </section>
+
+    </div>
+
+    <div class="mt-10 pt-6 border-t border-white/8 flex justify-center">
+      <button onclick="closeTerms()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-10 py-3 rounded-full transition-all tracking-wide">Got It</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOS ACCEPTANCE MODAL (blocking &#8212; existing users who haven't accepted yet) -->
+<div id="tos-modal" class="hidden fixed inset-0 z-[9999] bg-navy-950/95 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-navy-800 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+    <div class="bg-amber-500/10 border-b border-amber-500/20 px-6 py-5 text-center">
+      <div class="text-3xl mb-2">&#x1f4dc;</div>
+      <h2 class="text-lg font-bold text-white">Terms &amp; Conditions Updated</h2>
+      <p class="text-sm text-slate-400 mt-1">Please review and accept to continue using 19 Pool.</p>
+    </div>
+    <div class="px-6 py-5 space-y-3">
+      <div class="flex items-start gap-3">
+        <span class="text-amber-400 mt-0.5 flex-shrink-0">&#x2713;</span>
+        <p class="text-sm text-slate-300">19 Pool is a <strong class="text-white">league management tool only</strong> &mdash; it does not handle money.</p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="text-amber-400 mt-0.5 flex-shrink-0">&#x2713;</span>
+        <p class="text-sm text-slate-300">All financial arrangements are <strong class="text-white">between you and your commissioner</strong>.</p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="text-amber-400 mt-0.5 flex-shrink-0">&#x2713;</span>
+        <p class="text-sm text-slate-300">You must be <strong class="text-white">18 years of age or older</strong> to use this service.</p>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="text-amber-400 mt-0.5 flex-shrink-0">&#x2713;</span>
+        <p class="text-sm text-slate-300">19 Pool may charge a <strong class="text-white">service fee up to 3%</strong> on future payment features.</p>
+      </div>
+      <div class="mt-4 pt-4 border-t border-white/8 text-center">
+        <button onclick="showTermsFromModal()" class="text-xs text-amber-400 hover:text-amber-300 underline underline-offset-2">Read full Terms &amp; Conditions</button>
+      </div>
+    </div>
+    <div class="px-6 pb-6">
+      <button onclick="acceptTOS()" class="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide text-base">I Accept the Terms &amp; Conditions</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEAGUE DISCLAIMER MODAL (shown before joining a paid league) -->
+<div id="league-disclaimer-modal" class="hidden fixed inset-0 z-[9000] bg-navy-950/90 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-navy-800 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+    <div class="bg-green-500/8 border-b border-green-500/15 px-6 py-5 text-center">
+      <div class="text-3xl mb-2">&#x1f91d;</div>
+      <h2 class="text-lg font-bold text-white">Paid League &mdash; Please Confirm</h2>
+      <p class="text-sm text-slate-400 mt-1">This league has an entry fee. Before you join, please confirm the following.</p>
+    </div>
+    <div class="px-6 py-5">
+      <div class="bg-navy-900/60 border border-white/8 rounded-xl p-4 mb-4">
+        <p class="text-sm text-slate-300 leading-relaxed">Entry fee: <strong id="disclaimer-entry-fee" class="text-amber-400 font-bold text-base"></strong> &bull; Commissioner: <strong id="disclaimer-commissioner" class="text-white"></strong></p>
+      </div>
+      <div class="space-y-3 text-sm text-slate-300">
+        <div class="flex items-start gap-3">
+          <span class="text-slate-500 mt-0.5 flex-shrink-0">&#x26a0;&#xfe0f;</span>
+          <p><strong class="text-white">19 Pool does not handle money.</strong> All entry fees and prize payouts are managed directly between you and your commissioner.</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <span class="text-slate-500 mt-0.5 flex-shrink-0">&#x26a0;&#xfe0f;</span>
+          <p>19 Pool cannot mediate financial disputes or recover funds. Join only if you personally know and trust your commissioner.</p>
+        </div>
+      </div>
+      <label class="flex items-start gap-3 mt-5 p-3 bg-white/3 border border-white/8 rounded-xl cursor-pointer">
+        <input type="checkbox" id="disclaimer-confirm" class="mt-0.5 w-4 h-4 accent-amber-500 flex-shrink-0"/>
+        <span class="text-xs text-slate-400 leading-relaxed">I personally know <strong id="disclaimer-commissioner-inline" class="text-white"></strong> and trust them to collect and pay out league funds. I understand that 19 Pool does not handle money &mdash; all financial arrangements are between me and my commissioner.</span>
+      </label>
+    </div>
+    <div class="px-6 pb-6 flex gap-3">
+      <button onclick="closeLeagueDisclaimer()" class="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 text-sm font-semibold transition-colors">Cancel</button>
+      <button onclick="completeJoinLeague()" class="flex-1 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-2.5 rounded-xl text-sm transition-all">I Understand, Join League</button>
+    </div>
+  </div>
+</div>
+
 <!-- TOAST -->
 <div id="toast" class="fixed bottom-8 right-6 z-[9999] bg-green-500 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-lg opacity-0 transition-opacity duration-300 pointer-events-none"></div>
 
 <script>
-// \u2500\u2500 Firebase init \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472; Firebase init &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyBox1sX7Ucm7D-VZpa3NJOGOIPEk8KnSDA",
   authDomain: "pool-8bf61.firebaseapp.com",
@@ -1234,9 +1400,9 @@ const FIREBASE_CONFIG = {
 firebase.initializeApp(FIREBASE_CONFIG);
 const auth = firebase.auth();
 const db   = firebase.firestore();
-// \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 
-// \u2500\u2500\u2500 DATA \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; DATA &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 const NFL_TEAMS = [
   "Arizona Cardinals","Atlanta Falcons","Baltimore Ravens","Buffalo Bills",
   "Carolina Panthers","Chicago Bears","Cincinnati Bengals","Cleveland Browns",
@@ -1268,8 +1434,8 @@ let currentUser = null, isCommissioner = false, currentLeague = null, createdLea
 let currentUserId = null, currentUserEmail = '';
 let liveScores = {}, refreshInterval = null, countdown = 30, countdownInterval = null;
 
-// \u2500\u2500\u2500 ESPN \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
-// \u2500\u2500\u2500 SEASON / WEEK CONFIG \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; ESPN &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+// &#9472;&#9472;&#9472; SEASON / WEEK CONFIG &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 const SEASON_CONFIG = {
   2025: { start: '2025-09-04', end: '2026-01-05', weeks: 18 },
   2024: { start: '2024-09-05', end: '2025-01-06', weeks: 18 },
@@ -1298,7 +1464,7 @@ function buildWeekDropdown() {
   let defaultWeek   = cfg.weeks; // default: last week (works for completed seasons)
 
   if (now >= seasonStart && now <= seasonEnd) {
-    // Season in progress \u2014 pick the current approximate week
+    // Season in progress &#8212; pick the current approximate week
     defaultWeek = Math.min(cfg.weeks, Math.max(1, Math.ceil((now - seasonStart) / (7 * 86400000))));
   }
   // If season hasn't started yet, default to Week 1
@@ -1313,8 +1479,8 @@ function buildWeekDropdown() {
   }
 }
 
-// Rolling pot: walk weeks 1 \u2192 current, accumulate pot when no 19-winner
-const weeklyScoreCache = {}; // "season_week" \u2192 events[]
+// Rolling pot: walk weeks 1 &#8594; current, accumulate pot when no 19-winner
+const weeklyScoreCache = {}; // "season_week" &#8594; events[]
 
 async function espnFetch(url) {
   // Primary: use Anthropic API as a server-side proxy (bypasses CORS completely)
@@ -1326,7 +1492,7 @@ async function espnFetch(url) {
         model: 'claude-sonnet-4-20250514',
         max_tokens: 8192,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
-        system: 'You are a data proxy. When given a URL, fetch it with web_search and return ONLY the raw JSON content, nothing else \u2014 no markdown, no explanation.',
+        system: 'You are a data proxy. When given a URL, fetch it with web_search and return ONLY the raw JSON content, nothing else &#8212; no markdown, no explanation.',
         messages: [{ role: 'user', content: `Fetch this URL and return only the raw JSON: ${url}` }]
       })
     });
@@ -1396,9 +1562,9 @@ async function calcWeeklyPot(season, targetWeek) {
     const events  = await fetchWeekEvents(season, w);
     const winners = weekHas19Winner(events);
     if (winners.length === 0) {
-      rollover += weeklyShare; // no winner \u2014 carries forward
+      rollover += weeklyShare; // no winner &#8212; carries forward
     } else {
-      rollover = 0; // pot was won \u2014 reset
+      rollover = 0; // pot was won &#8212; reset
     }
   }
   // This week's pot = this week's share + any rollover from prior unclaimed weeks
@@ -1443,7 +1609,7 @@ async function fetchScores() {
 function showFetchError() {
   document.getElementById('scores-container').innerHTML = `
     <div class="glass rounded-2xl p-10 text-center max-w-lg mx-auto">
-      <div class="text-4xl mb-4">\u{1F4E1}</div>
+      <div class="text-4xl mb-4">&#128225;</div>
       <h3 class="text-lg font-bold text-white mb-2">Couldn't load scores</h3>
       <p class="text-slate-400 text-sm mb-5">The ESPN API is blocked or unavailable right now. This is a CORS limitation when running locally.</p>
       <button onclick="fetchScores()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-6 py-2.5 rounded-full text-sm transition-all">Try Again</button>
@@ -1512,24 +1678,24 @@ function renderGameCards(events) {
     bannerEl.className = 'winner-shimmer border border-amber-500/30 rounded-2xl p-5 mb-6';
     bannerEl.innerHTML = `
       <p class="text-xs font-bold text-amber-400 uppercase tracking-widest mb-2">
-        \u{1F3C6} ${split ? 'Split Pot \u2014 ' : ''}19-Point Winner${split ? 's' : ''}!
+        &#127942; ${split ? 'Split Pot &#8212; ' : ''}19-Point Winner${split ? 's' : ''}!
       </p>
       ${memberWinners.map(w => `
         <p class="text-white font-bold text-xl">${w.name}
-          <span class="text-amber-400 font-normal text-base"> \u00B7 ${w.team}</span>
+          <span class="text-amber-400 font-normal text-base"> &#183; ${w.team}</span>
           ${split ? `<span class="text-green-400 text-sm font-normal ml-2">splits ${pot}</span>` : `<span class="text-green-400 text-sm font-normal ml-2">wins ${pot}</span>`}
         </p>`).join('')}
     `;
     bannerEl.classList.remove('hidden');
   } else {
-    // Check if all games final \u2014 if so, show rollover notice
+    // Check if all games final &#8212; if so, show rollover notice
     const allFinal = events.every(ev => ev.status.type.state === 'post');
     if (allFinal && events.length > 0) {
       bannerEl.className = 'bg-navy-800/60 border border-white/10 rounded-2xl p-4 mb-6 flex items-center gap-3';
       bannerEl.innerHTML = `
-        <span class="text-2xl">\u{1F3B2}</span>
+        <span class="text-2xl">&#127922;</span>
         <div>
-          <p class="text-sm font-bold text-white">No 19-point score this week \u2014 pot rolls over!</p>
+          <p class="text-sm font-bold text-white">No 19-point score this week &#8212; pot rolls over!</p>
           <p class="text-xs text-slate-400 mt-0.5">The pot carries forward and grows for next week.</p>
         </div>
       `;
@@ -1539,7 +1705,7 @@ function renderGameCards(events) {
     }
   }
 
-  // Build cards \u2014 exactly matching the screenshot layout
+  // Build cards &#8212; exactly matching the screenshot layout
   const cards = events.map(ev => {
     const comp = ev.competitions[0];
     const st   = ev.status.type;
@@ -1585,7 +1751,7 @@ function renderGameCards(events) {
           <div class="flex items-center gap-1.5 flex-shrink-0">
             ${!pre
               ? `<span class="font-mono font-black text-3xl leading-none tracking-tight ${is19 ? 'text-amber-400' : isWinner ? 'text-white' : final ? 'text-slate-400' : 'text-white'}">${score}</span>`
-              : `<span class="text-slate-600 text-sm font-mono">\u2013</span>`}
+              : `<span class="text-slate-600 text-sm font-mono">&#8211;</span>`}
           </div>
         </div>
       `;
@@ -1600,7 +1766,7 @@ function renderGameCards(events) {
 
     return `
       <div class="${cardClass} rounded-2xl overflow-hidden transition-all">
-        <!-- Header row: status left, MATCHUP right \u2014 exactly like screenshot -->
+        <!-- Header row: status left, MATCHUP right &#8212; exactly like screenshot -->
         <div class="flex items-center justify-between px-4 py-2.5 border-b border-white/[0.06]">
           <span class="text-xs font-bold uppercase tracking-wider ${live ? 'text-red-400 flex items-center gap-1.5' : final ? 'text-slate-400' : 'text-slate-500'}">
             ${live ? '<span class="w-1.5 h-1.5 rounded-full bg-red-400 live-ring inline-block"></span>' : ''}
@@ -1621,11 +1787,11 @@ function renderGameCards(events) {
 function showNoGames() {
   document.getElementById('scores-container').innerHTML = `
     <div class="glass rounded-2xl p-12 text-center max-w-xl mx-auto">
-      <div class="text-5xl mb-4">\u{1F3C8}</div>
+      <div class="text-5xl mb-4">&#127944;</div>
       <h3 class="text-xl font-bold text-white mb-2">No Games This Week</h3>
-      <p class="text-slate-400 text-sm max-w-sm mx-auto mb-6">Scores automatically populate during the NFL regular season (September\u2013January). Check back on game days.</p>
+      <p class="text-slate-400 text-sm max-w-sm mx-auto mb-6">Scores automatically populate during the NFL regular season (September&#8211;January). Check back on game days.</p>
       <div class="bg-navy-950/60 border border-white/5 rounded-xl p-5 text-left">
-        <p class="text-amber-400 font-bold text-xs uppercase tracking-widest mb-3">Sample \u2014 What it looks like on game day</p>
+        <p class="text-amber-400 font-bold text-xs uppercase tracking-widest mb-3">Sample &#8212; What it looks like on game day</p>
         <div class="score-nineteen rounded-xl p-4">
           <div class="flex items-center justify-between text-xs text-slate-400 uppercase tracking-widest mb-3 font-bold">
             <span>Final</span><span>Matchup</span>
@@ -1634,9 +1800,9 @@ function showNoGames() {
             <div class="w-10 h-10 rounded-full bg-navy-700 flex items-center justify-center flex-shrink-0">
               <img src="https://a.espncdn.com/i/teamlogos/nfl/500/sf.png" class="w-7 h-7 object-contain" onerror="this.style.display='none'" alt="">
             </div>
-            <div class="flex-1"><p class="text-sm font-bold text-white">San Francisco</p><p class="text-xs text-slate-500">\u{1F464} Sarah M.</p></div>
+            <div class="flex-1"><p class="text-sm font-bold text-white">San Francisco</p><p class="text-xs text-slate-500">&#128100; Sarah M.</p></div>
             <span class="font-mono font-black text-3xl text-amber-400">19</span>
-            <span class="text-lg">\u{1F525}</span>
+            <span class="text-lg">&#128293;</span>
           </div>
           <div class="border-t border-white/5 mx-1"></div>
           <div class="flex items-center gap-3 py-2">
@@ -1671,13 +1837,13 @@ function switchDashTab(tab, btn) {
       btn.classList.add('border-b-2', 'border-amber-400');
     }
   }
-  // Scores always live on the overview tab now \u2014 fetch on any tab switch to keep data fresh
+  // Scores always live on the overview tab now &#8212; fetch on any tab switch to keep data fresh
   if (tab === 'overview') fetchScores();
   if (tab === 'account')  renderAccount();
   if (tab === 'admin')    switchAdminTab('invite'); // always start on first sub-tab
 }
 
-// \u2500\u2500\u2500 COUNTDOWN \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; COUNTDOWN &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function resetCountdown() {
   clearInterval(countdownInterval);
   countdown = 30;
@@ -1696,7 +1862,7 @@ function updateRing() {
   document.getElementById('refresh-countdown').textContent = `${countdown}s`;
 }
 
-// \u2500\u2500\u2500 NAVIGATION \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; NAVIGATION &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function showView(v) {
   document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
   document.getElementById('view-'+v).classList.add('active');
@@ -1708,7 +1874,7 @@ function showView(v) {
   }
   const nl = document.getElementById('nav-links');
   if (v === 'dashboard') {
-    nl.innerHTML = ''; // clean header when in dashboard \u2014 nav lives in sidebar
+    nl.innerHTML = ''; // clean header when in dashboard &#8212; nav lives in sidebar
     renderDashboard();
   } else if (currentUser) {
     nl.innerHTML = '';
@@ -1726,7 +1892,7 @@ async function signOut() {
   showView('landing');
 }
 
-// \u2500\u2500\u2500 AUTH \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; AUTH &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 let resetCode = null, resetEmail = null;
 
 function switchAuthTab(t) {
@@ -1754,7 +1920,7 @@ async function sendResetCode() {
     await auth.sendPasswordResetEmail(email);
     document.getElementById('forgot-email-display').textContent = email;
     showForgotStep(4); // Jump straight to the success screen
-    showToast('\u{1F4EC} Password reset email sent! Check your inbox.');
+    showToast('&#128236; Password reset email sent! Check your inbox.');
   } catch(e) {
     showAlert(al, e.message || 'Could not send reset email. Try again.');
   }
@@ -1822,13 +1988,17 @@ async function handleSignUp() {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('Enter a valid email'); return; }
   if (pw.length < 8) { showToast('Password must be at least 8 characters'); return; }
   if (pw !== pw2) { showToast('Passwords do not match'); return; }
+  const tosBox = document.getElementById('signup-tos');
+  if (tosBox && !tosBox.checked) { showToast('Please accept the Terms & Conditions to continue'); return; }
   try {
     showLoading(true);
     const cred = await auth.createUserWithEmailAndPassword(email, pw);
     const uid  = cred.user.uid;
     await db.collection('users').doc(uid).set({
       firstName: first, lastName: last,
-      email: email, leagueCode: '', createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      email: email, leagueCode: '',
+      acceptedTOS: true, acceptedTOSAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     currentUser = first;
     currentUserEmail = email;
@@ -1842,7 +2012,7 @@ async function handleSignUp() {
   }
 }
 
-// \u2500\u2500\u2500 ADMIN SUBNAV \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; ADMIN SUBNAV &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function switchAdminTab(tab) {
   ['invite','entry','teams'].forEach(t => {
     document.getElementById('apanel-'+t).classList.toggle('hidden', t!==tab);
@@ -1855,14 +2025,14 @@ function switchAdminTab(tab) {
   }
 }
 
-// \u2500\u2500\u2500 ACCOUNT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; ACCOUNT &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function renderAccount() {
   const nameParts = (currentUser||'').split(' ');
   document.getElementById('acct-first').value = nameParts[0]||'';
   document.getElementById('acct-last').value  = nameParts.slice(1).join(' ')||'';
   document.getElementById('acct-email').value = leagueData.members.find(m=>m.name===currentUser)?.email || '';
   document.getElementById('acct-entry-amount').textContent = '$' + (leagueData.seasonEntry||20);
-  // Payment notes \u2014 show Venmo if set, otherwise fallback text
+  // Payment notes &#8212; show Venmo if set, otherwise fallback text
   const venmo    = leagueData.venmo || '';
   const notesEl  = document.getElementById('acct-payment-notes');
   const venmoRow = document.getElementById('acct-venmo-row');
@@ -1930,7 +2100,7 @@ function generateCode(){
   return w[Math.floor(Math.random()*w.length)]+'-'+sfx;
 }
 
-// \u2500\u2500\u2500 CREATE LEAGUE FLOW \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; CREATE LEAGUE FLOW &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function showCreateStep(n) {
   [1, 2, 3].forEach(i => {
     const el = document.getElementById('create-step-' + i);
@@ -1944,7 +2114,7 @@ function showCreateStep(n) {
     const dot = document.getElementById('prog-' + i);
     if (!dot) return;
     dot.className = `w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i < n ? dotDone : i === n ? dotActive : dotInactive}`;
-    dot.textContent = i < n ? '\u2713' : i;
+    dot.textContent = i < n ? '&#10003;' : i;
   });
   const line1 = document.getElementById('prog-line-1');
   const line2 = document.getElementById('prog-line-2');
@@ -2078,8 +2248,8 @@ function goToLeagueInvite() {
 
 function goToDashboard() { showView('dashboard'); }
 
-function copyCode(){navigator.clipboard.writeText(createdLeagueCode||leagueData.code).catch(()=>{});showToast('\u2713 Code copied!');}
-function copyLink(){const code=createdLeagueCode||leagueData.code;const url=window.location.origin+window.location.pathname+'?code='+code;navigator.clipboard.writeText(url).catch(()=>{});showToast('\u2713 Link copied!');}
+function copyCode(){navigator.clipboard.writeText(createdLeagueCode||leagueData.code).catch(()=>{});showToast('&#10003; Code copied!');}
+function copyLink(){const code=createdLeagueCode||leagueData.code;const url=window.location.origin+window.location.pathname+'?code='+code;navigator.clipboard.writeText(url).catch(()=>{});showToast('&#10003; Link copied!');}
 
 async function joinLeague() {
   const code = (document.getElementById('join-code').value || '').trim().toUpperCase();
@@ -2096,6 +2266,19 @@ async function joinLeague() {
     }
     const data = snap.data();
     const alreadyMember = (data.members || []).some(m => m.uid === currentUserId || m.email === currentUserEmail);
+    // If this is a paid league and the user hasn't joined yet, show the disclaimer first
+    if (!alreadyMember && (data.seasonEntry || 0) > 0) {
+      showLoading(false);
+      _pendingJoinCode = code;
+      _pendingJoinData = data;
+      const commName = data.commissionerEmail || 'your commissioner';
+      document.getElementById('disclaimer-commissioner').textContent = commName;
+      document.getElementById('disclaimer-commissioner-inline').textContent = commName;
+      document.getElementById('disclaimer-entry-fee').textContent = '$' + data.seasonEntry;
+      document.getElementById('disclaimer-confirm').checked = false;
+      document.getElementById('league-disclaimer-modal').classList.remove('hidden');
+      return;
+    }
     if (!alreadyMember) {
       if ((data.members || []).length >= 32) {
         showLoading(false);
@@ -2129,7 +2312,7 @@ async function joinLeague() {
   }
 }
 
-// \u2500\u2500\u2500 LOAD LEAGUE FROM FIRESTORE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; LOAD LEAGUE FROM FIRESTORE &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 async function loadLeague(code) {
   const snap = await db.collection('leagues').doc(code).get();
   if (!snap.exists) return;
@@ -2148,7 +2331,7 @@ async function loadLeague(code) {
   createdLeagueCode         = code;
 }
 
-// \u2500\u2500\u2500 AUTH STATE OBSERVER \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; AUTH STATE OBSERVER &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 auth.onAuthStateChanged(async (user) => {
   if (user) {
     currentUserId = user.uid;
@@ -2159,8 +2342,10 @@ auth.onAuthStateChanged(async (user) => {
         const ud = userDoc.data();
         currentUser = (ud.firstName || '') + (ud.lastName ? ' ' + ud.lastName : '') || user.email.split('@')[0];
         if (ud.leagueCode) await loadLeague(ud.leagueCode);
+        _needsTOSAcceptance = !ud.acceptedTOS;
       } else {
         currentUser = user.email.split('@')[0];
+        _needsTOSAcceptance = true;
       }
     } catch(e) {
       console.error('onAuthStateChanged error:', e);
@@ -2171,13 +2356,17 @@ auth.onAuthStateChanged(async (user) => {
     if (leagueData.code) {
       showView('dashboard');
     } else if (pendingCode) {
-      // Invite link \u2014 pre-fill code and show the join view
+      // Invite link &#8212; pre-fill code and show the join view
       const jc = document.getElementById('join-code');
       if (jc) jc.value = pendingCode.toUpperCase();
       showView('join-league');
     } else {
-      // Signed in but no league yet \u2014 show join/create
+      // Signed in but no league yet &#8212; show join/create
       showView('landing');
+    }
+    // Show TOS modal if user hasn't accepted yet (after navigation so it overlays the page)
+    if (_needsTOSAcceptance) {
+      document.getElementById('tos-modal').classList.remove('hidden');
     }
   } else {
     currentUser = null; currentUserId = null; currentUserEmail = '';
@@ -2187,7 +2376,7 @@ auth.onAuthStateChanged(async (user) => {
   }
 });
 
-// \u2500\u2500\u2500 DASHBOARD \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; DASHBOARD &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function weeklyShare(lg, season) {
   const total = (lg.seasonEntry || 20) * lg.members.length;
   const weeks = SEASON_CONFIG[season || getSelectedSeason()]?.weeks || 18;
@@ -2219,7 +2408,7 @@ function renderDashboard() {
   document.getElementById('admin-code').textContent         = lg.code;
   document.getElementById('admin-member-count').textContent = lg.members.length;
   document.getElementById('admin-entry-input').value        = lg.seasonEntry || 20;
-  document.getElementById('admin-total-pot').textContent    = fmtPot(totalPot) + ' \u00B7 ' + fmtPot(shareAmt) + '/wk';
+  document.getElementById('admin-total-pot').textContent    = fmtPot(totalPot) + ' &#183; ' + fmtPot(shareAmt) + '/wk';
   if (!isCommissioner) {
     document.getElementById('admin-link').classList.add('hidden');
     document.getElementById('admin-link-mob').classList.add('hidden');
@@ -2242,17 +2431,17 @@ function renderStandings() {
 
   document.getElementById('standings-table').innerHTML = sorted.map((m, i) => {
     const s = liveScores[m.team];
-    // Payout: use stored payout if set, otherwise estimate wins \u00D7 base weekly share
+    // Payout: use stored payout if set, otherwise estimate wins &#215; base weekly share
     const payout = m.payout != null ? m.payout : m.wins * shareAmt;
     const payoutCell = payout > 0
       ? `<span class="text-green-400 font-bold">${fmtPot(payout)}</span>`
-      : '<span class="text-slate-600">\u2014</span>';
+      : '<span class="text-slate-600">&#8212;</span>';
 
     return `<tr class="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
       <td class="px-6 py-3.5 text-sm font-bold ${i < 3 ? 'text-amber-400' : 'text-slate-600'}">${i + 1}</td>
       <td class="px-6 py-3.5 text-sm font-semibold text-white">${m.name}</td>
       <td class="px-6 py-3.5 text-sm text-slate-400 hidden sm:table-cell">${m.team}</td>
-      <td class="px-6 py-3.5">${m.wins > 0 ? `<span class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">\u{1F3C6} ${m.wins}</span>` : '<span class="text-slate-600 text-sm">0</span>'}</td>
+      <td class="px-6 py-3.5">${m.wins > 0 ? `<span class="inline-flex items-center gap-1 bg-amber-500/10 text-amber-400 text-xs font-bold px-2.5 py-1 rounded-full">&#127942; ${m.wins}</span>` : '<span class="text-slate-600 text-sm">0</span>'}</td>
       <td class="px-6 py-3.5 hidden md:table-cell">${payoutCell}</td>
     </tr>`;
   }).join('');
@@ -2268,7 +2457,7 @@ function renderTeams() {
         <div class="w-2 h-2 rounded-full flex-shrink-0 ${hasScore ? s.status === 'live' ? 'bg-red-400 live-ring' : is19 ? 'bg-amber-400' : 'bg-green-500' : 'bg-slate-700'}"></div>
         <div class="min-w-0 flex-1">
           <p class="text-sm font-semibold text-white truncate">${m.team}</p>
-          <p class="text-xs text-slate-500 truncate">\u{1F464} ${m.name}${hasScore ? ` \u00B7 <span class="${is19 ? 'text-amber-400 font-bold' : 'text-slate-400'}">${s.score} pts</span>` : ''}</p>
+          <p class="text-xs text-slate-500 truncate">&#128100; ${m.name}${hasScore ? ` &#183; <span class="${is19 ? 'text-amber-400 font-bold' : 'text-slate-400'}">${s.score} pts</span>` : ''}</p>
         </div>
       </div>
     `;
@@ -2276,7 +2465,7 @@ function renderTeams() {
 }
 
 function renderAdminAssign() {
-  // Build a map of team \u2192 count to find duplicates
+  // Build a map of team &#8594; count to find duplicates
   const teamCount = {};
   leagueData.members.forEach(m => {
     if (m.team && m.team !== 'Unassigned') {
@@ -2293,7 +2482,7 @@ function renderAdminAssign() {
       ? 'bg-red-900/40 border border-red-500/50 text-red-300 text-xs px-2 py-1.5 rounded-lg flex-shrink-0 max-w-[180px]'
       : 'bg-navy-950/60 border border-white/10 text-slate-300 text-xs px-2 py-1.5 rounded-lg flex-shrink-0 max-w-[180px]';
     const nameClass = isDupe ? 'text-red-300' : 'text-white';
-    const dupeWarning = isDupe ? `<span class="text-red-400 text-xs flex-shrink-0" title="Team already taken">\u26A0</span>` : '';
+    const dupeWarning = isDupe ? `<span class="text-red-400 text-xs flex-shrink-0" title="Team already taken">&#9888;</span>` : '';
 
     return `
       <div class="flex items-center gap-3 py-2 ${rowClass} transition-all">
@@ -2301,11 +2490,11 @@ function renderAdminAssign() {
         <span class="flex-1 text-sm font-medium ${nameClass} truncate">${m.name}</span>
         ${dupeWarning}
         <select onchange="updateAssignment(${i},this.value)" class="${selectClass}" transition-all>
-          <option value="Unassigned" ${!m.team || m.team === 'Unassigned' ? 'selected' : ''}>\u2014 Unassigned \u2014</option>
+          <option value="Unassigned" ${!m.team || m.team === 'Unassigned' ? 'selected' : ''}>&#8212; Unassigned &#8212;</option>
           ${NFL_TEAMS.map(t => {
             const takenByOther = teamCount[t] > 0 && t !== m.team;
             const takenBySelf = t === m.team;
-            return `<option value="${t}" ${takenBySelf ? 'selected' : ''} ${takenByOther ? 'disabled' : ''}>${t}${takenByOther ? ' \u2717' : ''}</option>`;
+            return `<option value="${t}" ${takenBySelf ? 'selected' : ''} ${takenByOther ? 'disabled' : ''}>${t}${takenByOther ? ' &#10007;' : ''}</option>`;
           }).join('')}
         </select>
       </div>
@@ -2316,7 +2505,7 @@ function renderAdminAssign() {
   const dupes = Object.entries(teamCount).filter(([,count]) => count > 1);
   const existingWarning = document.getElementById('assign-dupe-warning');
   if (dupes.length) {
-    const msg = `\u26A0 Duplicate teams: ${dupes.map(([t]) => t).join(', ')} \u2014 each team can only have one owner.`;
+    const msg = `&#9888; Duplicate teams: ${dupes.map(([t]) => t).join(', ')} &#8212; each team can only have one owner.`;
     if (existingWarning) {
       existingWarning.textContent = msg;
       existingWarning.classList.remove('hidden');
@@ -2349,7 +2538,7 @@ function addOwner() {
   if (!first) { showOwnerAlert(al, 'First name is required.'); return; }
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showOwnerAlert(al, 'Please enter a valid email address.'); return; }
   if (!email && !phone) { showOwnerAlert(al, 'Please enter at least an email or phone number.'); return; }
-  if (leagueData.members.length >= 32) { showOwnerAlert(al, 'League is full \u2014 32 members maximum.'); return; }
+  if (leagueData.members.length >= 32) { showOwnerAlert(al, 'League is full &#8212; 32 members maximum.'); return; }
   if (email && leagueData.members.some(m => m.email && m.email.toLowerCase() === email.toLowerCase())) {
     showOwnerAlert(al, 'That email belongs to an existing member.'); return;
   }
@@ -2373,7 +2562,7 @@ function addOwner() {
   // Add to the invite send-list so commissioner can email/SMS immediately
   addToInviteList([{ name: fullName, email, phone }]);
   renderPendingInvites();
-  showToast('\u2713 ' + fullName + ' added to pending invites');
+  showToast('&#10003; ' + fullName + ' added to pending invites');
 }
 
 function removeOwner(i) {
@@ -2408,13 +2597,13 @@ function renderOwnersList() {
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-white truncate">${m.name}</p>
         <div class="flex items-center gap-3 mt-0.5 flex-wrap">
-          ${m.email ? `<span class="text-xs text-slate-500 truncate max-w-[180px]">\u2709 ${m.email}</span>` : ''}
-          ${m.phone ? `<span class="text-xs text-slate-500">\u{1F4DE} ${m.phone}</span>` : ''}
+          ${m.email ? `<span class="text-xs text-slate-500 truncate max-w-[180px]">&#9993; ${m.email}</span>` : ''}
+          ${m.phone ? `<span class="text-xs text-slate-500">&#128222; ${m.phone}</span>` : ''}
         </div>
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
         <span class="text-xs ${m.team && m.team !== 'Unassigned' ? 'text-amber-400 bg-amber-500/10 border border-amber-500/20' : 'text-slate-500 bg-white/5 border border-white/10'} px-2 py-0.5 rounded-full hidden sm:inline-block truncate max-w-[120px]">${m.team && m.team !== 'Unassigned' ? m.team : 'No team'}</span>
-        ${isCommissioner ? `<button onclick="togglePaid(${i})" class="text-xs px-2.5 py-1 rounded-lg font-semibold transition-all ${m.paid ? 'bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25' : 'bg-white/5 border border-white/10 text-slate-500 hover:bg-white/10'}" title="${m.paid ? 'Mark as unpaid' : 'Mark as paid'}">${m.paid ? '\u2713 Paid' : 'Unpaid'}</button>` : ''}
+        ${isCommissioner ? `<button onclick="togglePaid(${i})" class="text-xs px-2.5 py-1 rounded-lg font-semibold transition-all ${m.paid ? 'bg-green-500/15 border border-green-500/30 text-green-400 hover:bg-green-500/25' : 'bg-white/5 border border-white/10 text-slate-500 hover:bg-white/10'}" title="${m.paid ? 'Mark as unpaid' : 'Mark as paid'}">${m.paid ? '&#10003; Paid' : 'Unpaid'}</button>` : ''}
         <button onclick="removeOwner(${i})" class="opacity-0 group-hover:opacity-100 transition-opacity w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center flex-shrink-0" title="Remove">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
         </button>
@@ -2439,8 +2628,8 @@ function renderPendingInvites() {
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-white truncate">${inv.name}</p>
         <div class="flex items-center gap-3 mt-0.5 flex-wrap">
-          ${inv.email ? `<span class="text-xs text-slate-500 truncate max-w-[180px]">\u2709 ${inv.email}</span>` : ''}
-          ${inv.phone ? `<span class="text-xs text-slate-500">\u{1F4DE} ${inv.phone}</span>` : ''}
+          ${inv.email ? `<span class="text-xs text-slate-500 truncate max-w-[180px]">&#9993; ${inv.email}</span>` : ''}
+          ${inv.phone ? `<span class="text-xs text-slate-500">&#128222; ${inv.phone}</span>` : ''}
         </div>
       </div>
       <div class="flex items-center gap-2 flex-shrink-0">
@@ -2473,10 +2662,10 @@ function togglePaid(i) {
   }
   renderOwnersList();
   const m = leagueData.members[i];
-  showToast(m.paid ? '\u2713 ' + m.name + ' marked as paid' : m.name + ' marked as unpaid');
+  showToast(m.paid ? '&#10003; ' + m.name + ' marked as paid' : m.name + ' marked as unpaid');
 }
 
-// \u2500\u2500\u2500 INVITE SYSTEM \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; INVITE SYSTEM &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 let inviteList = []; // { name, email, phone, selected }
 
 function showAddManual() {
@@ -2500,12 +2689,12 @@ async function importContacts() {
         phone: (c.tel   && c.tel[0])   || '',
       })).filter(p => p.email || p.phone);
       addToInviteList(people);
-      showToast(`\u2713 ${people.length} contacts imported`);
+      showToast(`&#10003; ${people.length} contacts imported`);
     } catch (e) {
       if (e.name !== 'AbortError') showToast('Could not access contacts.');
     }
   } else {
-    // Not supported \u2014 show a helpful modal explaining alternatives
+    // Not supported &#8212; show a helpful modal explaining alternatives
     showContactsNotSupported();
   }
 }
@@ -2519,7 +2708,7 @@ function showContactsNotSupported() {
   el.innerHTML = `
     <p class="font-semibold mb-1">Contact access requires a mobile browser</p>
     <p class="text-amber-400/70">The Contact Picker API works on Chrome for Android and some mobile browsers. On desktop or iOS Safari, use <strong class="text-amber-300">Add Manually</strong> or paste a list of emails below.</p>
-    <button onclick="showPasteEmails()" class="mt-2 underline text-amber-400 hover:text-amber-300 transition-colors">Paste emails instead \u2192</button>
+    <button onclick="showPasteEmails()" class="mt-2 underline text-amber-400 hover:text-amber-300 transition-colors">Paste emails instead &#8594;</button>
   `;
   document.querySelector('#apanel-invite .bg-navy-950\\/50').appendChild(el);
 }
@@ -2546,7 +2735,7 @@ function importPastedEmails() {
   const people = emails.map(email => ({ name: email.split('@')[0], email, phone: '' }));
   addToInviteList(people);
   document.getElementById('paste-email-area').classList.add('hidden');
-  showToast(`\u2713 ${people.length} emails imported`);
+  showToast(`&#10003; ${people.length} emails imported`);
 }
 
 function addToInviteList(people) {
@@ -2584,7 +2773,7 @@ function renderInviteList() {
         class="w-4 h-4 rounded accent-amber-500 flex-shrink-0"/>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-white truncate">${p.name}</p>
-        <p class="text-xs text-slate-500 truncate">${[p.email, p.phone].filter(Boolean).join(' \u00B7 ') || 'No contact info'}</p>
+        <p class="text-xs text-slate-500 truncate">${[p.email, p.phone].filter(Boolean).join(' &#183; ') || 'No contact info'}</p>
       </div>
       ${p.invited ? `<span class="text-xs bg-green-500/10 border border-green-500/20 text-green-400 px-2 py-0.5 rounded-full flex-shrink-0">Sent</span>` : ''}
       ${p.email  ? '<svg class="w-3.5 h-3.5 text-blue-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" /></svg>' : ''}
@@ -2610,12 +2799,12 @@ function updateInviteCount() {
 }
 
 function getInviteMessage() {
-  const code  = leagueData.code || '\u2014';
+  const code  = leagueData.code || '&#8212;';
   const link  = `${window.location.origin}${window.location.pathname}?code=${code}`;
   const owner = currentUser || 'Your commissioner';
   return {
     subject: `${owner} invited you to ${leagueData.name || '19 Pool'}!`,
-    body: `Hey! ${owner} invited you to join ${leagueData.name || '19 Pool'} \u2014 the NFL score game where you win the weekly pot by scoring exactly 19 points.\n\nJoin with invite code: ${code}\nOr tap this link: ${link}\n\nSee you in the pool!`
+    body: `Hey! ${owner} invited you to join ${leagueData.name || '19 Pool'} &#8212; the NFL score game where you win the weekly pot by scoring exactly 19 points.\n\nJoin with invite code: ${code}\nOr tap this link: ${link}\n\nSee you in the pool!`
   };
 }
 
@@ -2700,7 +2889,7 @@ async function sendInAppEmail() {
   const btn   = document.getElementById('email-send-btn');
   const label = document.getElementById('email-send-label');
   btn.disabled = true;
-  label.textContent = 'Sending\u2026';
+  label.textContent = 'Sending&#8230;';
   btn.classList.add('opacity-60');
 
   try {
@@ -2721,9 +2910,9 @@ async function sendInAppEmail() {
     closeEmailComposer();
     selected.forEach(p => { p.invited = true; });
     renderInviteList();
-    showToast(`\u2713 ${selected.length} email${selected.length > 1 ? 's' : ''} sent!`);
+    showToast(`&#10003; ${selected.length} email${selected.length > 1 ? 's' : ''} sent!`);
   } catch (e) {
-    showToast('\u274C Email failed: ' + (e.message || 'Unknown error'));
+    showToast('&#10060; Email failed: ' + (e.message || 'Unknown error'));
   } finally {
     btn.disabled = false;
     label.textContent = `Send to ${selected.length}`;
@@ -2731,7 +2920,7 @@ async function sendInAppEmail() {
   }
 }
 
-// \u2500\u2500\u2500 JOIN AS PLAYER TOGGLE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; JOIN AS PLAYER TOGGLE &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 let joinAsPlayer = false;
 
 function toggleJoinAsPlayer() {
@@ -2754,7 +2943,7 @@ function sendBulkSMS() {
   const sep     = /iPhone|iPad|iPod/i.test(navigator.userAgent) ? '&' : '?';
   const url     = `sms:${numbers}${sep}body=${encodeURIComponent(body)}`;
   window.location.href = url;
-  showToast(`\u2713 Opening Messages for ${selected.length} players`);
+  showToast(`&#10003; Opening Messages for ${selected.length} players`);
 }
 
 function showOwnerAlert(el, msg) {
@@ -2765,7 +2954,7 @@ function showOwnerAlert(el, msg) {
 
 function saveSeasonEntry() {
   const val = parseInt(document.getElementById('admin-entry-input').value);
-  if (!val || val < 1) { showToast('\u26A0\uFE0F Enter a valid amount'); return; }
+  if (!val || val < 1) { showToast('&#9888;&#65039; Enter a valid amount'); return; }
   const lg = currentLeague || leagueData;
   lg.seasonEntry = val;
   leagueData.seasonEntry = val;
@@ -2778,8 +2967,8 @@ function saveSeasonEntry() {
   document.getElementById('stat-entry').textContent = fmtPot(share);
   document.getElementById('weekly-pot-display').textContent    = fmtPot(share);
   document.getElementById('standings-pot-display').textContent = fmtPot(share);
-  document.getElementById('admin-total-pot').textContent = fmtPot(totalPot) + ' \u00B7 ' + fmtPot(share) + '/wk';
-  showToast('\u2713 Entry $' + val + ' \u00B7 Total ' + fmtPot(totalPot) + ' \u00B7 Weekly ' + fmtPot(share));
+  document.getElementById('admin-total-pot').textContent = fmtPot(totalPot) + ' &#183; ' + fmtPot(share) + '/wk';
+  showToast('&#10003; Entry $' + val + ' &#183; Total ' + fmtPot(totalPot) + ' &#183; Weekly ' + fmtPot(share));
 
   // Persist to Firestore
   if (leagueData.code && isCommissioner) {
@@ -2794,14 +2983,14 @@ function updateEntryPreview() {
   const weeks    = SEASON_CONFIG[getSelectedSeason()]?.weeks || 18;
   const share    = totalPot / weeks;
   document.getElementById('admin-total-pot').textContent =
-    fmtPot(totalPot) + ' \u00B7 ' + fmtPot(share) + '/wk';
+    fmtPot(totalPot) + ' &#183; ' + fmtPot(share) + '/wk';
 }
 
 function saveVenmo() {
   const val = document.getElementById('admin-venmo-input').value.trim();
   leagueData.venmo = val;
   if (currentLeague) currentLeague.venmo = val;
-  showToast(val ? '\u2713 Venmo @' + val + ' saved' : '\u2713 Venmo info cleared');
+  showToast(val ? '&#10003; Venmo @' + val + ' saved' : '&#10003; Venmo info cleared');
 
   // Persist to Firestore
   if (leagueData.code && isCommissioner) {
@@ -2810,11 +2999,11 @@ function saveVenmo() {
   }
 }
 
-function randomAssign(){if(!confirm('Randomly assign all 32 NFL teams to your members?'))return;const s=[...NFL_TEAMS].sort(()=>Math.random()-0.5);leagueData.members.forEach((m,i)=>m.team=s[i]);renderAdminAssign();renderTeams();renderStandings();showToast('\u{1F3B2} Teams randomly assigned!');}
+function randomAssign(){if(!confirm('Randomly assign all 32 NFL teams to your members?'))return;const s=[...NFL_TEAMS].sort(()=>Math.random()-0.5);leagueData.members.forEach((m,i)=>m.team=s[i]);renderAdminAssign();renderTeams();renderStandings();showToast('&#127922; Teams randomly assigned!');}
 function resetAssignments(){leagueData.members.forEach(m=>m.team='Unassigned');renderAdminAssign();renderTeams();showToast('Assignments reset.');}
 
 
-// \u2500\u2500\u2500 UTILS \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; UTILS &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 function showAlert(el,msg){el.textContent=msg;el.classList.remove('hidden');setTimeout(()=>el.classList.add('hidden'),5000);}
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.opacity='1';setTimeout(()=>t.style.opacity='0',2500);}
 function showLoading(on) {
@@ -2832,10 +3021,95 @@ function showLoading(on) {
 function buildMarquee(){
   const track=document.getElementById('marquee-track');
   const doubled=[...NFL_TEAMS,...NFL_TEAMS];
-  track.innerHTML=doubled.map(t=>`<span class="text-slate-500 hover:text-amber-400 transition-colors text-sm font-semibold tracking-wider uppercase whitespace-nowrap px-6">\u{1F3C8} ${t}</span>`).join('');
+  track.innerHTML=doubled.map(t=>`<span class="text-slate-500 hover:text-amber-400 transition-colors text-sm font-semibold tracking-wider uppercase whitespace-nowrap px-6">&#127944; ${t}</span>`).join('');
 }
 
-// \u2500\u2500\u2500 EXPOSE TO WINDOW (required for onclick attrs with Tailwind v4 CDN) \u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; EXPOSE TO WINDOW (required for onclick attrs with Tailwind v4 CDN) &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+// &#9472;&#9472;&#9472; TERMS & CONDITIONS &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+let _previousView = 'landing';
+let _pendingJoinCode = null;
+let _pendingJoinData = null;
+let _needsTOSAcceptance = false;
+
+function showTerms() {
+  _previousView = document.querySelector('[id^="view-"]:not(.hidden)')?.id?.replace('view-','') || 'landing';
+  document.querySelectorAll('[id^="view-"]').forEach(v => v.classList.add('hidden'));
+  document.getElementById('view-terms').classList.remove('hidden');
+}
+
+function closeTerms() {
+  document.getElementById('view-terms').classList.add('hidden');
+  showView(_previousView || 'landing');
+}
+
+function showTermsFromModal() {
+  // Open terms while keeping tos-modal open beneath it
+  document.getElementById('view-terms').classList.remove('hidden');
+}
+
+async function acceptTOS() {
+  document.getElementById('tos-modal').classList.add('hidden');
+  _needsTOSAcceptance = false;
+  if (currentUserId) {
+    try {
+      await db.collection('users').doc(currentUserId).update({
+        acceptedTOS: true,
+        acceptedTOSAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(e) { console.error('acceptTOS error:', e); }
+  }
+}
+
+function closeLeagueDisclaimer() {
+  document.getElementById('league-disclaimer-modal').classList.add('hidden');
+  _pendingJoinCode = null;
+  _pendingJoinData = null;
+}
+
+async function completeJoinLeague() {
+  const confirmBox = document.getElementById('disclaimer-confirm');
+  if (!confirmBox.checked) { showToast('Please check the box to confirm you understand'); return; }
+  document.getElementById('league-disclaimer-modal').classList.add('hidden');
+
+  const code = _pendingJoinCode;
+  const data  = _pendingJoinData;
+  _pendingJoinCode = null;
+  _pendingJoinData = null;
+
+  const al = document.getElementById('join-alert');
+  try {
+    showLoading(true);
+    if ((data.members || []).length >= 32) {
+      showLoading(false);
+      showAlert(al, 'This league is full (32/32 players).'); return;
+    }
+    const nameParts = (currentUser || '').split(' ');
+    const newMember = {
+      uid: currentUserId, name: currentUser,
+      firstName: nameParts[0], lastName: nameParts.slice(1).join(' '),
+      email: currentUserEmail, phone: '', team: 'Unassigned', wins: 0, closest: 0
+    };
+    await db.collection('leagues').doc(code).update({
+      members: firebase.firestore.FieldValue.arrayUnion(newMember)
+    });
+    await db.collection('users').doc(currentUserId).update({ leagueCode: code });
+    // Remove from pending invites if pre-invited
+    const invitedArr = data.invited || [];
+    const stillInvited = invitedArr.filter(inv => (inv.email || '').toLowerCase() !== currentUserEmail.toLowerCase());
+    if (stillInvited.length !== invitedArr.length) {
+      await db.collection('leagues').doc(code).update({ invited: stillInvited });
+    }
+    await loadLeague(code);
+    showLoading(false);
+    document.getElementById('join-league-name').textContent = leagueData.name;
+    document.getElementById('join-step-1').classList.add('hidden');
+    document.getElementById('join-step-2').classList.remove('hidden');
+  } catch(e) {
+    showLoading(false);
+    showAlert(al, e.message || 'Could not join league. Try again.');
+  }
+}
+
 Object.assign(window, {
   showView, signOut, switchAuthTab, handleSignIn, handleSignUp,
   createLeague, copyCode, copyLink, goToDashboard, goToLeagueInvite,
@@ -2854,8 +3128,9 @@ Object.assign(window, {
   openEmailComposer, closeEmailComposer, sendInAppEmail,
   sendBulkSMS,
   renderPendingInvites, removeInvite,
+  showTerms, closeTerms, showTermsFromModal, acceptTOS, closeLeagueDisclaimer, completeJoinLeague,
 });
-// \u2500\u2500\u2500 INIT \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+// &#9472;&#9472;&#9472; INIT &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
 buildMarquee();
 buildWeekDropdown();
 document.querySelectorAll('.dash-tab').forEach(t => t.style.display = 'none');
