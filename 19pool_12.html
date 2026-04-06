@@ -2526,6 +2526,10 @@ function updateAssignment(i, team) {
   renderAdminAssign();
   renderTeams();
   renderStandings();
+  if (leagueData.code && isCommissioner) {
+    db.collection('leagues').doc(leagueData.code).update({ members: leagueData.members })
+      .catch(e => console.error('updateAssignment Firestore error:', e));
+  }
 }
 
 function addOwner() {
@@ -2999,8 +3003,8 @@ function saveVenmo() {
   }
 }
 
-function randomAssign(){if(!confirm('Randomly assign all 32 NFL teams to your members?'))return;const s=[...NFL_TEAMS].sort(()=>Math.random()-0.5);leagueData.members.forEach((m,i)=>m.team=s[i]);renderAdminAssign();renderTeams();renderStandings();showToast('&#127922; Teams randomly assigned!');}
-function resetAssignments(){leagueData.members.forEach(m=>m.team='Unassigned');renderAdminAssign();renderTeams();showToast('Assignments reset.');}
+function randomAssign(){if(!confirm('Randomly assign all 32 NFL teams to your members?'))return;const s=[...NFL_TEAMS].sort(()=>Math.random()-0.5);leagueData.members.forEach((m,i)=>m.team=s[i]);renderAdminAssign();renderTeams();renderStandings();showToast('&#127922; Teams randomly assigned!');if(leagueData.code&&isCommissioner){db.collection('leagues').doc(leagueData.code).update({members:leagueData.members}).catch(e=>console.error('randomAssign Firestore error:',e));}}
+function resetAssignments(){leagueData.members.forEach(m=>m.team='Unassigned');renderAdminAssign();renderTeams();showToast('Assignments reset.');if(leagueData.code&&isCommissioner){db.collection('leagues').doc(leagueData.code).update({members:leagueData.members}).catch(e=>console.error('resetAssignments Firestore error:',e));}}
 
 
 // &#9472;&#9472;&#9472; UTILS &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
