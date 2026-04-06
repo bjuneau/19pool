@@ -1022,6 +1022,17 @@
 
         <!-- Entry Fee panel -->
         <div id="apanel-entry" class="hidden">
+          <!-- League Name -->
+          <div class="glass rounded-2xl p-6 mb-5">
+            <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-1">League Name</h3>
+            <p class="text-slate-400 text-sm mb-4">Shown at the top of the dashboard for all members.</p>
+            <div class="flex items-center gap-3">
+              <input type="text" id="admin-league-name-input" maxlength="40" placeholder="e.g. Sunday Funday Pool 2025"
+                class="flex-1 bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-4 py-3 rounded-xl text-sm font-semibold"/>
+              <button onclick="saveLeagueName()" class="bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-6 py-3 rounded-full text-sm transition-all flex-shrink-0">Save</button>
+            </div>
+          </div>
+          <!-- Season Entry Fee -->
           <div class="glass rounded-2xl p-6 mb-5">
             <h3 class="text-sm font-bold text-white uppercase tracking-wider mb-1">Season Entry Fee</h3>
             <p class="text-slate-400 text-sm mb-4">The amount each member pays to participate this season.</p>
@@ -2020,6 +2031,8 @@ function switchAdminTab(tab) {
     if (btn) btn.className = `admin-tab flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-sm font-semibold transition-all whitespace-nowrap ${t===tab ? 'bg-navy-700 text-white' : 'text-slate-400 hover:text-white'}`;
   });
   if (tab === 'entry') {
+    const ni = document.getElementById('admin-league-name-input');
+    if (ni) ni.value = leagueData.name || '';
     const vi = document.getElementById('admin-venmo-input');
     if (vi) vi.value = leagueData.venmo || '';
   }
@@ -3003,6 +3016,19 @@ function saveVenmo() {
   }
 }
 
+function saveLeagueName() {
+  const val = document.getElementById('admin-league-name-input').value.trim();
+  if (!val) { showToast('&#9888;&#65039; League name cannot be empty'); return; }
+  leagueData.name = val;
+  if (currentLeague) currentLeague.name = val;
+  document.getElementById('dash-league-name').textContent = val;
+  showToast('&#10003; League name saved');
+  if (leagueData.code && isCommissioner) {
+    db.collection('leagues').doc(leagueData.code).update({ name: val })
+      .catch(e => console.error('saveLeagueName Firestore error:', e));
+  }
+}
+
 function randomAssign(){if(!confirm('Randomly assign all 32 NFL teams to your members?'))return;const s=[...NFL_TEAMS].sort(()=>Math.random()-0.5);leagueData.members.forEach((m,i)=>m.team=s[i]);renderAdminAssign();renderTeams();renderStandings();showToast('&#127922; Teams randomly assigned!');if(leagueData.code&&isCommissioner){db.collection('leagues').doc(leagueData.code).update({members:leagueData.members}).catch(e=>console.error('randomAssign Firestore error:',e));}}
 function resetAssignments(){leagueData.members.forEach(m=>m.team='Unassigned');renderAdminAssign();renderTeams();showToast('Assignments reset.');if(leagueData.code&&isCommissioner){db.collection('leagues').doc(leagueData.code).update({members:leagueData.members}).catch(e=>console.error('resetAssignments Firestore error:',e));}}
 
@@ -3118,7 +3144,7 @@ Object.assign(window, {
   showView, signOut, switchAuthTab, handleSignIn, handleSignUp,
   createLeague, copyCode, copyLink, goToDashboard, goToLeagueInvite,
   joinLeague, switchDashTab, fetchScores, onSeasonChange,
-  saveSeasonEntry, updateEntryPreview, saveVenmo,
+  saveSeasonEntry, updateEntryPreview, saveVenmo, saveLeagueName,
   randomAssign, resetAssignments, updateAssignment,
   addOwner, removeOwner, togglePaid, showFetchError,
   sendResetCode, verifyResetCode, resetPassword, showForgotStep, updatePwStrength,
