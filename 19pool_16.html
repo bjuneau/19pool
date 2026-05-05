@@ -2849,10 +2849,8 @@ auth.onAuthStateChanged(async (user) => {
     if (leagueData.code) {
       showView('dashboard');
     } else if (pendingCode) {
-      // Invite link — pre-fill code and show the join view
-      const jc = document.getElementById('join-code');
-      if (jc) jc.value = pendingCode.toUpperCase();
-      showView('join-league');
+      // Invite link — stay on the invite landing so the user sees the personalised page
+      showView('invite-landing');
     } else {
       // Signed in but no league yet — show join/create
       showView('landing');
@@ -2865,7 +2863,13 @@ auth.onAuthStateChanged(async (user) => {
     currentUser = null; currentUserId = null; currentUserEmail = '';
     isCommissioner = false; currentLeague = null;
     leagueData.members = []; leagueData.code = ''; leagueData.commissioner = '';
-    showView('landing');
+    // If visiting an invite link while signed out, stay on the invite landing
+    const pendingCode = new URLSearchParams(window.location.search).get('code');
+    if (pendingCode) {
+      showView('invite-landing');
+    } else {
+      showView('landing');
+    }
   }
 });
 
