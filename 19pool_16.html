@@ -2848,66 +2848,187 @@ function acceptInvite() {
   showView('join-league');
 }
 
+// ─── JOIN HELPERS ─────────────────────────────────────────────
+// Creates a new account or signs into an existing one using the
+// join form's name/email/password fields. Updates currentUserId /
+// currentUser / currentUserEmail on success. Returns true on
+// success, false (with an alert already shown) on failure.
+async function _ensureAccountForJoin(code, al) {
+  if (currentUserId) return true; // already signed in
+
+  const name  = (document.getElementById('join-name').value  || '').trim();
+  const email = (document.getElementById('join-email').value  || '').trim();
+  const pw    = (document.getElementById('join-password').value || '');
+
+  // Guard: these should have been validated already, but double-check
+  if (!name || !email || pw.length < 8) {
+    showAlert(al, 'Please complete all fields before joining.'); return false;
+  }
+
+  const nameParts = name.split(' ');
+  const firstName = nameParts[0];
+  const lastName  = nameParts.slice(1).join(' ');
+
+  try {
+    // Attempt to create a new account
+    const cred = await auth.createUserWithEmailAndPassword(email, pw);
+    const uid  = cred.user.uid;
+    await db.collection('users').doc(uid).set({
+      firstName, lastName, email, leagueCode: code,
+      acceptedTOS: true,
+      acceptedTOSVersion: CURRENT_TOS_VERSION,
+      acceptedTOSAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt:    firebase.firestore.FieldValue.serverTimestamp()
+    });
+    currentUserId    = uid;
+    currentUserEmail = email;
+    currentUser      = firstName + (lastName ? ' ' + lastName : '');
+    return true;
+  } catch(createErr) {
+    if (createErr.code === 'auth/email-already-in-use') {
+      // Email exists — try signing in with the supplied password
+      try {
+        const cred = await auth.signInWithEmailAndPassword(email, pw);
+        currentUserId    = cred.user.uid;
+        currentUserEmail = email;
+        try {
+          const udSnap = await db.collection('users').doc(cred.user.uid).get();
+          if (udSnap.exists) {
+            const ud = udSnap.data();
+            currentUser = (ud.firstName || '') + (ud.lastName ? ' ' + ud.lastName : '') || email.split('@')[0];
+          } else { currentUser = name; }
+        } catch(_) { currentUser = name; }
+        return true;
+      } catch(signInErr) {
+        // Wrong password — prompt them to sign in via the auth view
+        const signinEmail = document.getElementById('signin-email');
+        if (signinEmail) signinEmail.value = email;
+        sessionStorage.setItem('pendingInviteCode', code);
+        al.innerHTML = `An account with this email already exists. ` +
+          `<button onclick="showView('auth');switchAuthTab('signin')" ` +
+          `class="underline text-amber-400 font-semibold hover:text-amber-300">Sign In →</button> ` +
+          `with that email, or use a different email here.`;
+        al.classList.remove('hidden');
+        setTimeout(() => al.classList.add('hidden'), 10000);
+        return false;
+      }
+    }
+    // Any other Firebase error
+    showAlert(al, createErr.message || 'Could not create account. Try again.');
+    return false;
+  }
+}
+
+// Writes the new member to the league doc and advances to step 2.
+// Assumes currentUserId / currentUser / currentUserEmail are set.
+async function _doMemberAdd(code, data, al) {
+  const nameParts = (currentUser || '').split(' ');
+  const newMember = {
+    uid: currentUserId, name: currentUser,
+    firstName: nameParts[0], lastName: nameParts.slice(1).join(' '),
+    email: currentUserEmail, phone: '', team: 'Unassigned', wins: 0, closest: 0
+  };
+  await db.collection('leagues').doc(code).update({
+    members: firebase.firestore.FieldValue.arrayUnion(newMember)
+  });
+  await db.collection('users').doc(currentUserId).update({ leagueCode: code });
+  // Remove from pending invites list if pre-invited by email
+  const invitedArr  = data.invited || [];
+  const stillInvited = invitedArr.filter(
+    inv => (inv.email || '').toLowerCase() !== currentUserEmail.toLowerCase()
+  );
+  if (stillInvited.length !== invitedArr.length) {
+    await db.collection('leagues').doc(code).update({ invited: stillInvited });
+  }
+  await loadLeague(code);
+  showLoading(false);
+  document.getElementById('join-league-name').textContent = leagueData.name;
+  document.getElementById('join-step-1').classList.add('hidden');
+  document.getElementById('join-step-2').classList.remove('hidden');
+}
+
 async function joinLeague() {
   const code = (document.getElementById('join-code').value || '').trim().toUpperCase();
   const al   = document.getElementById('join-alert');
+
+  // 1. Invite code present
   if (!code) { showAlert(al, 'Please enter an invite code.'); return; }
-  if (!currentUserId) { showAlert(al, 'You must be signed in to join a league.'); return; }
 
   try {
     showLoading(true);
+
+    // 2. League exists
     const snap = await db.collection('leagues').doc(code).get();
-    if (!snap.exists) {
-      showLoading(false);
-      showAlert(al, 'League not found. Check the code with your commissioner.'); return;
-    }
+    showLoading(false);
+    if (!snap.exists) { showAlert(al, 'League not found. Check the code with your commissioner.'); return; }
     const data = snap.data();
-    const alreadyMember = (data.members || []).some(m => m.uid === currentUserId || m.email === currentUserEmail);
-    // If this is a paid league and the user hasn't joined yet, show the disclaimer first
+
+    // Determine email to use for duplicate checks (signed-in or from form)
+    const formEmail = currentUserId
+      ? currentUserEmail
+      : (document.getElementById('join-email')?.value || '').trim().toLowerCase();
+
+    const alreadyMember = (data.members || []).some(m =>
+      (currentUserId && m.uid === currentUserId) ||
+      (formEmail && m.email?.toLowerCase() === formEmail)
+    );
+
+    // 3. Not full (only relevant for new members)
+    if (!alreadyMember && (data.members || []).length >= 32) {
+      showAlert(al, 'This league is full (32/32 players).'); return;
+    }
+
+    // 5–7. Guest form validation (skipped if already signed in)
+    if (!currentUserId) {
+      const name  = (document.getElementById('join-name').value  || '').trim();
+      const email = (document.getElementById('join-email').value  || '').trim();
+      const pw    = (document.getElementById('join-password').value || '');
+      if (!name)  { showAlert(al, 'Please enter your full name.'); return; }
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showAlert(al, 'Please enter a valid email address.'); return;
+      }
+      // 4. Re-check already a member now that we have the validated email
+      if ((data.members || []).some(m => m.email?.toLowerCase() === email.toLowerCase())) {
+        showAlert(al, 'This email is already a member of this league.'); return;
+      }
+      if (pw.length < 8) { showAlert(al, 'Password must be at least 8 characters.'); return; }
+    }
+
+    // Paid league → show disclaimer; account creation deferred to completeJoinLeague
     if (!alreadyMember && (data.seasonEntry || 0) > 0) {
-      showLoading(false);
       _pendingJoinCode = code;
       _pendingJoinData = data;
       const commName = data.commissionerEmail || 'your commissioner';
       document.getElementById('disclaimer-commissioner').textContent = commName;
       document.getElementById('disclaimer-commissioner-inline').textContent = commName;
-      // Show effective amount (base + Pro recoupment surcharge if enabled)
-      const _baseEntry   = data.seasonEntry || 0;
-      const _recoup      = data.proRecoup   || {};
-      const _surcharge   = _recoup.enabled  ? (_recoup.perPlayerAmount || 0) : 0;
+      const _baseEntry    = data.seasonEntry || 0;
+      const _recoup       = data.proRecoup   || {};
+      const _surcharge    = _recoup.enabled  ? (_recoup.perPlayerAmount || 0) : 0;
       const _effectiveAmt = _baseEntry + _surcharge;
-      document.getElementById('disclaimer-entry-fee').textContent = '$' + _effectiveAmt.toFixed(2).replace(/\.00$/, '');
+      document.getElementById('disclaimer-entry-fee').textContent =
+        '$' + _effectiveAmt.toFixed(2).replace(/\.00$/, '');
       document.getElementById('disclaimer-confirm').checked = false;
       document.getElementById('league-disclaimer-modal').classList.remove('hidden');
       return;
     }
-    if (!alreadyMember) {
-      if ((data.members || []).length >= 32) {
-        showLoading(false);
-        showAlert(al, 'This league is full (32/32 players).'); return;
-      }
-      const nameParts = (currentUser || '').split(' ');
-      const newMember = {
-        uid: currentUserId, name: currentUser,
-        firstName: nameParts[0], lastName: nameParts.slice(1).join(' '),
-        email: currentUserEmail, phone: '', team: 'Unassigned', wins: 0, closest: 0
-      };
-      await db.collection('leagues').doc(code).update({
-        members: firebase.firestore.FieldValue.arrayUnion(newMember)
-      });
-      await db.collection('users').doc(currentUserId).update({ leagueCode: code });
-      // Remove from pending invites if pre-invited by email
-      const invitedArr = data.invited || [];
-      const stillInvited = invitedArr.filter(inv => (inv.email || '').toLowerCase() !== currentUserEmail.toLowerCase());
-      if (stillInvited.length !== invitedArr.length) {
-        await db.collection('leagues').doc(code).update({ invited: stillInvited });
-      }
+
+    // Free league (or already a member) → create/sign-in if needed, then join
+    showLoading(true);
+    if (!currentUserId) {
+      const ok = await _ensureAccountForJoin(code, al);
+      if (!ok) { showLoading(false); return; }
     }
-    await loadLeague(code);
-    showLoading(false);
-    document.getElementById('join-league-name').textContent = leagueData.name;
-    document.getElementById('join-step-1').classList.add('hidden');
-    document.getElementById('join-step-2').classList.remove('hidden');
+    if (alreadyMember) {
+      // Already in — just load and show success
+      await loadLeague(code);
+      showLoading(false);
+      document.getElementById('join-league-name').textContent = leagueData.name;
+      document.getElementById('join-step-1').classList.add('hidden');
+      document.getElementById('join-step-2').classList.remove('hidden');
+      return;
+    }
+    await _doMemberAdd(code, data, al);
+
   } catch(e) {
     showLoading(false);
     showAlert(al, e.message || 'Could not join league. Try again.');
@@ -2999,15 +3120,24 @@ auth.onAuthStateChanged(async (user) => {
       currentUser = user.email.split('@')[0];
     }
     showLoading(false);
-    const pendingCode = new URLSearchParams(window.location.search).get('code');
-    if (leagueData.code) {
-      showView('dashboard');
-    } else if (pendingCode) {
-      // Invite link — stay on the invite landing so the user sees the personalised page
-      showView('invite-landing');
+    // If they bounced through the auth view to complete an invite join, resume it
+    const storedInviteCode = sessionStorage.getItem('pendingInviteCode');
+    if (storedInviteCode) {
+      sessionStorage.removeItem('pendingInviteCode');
+      document.getElementById('join-code').value = storedInviteCode.toUpperCase();
+      _pendingInviteCode = storedInviteCode.toUpperCase();
+      showView('join-league');
     } else {
-      // Signed in but no league yet — show join/create
-      showView('landing');
+      const pendingCode = new URLSearchParams(window.location.search).get('code');
+      if (leagueData.code) {
+        showView('dashboard');
+      } else if (pendingCode) {
+        // Invite link — stay on the invite landing so the user sees the personalised page
+        showView('invite-landing');
+      } else {
+        // Signed in but no league yet — show join/create
+        showView('landing');
+      }
     }
     // Show TOS modal if user hasn't accepted yet (after navigation so it overlays the page)
     if (_needsTOSAcceptance) {
@@ -3780,31 +3910,18 @@ async function completeJoinLeague() {
   const al = document.getElementById('join-alert');
   try {
     showLoading(true);
+
+    // Create or sign-in account if the user isn't authenticated yet
+    if (!currentUserId) {
+      const ok = await _ensureAccountForJoin(code, al);
+      if (!ok) { showLoading(false); return; }
+    }
+
     if ((data.members || []).length >= 32) {
       showLoading(false);
       showAlert(al, 'This league is full (32/32 players).'); return;
     }
-    const nameParts = (currentUser || '').split(' ');
-    const newMember = {
-      uid: currentUserId, name: currentUser,
-      firstName: nameParts[0], lastName: nameParts.slice(1).join(' '),
-      email: currentUserEmail, phone: '', team: 'Unassigned', wins: 0, closest: 0
-    };
-    await db.collection('leagues').doc(code).update({
-      members: firebase.firestore.FieldValue.arrayUnion(newMember)
-    });
-    await db.collection('users').doc(currentUserId).update({ leagueCode: code });
-    // Remove from pending invites if pre-invited
-    const invitedArr = data.invited || [];
-    const stillInvited = invitedArr.filter(inv => (inv.email || '').toLowerCase() !== currentUserEmail.toLowerCase());
-    if (stillInvited.length !== invitedArr.length) {
-      await db.collection('leagues').doc(code).update({ invited: stillInvited });
-    }
-    await loadLeague(code);
-    showLoading(false);
-    document.getElementById('join-league-name').textContent = leagueData.name;
-    document.getElementById('join-step-1').classList.add('hidden');
-    document.getElementById('join-step-2').classList.remove('hidden');
+    await _doMemberAdd(code, data, al);
   } catch(e) {
     showLoading(false);
     showAlert(al, e.message || 'Could not join league. Try again.');
@@ -4269,6 +4386,7 @@ Object.assign(window, {
   showView, signOut, switchAuthTab, handleSignIn, handleSignUp,
   createLeague, copyCode, copyLink, goToDashboard, goToLeagueInvite,
   loadInviteLanding, acceptInvite,
+  _ensureAccountForJoin, _doMemberAdd,
   joinLeague, switchDashTab, fetchScores, onSeasonChange,
   saveSeasonEntry, updateEntryPreview, saveVenmo, saveLeagueName,
   randomAssign, resetAssignments, updateAssignment,
