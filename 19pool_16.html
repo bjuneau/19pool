@@ -92,6 +92,7 @@
   /* Marquee */
   .marquee-container { overflow: hidden; }
   .marquee-track { display: flex; width: max-content; animation: marquee 35s linear infinite; }
+  #invite-marquee-track { animation-duration: 55s; }
   .marquee-track:hover { animation-play-state: paused; }
   @keyframes marquee {
     0%   { transform: translateX(0); }
@@ -701,8 +702,8 @@
     </div>
   </div>
 
-  <!-- Marquee -->
-  <div class="bg-navy-800 border-y border-white/5 py-5 marquee-container">
+  <!-- Testimonials marquee -->
+  <div class="bg-navy-800 border-y border-white/5 py-6 marquee-container overflow-hidden">
     <div class="marquee-track" id="invite-marquee-track"></div>
   </div>
 
@@ -3701,12 +3702,32 @@ function showLoading(on) {
   ov.style.display = on ? 'flex' : 'none';
 }
 
+const TESTIMONIALS = [
+  { quote: "I hit 19 in Week 7 and won $320. Best Sunday of my entire life.", name: "Mike T.", detail: "Bills fan" },
+  { quote: "Set it up in 10 minutes. Had all 32 spots filled before Friday night.", name: "Sarah K.", detail: "Commissioner, 3 seasons" },
+  { quote: "The live scores auto-update is a game changer. No more texting the commish all day.", name: "Dave R.", detail: "Chiefs fan" },
+  { quote: "Won the pot twice this season. My Bengals finally pulled through.", name: "Jennifer M.", detail: "Bengals fan" },
+  { quote: "The rollover pot hit $800 in Week 11. Absolute chaos on the group chat.", name: "Chris L.", detail: "Cowboys fan" },
+  { quote: "Finally a pool my whole family can follow. Simple rules, huge drama every week.", name: "Amanda W.", detail: "Commissioner" },
+  { quote: "Our office league has been running this for 4 years. Nobody wants to stop.", name: "Tom B.", detail: "Commissioner" },
+  { quote: "I had the Packers. They scored 19 in the snow on Christmas. I still can't believe it.", name: "Kevin S.", detail: "Packers fan" },
+];
+
 function buildMarquee(){
-  const html=([...NFL_TEAMS,...NFL_TEAMS]).map(t=>`<span class="text-slate-500 hover:text-amber-400 transition-colors text-sm font-semibold tracking-wider uppercase whitespace-nowrap px-6">🏈 ${t}</span>`).join('');
+  const teamHtml=([...NFL_TEAMS,...NFL_TEAMS]).map(t=>`<span class="text-slate-500 hover:text-amber-400 transition-colors text-sm font-semibold tracking-wider uppercase whitespace-nowrap px-6">🏈 ${t}</span>`).join('');
   const track=document.getElementById('marquee-track');
-  if(track) track.innerHTML=html;
+  if(track) track.innerHTML=teamHtml;
+
+  const testimonialsHtml=[...TESTIMONIALS,...TESTIMONIALS].map(t=>`
+    <div class="inline-flex flex-col gap-2 bg-white/5 border border-white/8 rounded-2xl px-5 py-4 mx-3 w-72 align-top flex-shrink-0">
+      <p class="text-slate-300 text-sm leading-relaxed">&ldquo;${t.quote}&rdquo;</p>
+      <div class="flex items-center gap-2 mt-1">
+        <span class="text-amber-400 text-xs font-bold">${t.name}</span>
+        <span class="text-slate-600 text-xs">&middot; ${t.detail}</span>
+      </div>
+    </div>`).join('');
   const inviteTrack=document.getElementById('invite-marquee-track');
-  if(inviteTrack) inviteTrack.innerHTML=html;
+  if(inviteTrack) inviteTrack.innerHTML=testimonialsHtml;
 }
 
 // ─── EXPOSE TO WINDOW (required for onclick attrs with Tailwind v4 CDN) ──────
