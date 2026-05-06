@@ -2078,31 +2078,40 @@ async function fetchWeekEvents(season, week) {
   return events;
 }
 
-function weekHas19Winner(events) {
+// Returns array of team names that scored exactly 19 in final games.
+// If memberTeams is provided, only teams in that set are returned
+// (so rollover only resets when a *league member's* team wins).
+function weekHas19Winner(events, memberTeams) {
   const winners = [];
   events.forEach(ev => {
     if (ev.status.type.state !== 'post') return;
     ev.competitions[0].competitors.forEach(t => {
-      if (parseInt(t.score) === 19) winners.push(ESPN_TO_FULL[t.team.abbreviation] || t.team.displayName);
+      if (parseInt(t.score) !== 19) return;
+      const full = ESPN_TO_FULL[t.team.abbreviation] || t.team.displayName;
+      if (!memberTeams || memberTeams.includes(full)) winners.push(full);
     });
   });
   return winners;
 }
 
 async function calcWeeklyPot(season, targetWeek) {
-  const totalPot  = leagueData.seasonEntry * leagueData.members.length; // e.g. $4,224
+  const totalPot  = leagueData.seasonEntry * leagueData.members.length;
   const totalWeeks = SEASON_CONFIG[season]?.weeks || 18;
-  const weeklyShare = totalPot / totalWeeks; // e.g. $234.67 per week
+  const weeklyShare = totalPot / totalWeeks;
 
-  // Walk weeks 1..targetWeek-1, rolling over the share when no 19-winner
+  // Only count a week as "won" if a league member's assigned team hit 19
+  const memberTeams = leagueData.members
+    .map(m => m.team)
+    .filter(t => t && t !== 'Unassigned');
+
   let rollover = 0;
   for (let w = 1; w < targetWeek; w++) {
     const events  = await fetchWeekEvents(season, w);
-    const winners = weekHas19Winner(events);
+    const winners = weekHas19Winner(events, memberTeams);
     if (winners.length === 0) {
-      rollover += weeklyShare; // no winner — carries forward
+      rollover += weeklyShare; // no member won — pot carries forward
     } else {
-      rollover = 0; // pot was won — reset
+      rollover = 0; // a member won — pot resets
     }
   }
   // This week's pot = this week's share + any rollover from prior unclaimed weeks
@@ -2244,12 +2253,20 @@ function renderGameCards(events) {
     // Check if all games final — if so, show rollover notice
     const allFinal = events.every(ev => ev.status.type.state === 'post');
     if (allFinal && events.length > 0) {
+      // Were there any 19s at all (across all teams, not just members)?
+      const anyTeam19 = events.some(ev =>
+        ev.status.type.state === 'post' &&
+        ev.competitions[0].competitors.some(t => parseInt(t.score) === 19)
+      );
       bannerEl.className = 'bg-navy-800/60 border border-white/10 rounded-2xl p-4 mb-6 flex items-center gap-3';
       bannerEl.innerHTML = `
         <span class="text-2xl">🎲</span>
         <div>
-          <p class="text-sm font-bold text-white">No 19-point score this week — pot rolls over!</p>
-          <p class="text-xs text-slate-400 mt-0.5">The pot carries forward and grows for next week.</p>
+          <p class="text-sm font-bold text-white">No league member's team hit 19 this week — pot rolls over!</p>
+          <p class="text-xs text-slate-400 mt-0.5">${anyTeam19
+            ? 'Teams scored 19 in the NFL this week, but none were assigned to a league member.'
+            : 'No NFL team scored exactly 19 points. The pot carries forward.'
+          }</p>
         </div>
       `;
       bannerEl.classList.remove('hidden');
