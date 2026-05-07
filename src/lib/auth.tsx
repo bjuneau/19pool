@@ -52,6 +52,8 @@ export function useAuth() {
 export function authErrorMessage(err: unknown): string {
   const code = (err as { code?: string })?.code ?? '';
   switch (code) {
+    case 'auth/missing-email':
+      return 'Please enter your email.';
     case 'auth/invalid-email':
       return 'That email address looks invalid.';
     case 'auth/user-disabled':

@@ -65,6 +65,14 @@ export default function SignIn() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <div className="text-right">
+            <Link
+              to="/forgot-password"
+              className="text-xs text-slate-400 hover:text-amber-400 transition-colors"
+            >
+              Forgot password?
+            </Link>
+          </div>
           <button
             type="submit"
             disabled={submitting}
