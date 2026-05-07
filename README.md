@@ -115,6 +115,47 @@ The first time only:
 
 After that, every push to `main` auto-deploys.
 
+## Admin: wipe all test data
+
+> ⚠️ **DESTRUCTIVE.** This wipes every league, every user document, and every Firebase Auth account in the project. Use only in development. The `config/` collection (pricing) is intentionally preserved.
+
+### One-time Vercel setup
+
+Set two environment variables in **Vercel → Project → Settings → Environment Variables** (apply to **Production** at minimum):
+
+1. **`ADMIN_WIPE_SECRET`** — a long random string of your choice. This is the bearer secret you'll send in the request header. Treat it like a password. Suggested: `openssl rand -hex 32` produces a 64-char hex string.
+
+2. **`FIREBASE_SERVICE_ACCOUNT_JSON`** — the entire contents of a Firebase service account key JSON file. To get it:
+   - Go to **Firebase Console → Project Settings → Service accounts**.
+   - Make sure "Firebase Admin SDK" is selected.
+   - Click **Generate new private key** → confirm. A `.json` file downloads.
+   - Open the file in a text editor, **copy the entire contents** (including the leading `{` and trailing `}`).
+   - Paste it as the value of `FIREBASE_SERVICE_ACCOUNT_JSON` in Vercel.
+   - Delete the downloaded `.json` file from your machine — once it's in Vercel you don't need a local copy.
+
+After saving the env vars, redeploy (or push any small change) so the new function picks them up.
+
+### Run the wipe
+
+```bash
+curl -X POST https://19pool.vercel.app/api/admin-wipe \
+  -H "x-admin-secret: <YOUR_ADMIN_WIPE_SECRET>"
+```
+
+Returns a JSON summary, e.g.:
+
+```json
+{
+  "leaguesDeleted": 3,
+  "membersDeleted": 8,
+  "usersDeleted": 5,
+  "purchasesDeleted": 0,
+  "authUsersDeleted": 5
+}
+```
+
+A wrong or missing `x-admin-secret` returns `401 Unauthorized`.
+
 ## What is not included in this spike
 
 Per the spec, all of the following are deferred:
