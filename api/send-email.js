@@ -20,7 +20,7 @@ export default async function handler(req, res) {
 
   try {
         const emailOptions = {
-                from: '19 Pool <invite@19pool.com>',
+                from: '19 Pool <hello@19pool.com>',
                 to: recipients,
                 subject,
                 html,

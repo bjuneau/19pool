@@ -4,38 +4,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import { PasswordStrengthBar } from '../components/PasswordStrengthBar';
 import { authErrorMessage, useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
+import {
+  getPasswordStrength,
+  validatePasswordPair,
+} from '../lib/passwordStrength';
 
 const TOS_VERSION = '2026-05-05';
-
-type Strength = { score: number; label: string; color: string };
-
-function getPasswordStrength(pw: string): Strength {
-  if (!pw) return { score: 0, label: '', color: '' };
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (pw.length >= 12) score++;
-  if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
-  if (/\d/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-  score = Math.min(score, 4);
-  const labels = ['Too weak', 'Weak', 'Fair', 'Good', 'Strong'];
-  const colors = [
-    'text-red-400',
-    'text-red-400',
-    'text-amber-400',
-    'text-amber-300',
-    'text-green-400',
-  ];
-  return { score, label: labels[score], color: colors[score] };
-}
-
-function strengthBarColor(score: number): string {
-  if (score <= 1) return 'bg-red-400';
-  if (score <= 3) return 'bg-amber-400';
-  return 'bg-green-400';
-}
 
 export default function SignUp() {
   const { signUp } = useAuth();
@@ -63,16 +40,9 @@ export default function SignUp() {
       setError('Please enter a valid email.');
       return;
     }
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setError('Passwords do not match. Please re-type to confirm.');
-      return;
-    }
-    if (strength.score < 2) {
-      setError('Password is too weak. Try a longer password or add numbers/symbols.');
+    const pwError = validatePasswordPair(password, confirmPassword, strength);
+    if (pwError) {
+      setError(pwError);
       return;
     }
 
@@ -82,7 +52,7 @@ export default function SignUp() {
       await setDoc(doc(db, 'users', cred.user.uid), {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         leagueCode: '',
         acceptedTOS: true,
         acceptedTOSVersion: TOS_VERSION,
@@ -161,21 +131,7 @@ export default function SignUp() {
             onChange={(e) => setPassword(e.target.value)}
             endAdornment={passwordToggle}
           />
-          {password && (
-            <div className="-mt-2 mb-1">
-              <div className="flex gap-1 mb-1">
-                {[0, 1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className={`h-1 flex-1 rounded-full transition-colors ${
-                      i < strength.score ? strengthBarColor(strength.score) : 'bg-white/10'
-                    }`}
-                  />
-                ))}
-              </div>
-              <p className={`text-xs ${strength.color}`}>{strength.label}</p>
-            </div>
-          )}
+          <PasswordStrengthBar password={password} strength={strength} />
           <Input
             label="Confirm Password"
             type={showPassword ? 'text' : 'password'}

@@ -1,11 +1,23 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  getDoc,
+  serverTimestamp,
+  setDoc,
+  updateDoc,
+} from 'firebase/firestore';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
+import {
+  buildDisplayName,
+  generateInviteToken,
+} from '../lib/members';
+import type { League, Member } from '../lib/types';
 
 // Same algorithm as legacy generateCode() in 19pool_15.html.
 function generateLeagueCode(): string {
@@ -49,40 +61,52 @@ export default function CreateLeague() {
 
     setSubmitting(true);
     try {
-      // Look up the user's first/last name from their Firestore profile so the
-      // commissioner record on the league has a proper display name.
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       const userData = userSnap.exists() ? userSnap.data() : {};
       const firstName: string = userData.firstName ?? '';
       const lastName: string = userData.lastName ?? '';
-      const displayName =
-        `${firstName} ${lastName}`.trim() || user.email?.split('@')[0] || 'Commissioner';
+      const userEmail = (user.email ?? '').toLowerCase();
+      const displayName = buildDisplayName(firstName, lastName, userEmail.split('@')[0]);
 
       const code = generateLeagueCode();
 
-      await setDoc(doc(db, 'leagues', code), {
+      const leagueDoc: Omit<League, 'createdAt'> & {
+        createdAt: ReturnType<typeof serverTimestamp>;
+      } = {
         name: leagueName.trim(),
         code,
         commissionerId: user.uid,
-        commissionerEmail: user.email ?? '',
+        commissionerEmail: userEmail,
         seasonEntry: entryAmount,
         venmo: venmo.trim(),
         pot: 0,
         season: new Date().getFullYear(),
+        memberCount: 1,
+        status: 'recruiting',
         createdAt: serverTimestamp(),
-        members: [
-          {
-            uid: user.uid,
-            name: displayName,
-            firstName,
-            lastName,
-            email: user.email ?? '',
-            phone: '',
-            team: 'Unassigned',
-            wins: 0,
-            closest: 0,
-          },
-        ],
+      };
+      await setDoc(doc(db, 'leagues', code), leagueDoc);
+
+      const commissionerMember: Member = {
+        uid: user.uid,
+        email: userEmail,
+        firstName,
+        lastName,
+        name: displayName,
+        phone: '',
+        teams: [],
+        wins: 0,
+        closest: 0,
+        role: 'commissioner',
+        invitedAt: null,
+        joinedAt: null,
+        inviteToken: generateInviteToken(),
+      };
+      const memberRef = doc(collection(db, 'leagues', code, 'members'));
+      await setDoc(memberRef, {
+        ...commissionerMember,
+        invitedAt: serverTimestamp(),
+        joinedAt: serverTimestamp(),
       });
 
       await updateDoc(doc(db, 'users', user.uid), { leagueCode: code });

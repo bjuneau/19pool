@@ -5,6 +5,7 @@ import SignUp from './pages/SignUp';
 import ForgotPassword from './pages/ForgotPassword';
 import CreateLeague from './pages/CreateLeague';
 import Dashboard from './pages/Dashboard';
+import Join from './pages/Join';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
@@ -14,6 +15,8 @@ export default function App() {
       <Route path="/signin" element={<SignIn />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/join" element={<Join />} />
+      <Route path="/join/:codeOrToken" element={<Join />} />
       <Route
         path="/create-league"
         element={
