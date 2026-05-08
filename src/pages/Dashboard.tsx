@@ -5,8 +5,10 @@ import { Card } from '../components/Card';
 import { useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
 import { buildDisplayName } from '../lib/members';
+import { normalizeLeague } from '../lib/types';
 import type { League } from '../lib/types';
 import MembersTab from './dashboard/MembersTab';
+import TeamsTab from './dashboard/TeamsTab';
 
 type UserDoc = {
   firstName?: string;
@@ -15,7 +17,7 @@ type UserDoc = {
   leagueCode?: string;
 };
 
-type DashTab = 'overview' | 'members';
+type DashTab = 'overview' | 'members' | 'teams';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -27,9 +29,6 @@ export default function Dashboard() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [activeTab, setActiveTab] = useState<DashTab>('overview');
 
-  // Subscribe to the user doc; whenever leagueCode changes, swap the league
-  // subscription so the dashboard stays in sync if the user joins a league
-  // from another tab.
   useEffect(() => {
     if (!user) return;
     const unsub = onSnapshot(doc(db, 'users', user.uid), (snap) => {
@@ -47,7 +46,7 @@ export default function Dashboard() {
       return;
     }
     const unsub = onSnapshot(doc(db, 'leagues', leagueCode), (snap) => {
-      setLeague(snap.exists() ? (snap.data() as League) : null);
+      setLeague(snap.exists() ? normalizeLeague(snap.data() as Record<string, unknown>) : null);
     });
     return unsub;
   }, [leagueCode]);
@@ -58,17 +57,19 @@ export default function Dashboard() {
   }
 
   const firstName = userDoc?.firstName || user?.email?.split('@')[0] || 'there';
-  const isCommissioner =
-    !!user && !!league && league.commissionerId === user.uid;
+  const isCommissioner = !!user && !!league && league.commissionerId === user.uid;
   const commissionerName = buildDisplayName(
     userDoc?.firstName ?? '',
     userDoc?.lastName ?? '',
     user?.email?.split('@')[0]
   );
 
+  // Teams tab is wider — use a wider container when it's active.
+  const wideTab = activeTab === 'teams';
+
   return (
     <div className="hero-bg min-h-screen px-4 py-16">
-      <div className="max-w-3xl mx-auto">
+      <div className={`mx-auto transition-all ${wideTab ? 'max-w-4xl' : 'max-w-3xl'}`}>
         <header className="flex items-center justify-between mb-10">
           <Link to="/" className="text-2xl font-extrabold tracking-widest">
             <span className="text-amber-400">19</span>
@@ -96,6 +97,12 @@ export default function Dashboard() {
             >
               Members
             </TabButton>
+            <TabButton
+              active={activeTab === 'teams'}
+              onClick={() => setActiveTab('teams')}
+            >
+              Teams
+            </TabButton>
           </div>
         )}
 
@@ -106,12 +113,14 @@ export default function Dashboard() {
               league={league}
               loadingProfile={loadingProfile}
             />
-          ) : (
+          ) : activeTab === 'members' ? (
             <MembersTab
               leagueCode={leagueCode}
               league={league}
               commissionerName={commissionerName}
             />
+          ) : (
+            <TeamsTab leagueCode={leagueCode} league={league} />
           )}
         </Card>
       </div>

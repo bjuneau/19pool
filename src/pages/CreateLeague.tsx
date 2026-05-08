@@ -84,6 +84,10 @@ export default function CreateLeague() {
         season: new Date().getFullYear(),
         memberCount: 1,
         status: 'recruiting',
+        unownedTeams: [],
+        teamsAssignedAt: null,
+        lockedAt: null,
+        skipReassignmentCheck: false,
         createdAt: serverTimestamp(),
       };
       await setDoc(doc(db, 'leagues', code), leagueDoc);

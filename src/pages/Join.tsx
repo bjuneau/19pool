@@ -118,6 +118,29 @@ export default function Join() {
   }
 
   const { invite } = resolveState;
+
+  // Hard gate: league is locked, no new members.
+  if (invite.league.status === 'in_season') {
+    return (
+      <CenteredCard>
+        <h1 className="text-2xl font-extrabold text-white mb-2">
+          League already started
+        </h1>
+        <p className="text-slate-400 text-sm mb-6">
+          <span className="text-amber-400 font-semibold">{invite.league.name}</span> has
+          already locked and the season is underway. Contact the commissioner if you
+          think you should be included.
+        </p>
+        <Link
+          to="/"
+          className="inline-block bg-white/10 hover:bg-white/15 text-white font-semibold px-6 py-2.5 rounded-full transition-all"
+        >
+          Go Home
+        </Link>
+      </CenteredCard>
+    );
+  }
+
   const userEmail = (user?.email ?? '').toLowerCase();
   const alreadyJoined =
     !!user &&
@@ -182,9 +205,22 @@ export default function Join() {
 
     return (
       <CenteredCard>
-        <h1 className="text-2xl font-extrabold text-white mb-2">
-          Join <span className="text-amber-400">{invite.league.name}</span>?
-        </h1>
+        <div className="mb-2">
+          <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">
+            You're invited to join
+          </p>
+          <h1 className="text-2xl font-extrabold text-white">
+            {invite.league.name}
+          </h1>
+          {invite.league.commissionerName && (
+            <p className="text-sm text-slate-400 mt-1">
+              by{' '}
+              <span className="text-amber-400 font-semibold">
+                {invite.league.commissionerName}
+              </span>
+            </p>
+          )}
+        </div>
         <p className="text-slate-400 text-sm mb-6">
           You're signed in as{' '}
           <span className="text-white font-semibold">{userEmail}</span>.

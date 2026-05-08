@@ -2,7 +2,7 @@ import type { Timestamp } from 'firebase/firestore';
 
 export const LEAGUE_CAPACITY = 32;
 
-export type LeagueStatus = 'recruiting' | 'locked' | 'in_season' | 'complete';
+export type LeagueStatus = 'recruiting' | 'assigned' | 'in_season' | 'complete';
 
 export type League = {
   name: string;
@@ -17,7 +17,36 @@ export type League = {
   createdAt: Timestamp | null;
   memberCount: number;
   status: LeagueStatus;
+  // Team assignment fields (populated when status moves to 'assigned')
+  unownedTeams: string[];
+  teamsAssignedAt: Timestamp | null;
+  lockedAt: Timestamp | null;
+  // When true, the "roster changed after assignment" banner is suppressed
+  // until the next reroll (or a new member joins).
+  skipReassignmentCheck?: boolean;
 };
+
+// Safe defaults for reading league docs that predate the team-assignment fields.
+export function normalizeLeague(raw: Record<string, unknown>): League {
+  return {
+    name: (raw.name as string) ?? '',
+    code: (raw.code as string) ?? '',
+    commissionerId: (raw.commissionerId as string) ?? '',
+    commissionerEmail: (raw.commissionerEmail as string) ?? '',
+    commissionerName: (raw.commissionerName as string) ?? '',
+    seasonEntry: (raw.seasonEntry as number) ?? 0,
+    venmo: (raw.venmo as string) ?? '',
+    pot: (raw.pot as number) ?? 0,
+    season: (raw.season as number) ?? new Date().getFullYear(),
+    createdAt: (raw.createdAt as Timestamp) ?? null,
+    memberCount: (raw.memberCount as number) ?? 0,
+    status: (raw.status as LeagueStatus) ?? 'recruiting',
+    unownedTeams: (raw.unownedTeams as string[]) ?? [],
+    teamsAssignedAt: (raw.teamsAssignedAt as Timestamp) ?? null,
+    lockedAt: (raw.lockedAt as Timestamp) ?? null,
+    skipReassignmentCheck: (raw.skipReassignmentCheck as boolean) ?? false,
+  };
+}
 
 export type MemberRole = 'commissioner' | 'member';
 

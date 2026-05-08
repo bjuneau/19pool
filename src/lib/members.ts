@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { db } from './firebase';
-import { LEAGUE_CAPACITY } from './types';
+import { LEAGUE_CAPACITY, normalizeLeague } from './types';
 import type { League, Member, MemberRole } from './types';
 
 export type MemberWithId = Member & { id: string };
@@ -132,7 +132,7 @@ export async function resolveInvite(
   const upperCode = trimmedCode.toUpperCase();
   const leagueSnap = await getDoc(doc(db, 'leagues', upperCode));
   if (!leagueSnap.exists()) return null;
-  const league = leagueSnap.data() as League;
+  const league = normalizeLeague(leagueSnap.data() as Record<string, unknown>);
 
   const trimmedToken = inviteToken?.trim();
   if (trimmedToken) {
@@ -179,6 +179,15 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
     return { ok: false, error: 'Your account is missing an email address.' };
   }
 
+  // Hard gate: no joins after the season starts.
+  if (league.status === 'in_season') {
+    return {
+      ok: false,
+      error:
+        'This league has already started. Contact the commissioner if you think you should be included.',
+    };
+  }
+
   // Case 1 — invite token resolved to a specific member doc.
   if (invitedMember) {
     if (invitedMember.uid && invitedMember.uid !== user.uid) {
@@ -197,6 +206,7 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
       lastName: lastName || invitedMember.lastName,
     });
     await ensureUserLeagueLink(user.uid, leagueCode);
+    await resetReassignmentCheckIfAssigned(leagueCode, league.status);
     return { ok: true, alreadyMember: false };
   }
 
@@ -219,6 +229,7 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
       lastName: lastName || existing.lastName,
     });
     await ensureUserLeagueLink(user.uid, leagueCode);
+    await resetReassignmentCheckIfAssigned(leagueCode, league.status);
     return { ok: true, alreadyMember: false };
   }
 
@@ -250,6 +261,7 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
   });
   await bumpMemberCount(leagueCode);
   await ensureUserLeagueLink(user.uid, leagueCode);
+  await resetReassignmentCheckIfAssigned(leagueCode, league.status);
   return { ok: true, alreadyMember: false };
 }
 
@@ -279,6 +291,17 @@ async function ensureUserLeagueLink(uid: string, leagueCode: string) {
 
 async function bumpMemberCount(leagueCode: string) {
   await updateDoc(doc(db, 'leagues', leagueCode), { memberCount: increment(1) });
+}
+
+// When someone joins during 'assigned' status, reset the check flag so the
+// TeamsTab banner reappears to prompt the commissioner to handle the new member.
+async function resetReassignmentCheckIfAssigned(
+  leagueCode: string,
+  leagueStatus: string
+) {
+  if (leagueStatus === 'assigned') {
+    await updateDoc(doc(db, 'leagues', leagueCode), { skipReassignmentCheck: false });
+  }
 }
 
 // Convenience for the dashboard "Send Email Invite" flow. Calls the existing

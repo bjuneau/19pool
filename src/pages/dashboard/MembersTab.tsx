@@ -139,6 +139,8 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
     }
   }
 
+  const isLocked = league.status === 'in_season';
+
   return (
     <div className="space-y-6">
       <div>
@@ -157,6 +159,17 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
         </div>
       </div>
 
+      {isLocked ? (
+        <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-5 flex items-start gap-3">
+          <span className="text-lg mt-0.5">🔒</span>
+          <div>
+            <p className="text-white font-semibold text-sm">League is locked</p>
+            <p className="text-slate-400 text-sm mt-0.5">
+              No new members can be added once the season begins.
+            </p>
+          </div>
+        </div>
+      ) : (
       <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-5">
         <div className="flex bg-navy-950/80 rounded-xl p-1 mb-4 gap-1">
           <button
@@ -256,6 +269,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
           </div>
         )}
       </div>
+      )}
 
       <div>
         <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-3">
