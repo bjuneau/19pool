@@ -9,6 +9,7 @@ export type League = {
   code: string;
   commissionerId: string;
   commissionerEmail: string;
+  commissionerName: string;
   seasonEntry: number;
   venmo: string;
   pot: number;

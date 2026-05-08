@@ -351,6 +351,11 @@ function JoinAuthFlow({
           You're invited to join
         </p>
         <h1 className="text-2xl font-extrabold text-white">{invite.league.name}</h1>
+        {invite.league.commissionerName && (
+          <p className="text-sm text-slate-400 mt-1">
+            by <span className="text-amber-400 font-semibold">{invite.league.commissionerName}</span>
+          </p>
+        )}
       </div>
 
       <div className="flex bg-navy-950/80 rounded-xl p-1 mb-6 gap-1">

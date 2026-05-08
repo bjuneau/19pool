@@ -77,6 +77,7 @@ export default function CreateLeague() {
         code,
         commissionerId: user.uid,
         commissionerEmail: userEmail,
+        commissionerName: displayName,
         seasonEntry: entryAmount,
         venmo: venmo.trim(),
         pot: 0,
