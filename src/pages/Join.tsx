@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
@@ -27,6 +27,8 @@ type ResolveState =
 
 export default function Join() {
   const { codeOrToken } = useParams<{ codeOrToken: string }>();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('invite');
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -42,7 +44,7 @@ export default function Join() {
       return;
     }
     setResolveState({ kind: 'loading' });
-    resolveInvite(codeOrToken)
+    resolveInvite(codeOrToken, inviteToken)
       .then((invite) => {
         if (cancelled) return;
         setResolveState(invite ? { kind: 'ready', invite } : { kind: 'invalid' });
@@ -53,7 +55,7 @@ export default function Join() {
     return () => {
       cancelled = true;
     };
-  }, [codeOrToken]);
+  }, [codeOrToken, inviteToken]);
 
   // Sub-screen: no codeOrToken → prompt for one.
   if (!codeOrToken) {

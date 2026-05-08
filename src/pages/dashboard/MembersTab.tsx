@@ -101,7 +101,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
       setSendStatus({ kind: 'sending', current: i + 1, total: valid.length });
       try {
         const member = await createPendingInvite({ leagueCode, email });
-        const tokenUrl = `${window.location.origin}/join/${member.inviteToken}`;
+        const tokenUrl = `${window.location.origin}/join/${leagueCode}?invite=${member.inviteToken}`;
         await sendInviteEmail({
           to: email,
           subject: buildInviteEmailSubject(commissionerName, league.name),

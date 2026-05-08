@@ -1,6 +1,5 @@
 import {
   collection,
-  collectionGroup,
   doc,
   getDoc,
   getDocs,
@@ -109,60 +108,50 @@ export async function findMemberByEmail(
   return { id: d.id, ...(d.data() as Member) };
 }
 
-// Resolves a /join/:codeOrToken parameter to a league code. Tries the invite
-// token first (cross-league collectionGroup query), falls back to a direct
-// league lookup. Returns { leagueCode, member } where member is the matched
-// invite if a token was used, otherwise null.
+// Resolves a join URL to a league + (optionally) the specific invited member.
+// URL contract:
+//   /join/CODE                  → shared link, returns league with invitedMember=null
+//   /join/CODE?invite=TOKEN     → email invite, returns league + the matching member
+//
+// We deliberately do NOT use a collectionGroup query — that would require a
+// manually-created Firestore index. The token lookup runs scoped to a single
+// league's members subcollection, which uses Firestore's auto-index.
 export type ResolvedInvite = {
   leagueCode: string;
   league: League;
   invitedMember: MemberWithId | null;
 };
 
-export async function resolveInvite(codeOrToken: string): Promise<ResolvedInvite | null> {
-  const trimmed = codeOrToken.trim();
-  if (!trimmed) return null;
+export async function resolveInvite(
+  code: string,
+  inviteToken?: string | null
+): Promise<ResolvedInvite | null> {
+  const trimmedCode = code.trim();
+  if (!trimmedCode) return null;
 
-  // 1) Try as inviteToken across all leagues.
-  try {
+  const upperCode = trimmedCode.toUpperCase();
+  const leagueSnap = await getDoc(doc(db, 'leagues', upperCode));
+  if (!leagueSnap.exists()) return null;
+  const league = leagueSnap.data() as League;
+
+  const trimmedToken = inviteToken?.trim();
+  if (trimmedToken) {
     const tokenQuery = query(
-      collectionGroup(db, 'members'),
-      where('inviteToken', '==', trimmed),
+      collection(db, 'leagues', upperCode, 'members'),
+      where('inviteToken', '==', trimmedToken),
       limit(1)
     );
-    const tokenSnap = await getDocs(tokenQuery);
-    if (!tokenSnap.empty) {
-      const memberDoc = tokenSnap.docs[0];
-      // member doc path is leagues/{code}/members/{id}
-      const leagueCode = memberDoc.ref.parent.parent?.id;
-      if (leagueCode) {
-        const leagueSnap = await getDoc(doc(db, 'leagues', leagueCode));
-        if (leagueSnap.exists()) {
-          return {
-            leagueCode,
-            league: leagueSnap.data() as League,
-            invitedMember: { id: memberDoc.id, ...(memberDoc.data() as Member) },
-          };
-        }
-      }
-    }
-  } catch {
-    // collectionGroup query may fail without an index in dev — fall through to
-    // the league-code lookup so shared links still work.
-  }
-
-  // 2) Fall back to treating the param as a league code.
-  const upper = trimmed.toUpperCase();
-  const leagueSnap = await getDoc(doc(db, 'leagues', upper));
-  if (leagueSnap.exists()) {
+    const memberSnap = await getDocs(tokenQuery);
+    if (memberSnap.empty) return null;
+    const memberDoc = memberSnap.docs[0];
     return {
-      leagueCode: upper,
-      league: leagueSnap.data() as League,
-      invitedMember: null,
+      leagueCode: upperCode,
+      league,
+      invitedMember: { id: memberDoc.id, ...(memberDoc.data() as Member) },
     };
   }
 
-  return null;
+  return { leagueCode: upperCode, league, invitedMember: null };
 }
 
 export type ClaimResult =
