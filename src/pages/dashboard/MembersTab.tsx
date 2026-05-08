@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import {
   LEAGUE_CAPACITY,
+  MemberExistsError,
   createPendingInvite,
   isInResendCooldown,
   isValidEmail,
@@ -158,10 +159,14 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
         });
         sent++;
       } catch (err) {
-        failed.push({
-          email,
-          error: (err as { message?: string })?.message ?? 'Send failed',
-        });
+        if (err instanceof MemberExistsError) {
+          skipped.push(email);
+        } else {
+          failed.push({
+            email,
+            error: (err as { message?: string })?.message ?? 'Send failed',
+          });
+        }
       }
     }
 

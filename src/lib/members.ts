@@ -20,6 +20,18 @@ import { buildInviteEmailHtml, buildInviteEmailSubject } from './inviteEmail';
 
 export type MemberWithId = Member & { id: string };
 
+/**
+ * Thrown by createPendingInvite when a member with the same email already
+ * exists in the league. Callers can catch this specifically to treat it as a
+ * skip rather than a failure.
+ */
+export class MemberExistsError extends Error {
+  constructor(public existing: MemberWithId) {
+    super('A member with this email already exists in this league.');
+    this.name = 'MemberExistsError';
+  }
+}
+
 export function generateInviteToken(): string {
   // 32 hex chars, dashes stripped — opaque, hard to guess.
   return crypto.randomUUID().replace(/-/g, '');
@@ -72,6 +84,12 @@ export async function createPendingInvite({
   role = 'member',
 }: CreateInviteArgs): Promise<MemberWithId> {
   const lower = email.trim().toLowerCase();
+
+  const existing = await findMemberByEmail(leagueCode, lower);
+  if (existing) {
+    throw new MemberExistsError(existing);
+  }
+
   const member: Member = {
     uid: null,
     email: lower,
@@ -238,6 +256,14 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
   // Case 3 — brand new member via shared link. Capacity gate applies here.
   if (league.memberCount >= LEAGUE_CAPACITY) {
     return { ok: false, error: 'This league is full.' };
+  }
+
+  // Race guard: another tab/device may have created the doc between the
+  // findMemberByEmail above and now. Treat a late duplicate as already joined.
+  const raceCheck = await findMemberByEmail(leagueCode, userEmail);
+  if (raceCheck) {
+    await ensureUserLeagueLink(user.uid, leagueCode);
+    return { ok: true, alreadyMember: true };
   }
 
   const newMember: Member = {
