@@ -50,6 +50,38 @@ export function normalizeLeague(raw: Record<string, unknown>): League {
 
 export type MemberRole = 'commissioner' | 'member';
 
+// ─── Scoring types ───────────────────────────────────────────────────────────
+
+export type GameStatus = 'scheduled' | 'in_progress' | 'final';
+
+export type GameResult = {
+  espnGameId: string;  // ESPN event ID
+  homeAbbr: string;    // e.g. 'BUF'
+  awayAbbr: string;    // e.g. 'MIA'
+  homeScore: number;
+  awayScore: number;
+  status: GameStatus;
+  startsAt: string;    // ISO string
+};
+
+export type WeeklyResultStatus = 'in_progress' | 'final' | 'rolled_over';
+
+export type WeeklyResult = {
+  week: number;
+  season: number;
+  fetchedAt: Timestamp;
+  games: GameResult[];
+  teamsAt19: string[];
+  winningMemberIds: string[];
+  weeklyShare: number;
+  rolloverFrom: number;
+  payoutPerWinner: number;
+  status: WeeklyResultStatus;
+  settledAt: Timestamp | null;
+};
+
+// ─── Member ───────────────────────────────────────────────────────────────────
+
 export type Member = {
   uid: string | null;
   email: string;

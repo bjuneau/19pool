@@ -8,6 +8,7 @@ import { buildDisplayName } from '../lib/members';
 import { normalizeLeague } from '../lib/types';
 import type { League } from '../lib/types';
 import MembersTab from './dashboard/MembersTab';
+import OverviewTab from './dashboard/OverviewTab';
 import TeamsTab from './dashboard/TeamsTab';
 
 type UserDoc = {
@@ -46,7 +47,9 @@ export default function Dashboard() {
       return;
     }
     const unsub = onSnapshot(doc(db, 'leagues', leagueCode), (snap) => {
-      setLeague(snap.exists() ? normalizeLeague(snap.data() as Record<string, unknown>) : null);
+      setLeague(
+        snap.exists() ? normalizeLeague(snap.data() as Record<string, unknown>) : null
+      );
     });
     return unsub;
   }, [leagueCode]);
@@ -56,16 +59,20 @@ export default function Dashboard() {
     navigate('/', { replace: true });
   }
 
-  const firstName = userDoc?.firstName || user?.email?.split('@')[0] || 'there';
-  const isCommissioner = !!user && !!league && league.commissionerId === user.uid;
+  const firstName =
+    userDoc?.firstName || user?.email?.split('@')[0] || 'there';
+  const isCommissioner =
+    !!user && !!league && league.commissionerId === user.uid;
   const commissionerName = buildDisplayName(
     userDoc?.firstName ?? '',
     userDoc?.lastName ?? '',
     user?.email?.split('@')[0]
   );
 
-  // Teams tab is wider — use a wider container when it's active.
-  const wideTab = activeTab === 'teams';
+  // Widen the container for Teams tab (drag-and-drop) and Overview in-season (game cards).
+  const wideTab =
+    activeTab === 'teams' ||
+    (activeTab === 'overview' && league?.status === 'in_season');
 
   return (
     <div className="hero-bg min-h-screen px-4 py-16">
@@ -83,6 +90,7 @@ export default function Dashboard() {
           </button>
         </header>
 
+        {/* Tab bar — only for commissioners (members only see overview) */}
         {league && isCommissioner && (
           <div className="flex bg-navy-950/60 border border-white/10 rounded-xl p-1 mb-6 gap-1 max-w-sm">
             <TabButton
@@ -108,10 +116,13 @@ export default function Dashboard() {
 
         <Card>
           {activeTab === 'overview' || !isCommissioner || !league ? (
-            <Overview
+            <OverviewTab
               firstName={firstName}
               league={league}
+              leagueCode={leagueCode}
               loadingProfile={loadingProfile}
+              userId={user?.uid ?? ''}
+              isCommissioner={isCommissioner}
             />
           ) : activeTab === 'members' ? (
             <MembersTab
@@ -147,58 +158,5 @@ function TabButton({
     >
       {children}
     </button>
-  );
-}
-
-function Overview({
-  firstName,
-  league,
-  loadingProfile,
-}: {
-  firstName: string;
-  league: League | null;
-  loadingProfile: boolean;
-}) {
-  return (
-    <div>
-      <h1 className="text-3xl font-extrabold text-white mb-2">
-        Welcome, <span className="text-amber-400">{firstName}</span>
-      </h1>
-      <p className="text-slate-400 text-sm mb-8">
-        Your dashboard is just getting started. Full league features coming soon.
-      </p>
-
-      {loadingProfile ? (
-        <p className="text-slate-500 text-sm">Loading your profile…</p>
-      ) : league ? (
-        <div className="bg-navy-950/60 border border-amber-500/20 rounded-2xl p-6">
-          <p className="text-xs text-slate-500 uppercase tracking-widest mb-2">
-            Your League
-          </p>
-          <p className="text-2xl font-bold text-white mb-1">{league.name}</p>
-          <p className="font-mono text-amber-400 tracking-[0.3em]">{league.code}</p>
-          <p className="text-xs text-slate-500 mt-3">
-            {league.memberCount ?? 0} member
-            {(league.memberCount ?? 0) === 1 ? '' : 's'} · {league.status}
-          </p>
-        </div>
-      ) : (
-        <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-6 text-center">
-          <p className="text-slate-400 text-sm mb-4">
-            You're not in a league yet.
-          </p>
-          <Link
-            to="/create-league"
-            className="inline-block bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-6 py-2.5 rounded-full transition-all tracking-wide"
-          >
-            Create a League
-          </Link>
-        </div>
-      )}
-
-      <p className="text-xs text-slate-600 mt-8 text-center">
-        Full dashboard coming soon.
-      </p>
-    </div>
   );
 }

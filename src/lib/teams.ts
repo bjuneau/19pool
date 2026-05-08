@@ -62,3 +62,8 @@ export const TEAM_BY_ABBR: Record<string, NFLTeam> = Object.fromEntries(
 export const ESPN_TO_FULL: Record<string, string> = Object.fromEntries(
   NFL_TEAMS.map((t) => [t.abbr, t.fullName])
 );
+
+/** ESPN numeric team ID → our abbr, used as fallback in score normalization */
+export const ESPN_ID_TO_ABBR: Record<string, string> = Object.fromEntries(
+  NFL_TEAMS.map((t) => [t.espnId, t.abbr])
+);

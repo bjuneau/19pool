@@ -30,6 +30,10 @@ service cloud.firestore {
       return signedIn() && leagueData(code).commissionerId == request.auth.uid;
     }
 
+    function leagueStatus(code) {
+      return leagueData(code).status;
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
       allow create: if signedIn() && request.auth.uid == uid;
@@ -42,10 +46,19 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.commissionerId == request.auth.uid;
       allow update: if signedIn() && (
+        // Commissioner can change anything.
         resource.data.commissionerId == request.auth.uid
+        // Any signed-in user can bump memberCount by 1 (join — recruiting status).
         || (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
           && request.resource.data.memberCount == resource.data.memberCount + 1
+        )
+        // Any signed-in user can bump memberCount AND reset skipReassignmentCheck
+        // atomically (join — assigned status).
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount', 'skipReassignmentCheck'])
+          && request.resource.data.memberCount == resource.data.memberCount + 1
+          && request.resource.data.skipReassignmentCheck == false
         )
       );
       allow delete: if signedIn()
@@ -72,6 +85,16 @@ service cloud.firestore {
         );
 
         allow delete: if isCommissionerOf(code);
+      }
+
+      // Weekly score results — written by any signed-in user via ESPN polling.
+      // Data is sourced from ESPN's public API and math is deterministic, so
+      // tampering is self-correcting on the next refresh.
+      match /weeklyResults/{week} {
+        allow read: if signedIn();
+        allow create, update: if signedIn()
+                               && leagueStatus(code) == 'in_season';
+        allow delete: if false;
       }
     }
   }
