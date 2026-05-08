@@ -106,6 +106,7 @@ export default function CreateLeague() {
         invitedAt: null,
         joinedAt: null,
         inviteToken: generateInviteToken(),
+        lastInviteSentAt: null,
       };
       const memberRef = doc(collection(db, 'leagues', code, 'members'));
       await setDoc(memberRef, {

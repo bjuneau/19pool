@@ -64,4 +64,7 @@ export type Member = {
   invitedAt: Timestamp | null;
   joinedAt: Timestamp | null;
   inviteToken: string;
+  // Set when an invite email is successfully delivered (initial or resend).
+  // Null/undefined = never sent, or send failed — treat both as "free to send".
+  lastInviteSentAt: Timestamp | null;
 };

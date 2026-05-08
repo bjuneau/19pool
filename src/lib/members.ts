@@ -16,6 +16,7 @@ import type { User } from 'firebase/auth';
 import { db } from './firebase';
 import { LEAGUE_CAPACITY, normalizeLeague } from './types';
 import type { League, Member, MemberRole } from './types';
+import { buildInviteEmailHtml, buildInviteEmailSubject } from './inviteEmail';
 
 export type MemberWithId = Member & { id: string };
 
@@ -85,6 +86,7 @@ export async function createPendingInvite({
     invitedAt: null,
     joinedAt: null,
     inviteToken: generateInviteToken(),
+    lastInviteSentAt: null,
   };
   const ref = doc(collection(db, 'leagues', leagueCode, 'members'));
   await setDoc(ref, { ...member, invitedAt: serverTimestamp() });
@@ -252,6 +254,7 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
     invitedAt: null,
     joinedAt: null,
     inviteToken: generateInviteToken(),
+    lastInviteSentAt: null,
   };
   const ref = doc(collection(db, 'leagues', leagueCode, 'members'));
   await setDoc(ref, {
@@ -317,6 +320,85 @@ export async function sendInviteEmail(args: {
     const data = await res.json().catch(() => ({}));
     throw new Error(data.error || `Failed to send invite (${res.status})`);
   }
+}
+
+// ─── Resend ───────────────────────────────────────────────────────────────────
+
+const RESEND_COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
+
+export type ResendResult =
+  | { ok: true }
+  | { ok: false; reason: 'cooldown' | 'joined' | 'error'; error?: string; retryAt?: Date };
+
+/**
+ * Resends an invite email to a pending member. Enforces:
+ *  • already-joined guard
+ *  • 1-hour per-recipient cooldown (based on lastInviteSentAt)
+ * Reuses the existing inviteToken — both the old and new links keep working.
+ * On success, writes lastInviteSentAt = serverTimestamp() to the member doc.
+ */
+export async function resendInvite(
+  member: MemberWithId,
+  league: League,
+  leagueCode: string,
+  commissionerEmail: string
+): Promise<ResendResult> {
+  // 1. Refuse if already joined.
+  if (member.joinedAt) return { ok: false, reason: 'joined' };
+
+  // 2. Cooldown check. undefined/null means "never sent" — allow immediately.
+  if (member.lastInviteSentAt) {
+    const sentAt = member.lastInviteSentAt.toDate();
+    const cutoff = new Date(Date.now() - RESEND_COOLDOWN_MS);
+    if (sentAt > cutoff) {
+      const retryAt = new Date(sentAt.getTime() + RESEND_COOLDOWN_MS);
+      return { ok: false, reason: 'cooldown', retryAt };
+    }
+  }
+
+  // 3. Build and send email using the existing token (not a new one).
+  const inviteUrl = `${window.location.origin}/join/${leagueCode}?invite=${member.inviteToken}`;
+  const html = buildInviteEmailHtml({
+    leagueName: league.name,
+    leagueCode,
+    commissionerName: league.commissionerName ?? '',
+    inviteUrl,
+  });
+  const subject = buildInviteEmailSubject(league.commissionerName ?? '', league.name);
+
+  try {
+    await sendInviteEmail({ to: member.email, subject, html, replyTo: commissionerEmail });
+  } catch (err) {
+    return {
+      ok: false,
+      reason: 'error',
+      error: (err as { message?: string })?.message ?? 'Send failed',
+    };
+  }
+
+  // 4. Stamp the send time so the cooldown takes effect.
+  await updateDoc(doc(db, 'leagues', leagueCode, 'members', member.id), {
+    lastInviteSentAt: serverTimestamp(),
+  });
+
+  return { ok: true };
+}
+
+/** Returns true if the member is within the 1-hour resend cooldown. */
+export function isInResendCooldown(member: Pick<Member, 'lastInviteSentAt'>): boolean {
+  if (!member.lastInviteSentAt) return false;
+  const sentAt = member.lastInviteSentAt.toDate();
+  return sentAt > new Date(Date.now() - RESEND_COOLDOWN_MS);
+}
+
+/** Returns the Date when the cooldown expires, or null if not in cooldown. */
+export function resendCooldownExpiresAt(
+  member: Pick<Member, 'lastInviteSentAt'>
+): Date | null {
+  if (!member.lastInviteSentAt) return null;
+  const sentAt = member.lastInviteSentAt.toDate();
+  const expiresAt = new Date(sentAt.getTime() + RESEND_COOLDOWN_MS);
+  return expiresAt > new Date() ? expiresAt : null;
 }
 
 // Convenience: re-export ordering helper that callers can apply to a fresh

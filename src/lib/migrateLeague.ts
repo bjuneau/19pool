@@ -71,6 +71,7 @@ export async function migrateLeagueToSubcollection(leagueCode: string): Promise<
       invitedAt: (createdAt as Member['invitedAt']) ?? null,
       joinedAt: (createdAt as Member['joinedAt']) ?? null,
       inviteToken: generateInviteToken(),
+      lastInviteSentAt: null,
     };
 
     const newRef = doc(collection(db, 'leagues', code, 'members'));
