@@ -206,7 +206,7 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
       lastName: lastName || invitedMember.lastName,
     });
     await ensureUserLeagueLink(user.uid, leagueCode);
-    await resetReassignmentCheckIfAssigned(leagueCode, league.status);
+    await bumpLeagueOnJoin(leagueCode, league.status);
     return { ok: true, alreadyMember: false };
   }
 
@@ -229,7 +229,7 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
       lastName: lastName || existing.lastName,
     });
     await ensureUserLeagueLink(user.uid, leagueCode);
-    await resetReassignmentCheckIfAssigned(leagueCode, league.status);
+    await bumpLeagueOnJoin(leagueCode, league.status);
     return { ok: true, alreadyMember: false };
   }
 
@@ -259,9 +259,8 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
     invitedAt: serverTimestamp(),
     joinedAt: serverTimestamp(),
   });
-  await bumpMemberCount(leagueCode);
   await ensureUserLeagueLink(user.uid, leagueCode);
-  await resetReassignmentCheckIfAssigned(leagueCode, league.status);
+  await bumpLeagueOnJoin(leagueCode, league.status);
   return { ok: true, alreadyMember: false };
 }
 
@@ -289,19 +288,16 @@ async function ensureUserLeagueLink(uid: string, leagueCode: string) {
   await updateDoc(doc(db, 'users', uid), { leagueCode });
 }
 
-async function bumpMemberCount(leagueCode: string) {
-  await updateDoc(doc(db, 'leagues', leagueCode), { memberCount: increment(1) });
-}
-
-// When someone joins during 'assigned' status, reset the check flag so the
-// TeamsTab banner reappears to prompt the commissioner to handle the new member.
-async function resetReassignmentCheckIfAssigned(
-  leagueCode: string,
-  leagueStatus: string
-) {
+// Single atomic update that always increments memberCount and, when the league
+// is already in 'assigned' state, simultaneously resets skipReassignmentCheck.
+// The Firestore rule requires both fields to land in one write when status is
+// 'assigned' (affectedKeys must be exactly ['memberCount','skipReassignmentCheck']).
+async function bumpLeagueOnJoin(leagueCode: string, leagueStatus: string) {
+  const update: Record<string, unknown> = { memberCount: increment(1) };
   if (leagueStatus === 'assigned') {
-    await updateDoc(doc(db, 'leagues', leagueCode), { skipReassignmentCheck: false });
+    update.skipReassignmentCheck = false;
   }
+  await updateDoc(doc(db, 'leagues', leagueCode), update);
 }
 
 // Convenience for the dashboard "Send Email Invite" flow. Calls the existing
