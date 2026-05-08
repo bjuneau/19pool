@@ -4,11 +4,13 @@ export function buildInviteEmailHtml(args: {
   leagueName: string;
   commissionerName: string;
   inviteUrl: string;
+  leagueCode: string;
 }): string {
-  const { leagueName, commissionerName, inviteUrl } = args;
+  const { leagueName, commissionerName, inviteUrl, leagueCode } = args;
   const safeLeague = escapeHtml(leagueName);
   const safeCommissioner = escapeHtml(commissionerName);
   const safeUrl = escapeHtml(inviteUrl);
+  const safeCode = escapeHtml(leagueCode);
 
   return `
 <div style="font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif; max-width: 560px; margin: 0 auto; color: #1a202c;">
@@ -27,6 +29,11 @@ export function buildInviteEmailHtml(args: {
       Or paste this link into your browser:<br>
       <a href="${safeUrl}" style="color: #f59e0b; word-break: break-all;">${safeUrl}</a>
     </p>
+    <div style="margin-top: 24px; padding: 16px; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 8px; text-align: center;">
+      <p style="font-size: 12px; color: #718096; margin: 0 0 6px 0; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600;">Your league code</p>
+      <p style="font-size: 20px; font-weight: 800; letter-spacing: 0.15em; color: #1a202c; margin: 0; font-family: 'DM Mono', 'Courier New', monospace;">${safeCode}</p>
+      <p style="font-size: 12px; color: #a0aec0; margin: 6px 0 0 0;">Save this — you can use it to rejoin at 19pool.com</p>
+    </div>
   </div>
   <p style="text-align: center; font-size: 12px; color: #718096; margin-top: 24px;">
     Sent from 19pool.com · You can reply to this email to reach ${safeCommissioner}.

@@ -109,6 +109,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
             leagueName: league.name,
             commissionerName,
             inviteUrl: tokenUrl,
+            leagueCode,
           }),
           replyTo: league.commissionerEmail,
         });
