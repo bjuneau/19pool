@@ -12,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   where,
+  writeBatch,
 } from 'firebase/firestore';
 import type { User } from 'firebase/auth';
 import { db } from './firebase';
@@ -494,6 +495,132 @@ export async function removeMember(
       reason: 'error',
       error: (err as { message?: string })?.message ?? 'Remove failed',
     };
+  }
+}
+
+// ─── Self-leave ───────────────────────────────────────────────────────────────
+
+export type LeaveLeagueResult =
+  | { ok: true }
+  | { ok: false; reason: 'locked' | 'commissioner' | 'error'; error?: string };
+
+/**
+ * Self-removal during recruiting only. The user is calling this on themselves
+ * (the auth user matches member.uid), which exercises a different Firestore
+ * rule path than commissioner-removes-member:
+ *  • members/{id} delete   → self-removal rule (uid == request.auth.uid)
+ *  • leagues/{code} update → recruiting-decrement rule (memberCount -1)
+ *  • users/{uid} update    → user-edits-own-doc rule
+ *
+ * Commissioners can't leave their own league — they have to delete it
+ * (or transfer it, once we support that).
+ */
+export async function leaveLeague(
+  member: MemberWithId,
+  league: League,
+  leagueCode: string
+): Promise<LeaveLeagueResult> {
+  if (league.status !== 'recruiting') {
+    return { ok: false, reason: 'locked' };
+  }
+  if (member.role === 'commissioner') {
+    return { ok: false, reason: 'commissioner' };
+  }
+
+  try {
+    // Clear leagueCode on self first. If a later write fails, the user
+    // ends up out of the league with a dangling member doc rather than
+    // stuck pointing at a league they thought they left.
+    if (member.uid) {
+      await updateDoc(doc(db, 'users', member.uid), { leagueCode: '' });
+    }
+
+    await deleteDoc(doc(db, 'leagues', leagueCode, 'members', member.id));
+
+    await updateDoc(doc(db, 'leagues', leagueCode), {
+      memberCount: increment(-1),
+    });
+
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: 'error',
+      error: (err as { message?: string })?.message ?? 'Leave failed',
+    };
+  }
+}
+
+// ─── Delete league (commissioner) ─────────────────────────────────────────────
+
+export type DeleteLeagueResult =
+  | { ok: true; membersRemoved: number; weeklyResultsRemoved: number }
+  | { ok: false; reason: 'locked' | 'error'; error?: string };
+
+/**
+ * Permanently deletes a league and everything under it. Commissioner-only;
+ * refused during in_season. Order matters: child docs first (so rules can
+ * still see the league doc and verify isCommissionerOf), then the league.
+ */
+export async function deleteLeague(
+  league: League,
+  leagueCode: string
+): Promise<DeleteLeagueResult> {
+  if (league.status === 'in_season') {
+    return { ok: false, reason: 'locked' };
+  }
+
+  try {
+    const members = await listMembers(leagueCode);
+
+    // 1. Clear users/{uid}.leagueCode for every joined member (so the user
+    //    can sign in and join/create another league cleanly).
+    for (const m of members) {
+      if (m.uid) {
+        await updateDoc(doc(db, 'users', m.uid), { leagueCode: '' });
+      }
+    }
+
+    // 2. Delete member docs in batches of 500.
+    const memberRefs = members.map((m) =>
+      doc(db, 'leagues', leagueCode, 'members', m.id)
+    );
+    await batchDelete(memberRefs);
+
+    // 3. Delete weeklyResults docs (only present if the league reached
+    //    in_season or complete). Read first so we know what's there.
+    const weeklySnap = await getDocs(
+      collection(db, 'leagues', leagueCode, 'weeklyResults')
+    );
+    const weeklyRefs = weeklySnap.docs.map((d) => d.ref);
+    await batchDelete(weeklyRefs);
+
+    // 4. Finally, the league doc itself.
+    await deleteDoc(doc(db, 'leagues', leagueCode));
+
+    return {
+      ok: true,
+      membersRemoved: members.length,
+      weeklyResultsRemoved: weeklyRefs.length,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: 'error',
+      error: (err as { message?: string })?.message ?? 'Delete failed',
+    };
+  }
+}
+
+// Helper: deletes a list of doc refs in 500-op batches (Firestore's cap).
+async function batchDelete(refs: ReturnType<typeof doc>[]): Promise<void> {
+  if (refs.length === 0) return;
+  const CHUNK = 500;
+  for (let i = 0; i < refs.length; i += CHUNK) {
+    const slice = refs.slice(i, i + CHUNK);
+    const batch = writeBatch(db);
+    slice.forEach((ref) => batch.delete(ref));
+    await batch.commit();
   }
 }
 

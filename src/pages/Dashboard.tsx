@@ -82,12 +82,20 @@ export default function Dashboard() {
             <span className="text-amber-400">19</span>
             <span className="text-white"> POOL</span>
           </Link>
-          <button
-            onClick={handleSignOut}
-            className="text-sm text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-full border border-white/10 hover:border-white/30"
-          >
-            Sign Out
-          </button>
+          <div className="flex items-center gap-4">
+            <Link
+              to="/account"
+              className="text-sm text-slate-400 hover:text-amber-400 transition-colors"
+            >
+              Account
+            </Link>
+            <button
+              onClick={handleSignOut}
+              className="text-sm text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-full border border-white/10 hover:border-white/30"
+            >
+              Sign Out
+            </button>
+          </div>
         </header>
 
         {/* Tab bar — only for commissioners (members only see overview) */}

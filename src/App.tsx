@@ -6,6 +6,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import CreateLeague from './pages/CreateLeague';
 import Dashboard from './pages/Dashboard';
 import Join from './pages/Join';
+import Account from './pages/Account';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export default function App() {
@@ -30,6 +31,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/account"
+        element={
+          <ProtectedRoute>
+            <Account />
           </ProtectedRoute>
         }
       />

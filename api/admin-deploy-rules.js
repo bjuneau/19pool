@@ -71,6 +71,15 @@ service cloud.firestore {
           && request.resource.data.memberCount == resource.data.memberCount + 1
           && request.resource.data.skipReassignmentCheck == false
         )
+        // Any signed-in user can decrement memberCount by 1 during recruiting
+        // (self-leave). Member-doc deletion is separately gated by the
+        // self-removal rule on /members, so only actual members can usefully
+        // trigger this path.
+        || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
+          && request.resource.data.memberCount == resource.data.memberCount - 1
+          && resource.data.status == 'recruiting'
+        )
       );
       allow delete: if signedIn()
                     && resource.data.commissionerId == request.auth.uid;
@@ -95,12 +104,18 @@ service cloud.firestore {
           )
         );
 
-        // Commissioner can remove members during recruiting/assigned only.
-        // Once the season starts (in_season) or finishes (complete), the
-        // roster is frozen.
-        allow delete: if isCommissionerOf(code)
-                      && leagueStatus(code) != 'in_season'
-                      && leagueStatus(code) != 'complete';
+        // Member deletion. Commissioner can remove members anytime except
+        // in_season (members are part of the data set during 'complete' so
+        // delete-league needs to be able to wipe them). Self-removal is
+        // allowed during 'recruiting' only.
+        allow delete: if (
+          isCommissionerOf(code)
+          && leagueStatus(code) != 'in_season'
+        ) || (
+          signedIn()
+          && resource.data.uid == request.auth.uid
+          && leagueStatus(code) == 'recruiting'
+        );
       }
 
       // Weekly score results — written by any signed-in user via ESPN polling.
@@ -110,7 +125,10 @@ service cloud.firestore {
         allow read: if signedIn();
         allow create, update: if signedIn()
                                && leagueStatus(code) == 'in_season';
-        allow delete: if false;
+        // Commissioner can sweep weekly results when deleting a league.
+        // Same gate as member-delete: anytime except in_season.
+        allow delete: if isCommissionerOf(code)
+                      && leagueStatus(code) != 'in_season';
       }
     }
   }
