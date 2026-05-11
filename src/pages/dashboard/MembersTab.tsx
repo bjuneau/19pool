@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import {
@@ -8,6 +8,7 @@ import {
   isInResendCooldown,
   isValidEmail,
   membersCollectionRef,
+  removeMember,
   resendCooldownExpiresAt,
   resendInvite,
   sendInviteEmail,
@@ -63,6 +64,21 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
   // Resend All state
   const [resendAllStatus, setResendAllStatus] = useState<ResendAllStatus>({ kind: 'idle' });
   const [showResendAllModal, setShowResendAllModal] = useState(false);
+
+  // Removal state
+  const [removeTarget, setRemoveTarget] = useState<MemberWithId | null>(null);
+  const [removeStatus, setRemoveStatus] = useState<
+    { kind: 'idle' } | { kind: 'removing' } | { kind: 'error'; message: string }
+  >({ kind: 'idle' });
+
+  // Toast (success messages)
+  const [toast, setToast] = useState('');
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 4000);
+  }
 
   useEffect(() => {
     const unsub = onSnapshot(
@@ -278,13 +294,123 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
     }
   }
 
+  // ── Removal ────────────────────────────────────────────────────────────────
+
+  async function handleConfirmRemove() {
+    if (!removeTarget) return;
+    setRemoveStatus({ kind: 'removing' });
+
+    const target = removeTarget;
+    const result = await removeMember(target, league, leagueCode);
+
+    if (!result.ok) {
+      const message =
+        result.reason === 'commissioner'
+          ? "The commissioner can't be removed."
+          : result.reason === 'locked'
+            ? "Members can't be removed once the season has started."
+            : result.error ?? 'Remove failed.';
+      setRemoveStatus({ kind: 'error', message });
+      return;
+    }
+
+    // Success — close modal, surface a toast.
+    setRemoveTarget(null);
+    setRemoveStatus({ kind: 'idle' });
+
+    const label = target.name?.trim() || target.email;
+    const hadTeams = target.teams.length > 0;
+    const inAssigned = league.status === 'assigned';
+
+    if (result.wasJoined) {
+      const base = `✓ Removed ${label}`;
+      const addendum =
+        inAssigned && hadTeams
+          ? '. Open Teams tab to redistribute their teams.'
+          : ' from the league.';
+      showToast(base + addendum);
+    } else {
+      showToast(`✓ Cancelled invite to ${target.email}.`);
+    }
+  }
+
+  function handleOpenRemoveModal(member: MemberWithId) {
+    setRemoveStatus({ kind: 'idle' });
+    setRemoveTarget(member);
+  }
+
+  function handleCloseRemoveModal() {
+    if (removeStatus.kind === 'removing') return;
+    setRemoveTarget(null);
+    setRemoveStatus({ kind: 'idle' });
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const isLocked = league.status === 'in_season';
+  const canRemove =
+    league.status !== 'in_season' && league.status !== 'complete';
   const resendAllSending = resendAllStatus.kind === 'sending';
+
+  const removeIsPending = removeTarget && !removeTarget.joinedAt;
+  const removeDisplay = removeTarget?.name?.trim() || removeTarget?.email || '';
 
   return (
     <div className="space-y-6">
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-navy-900 border border-amber-500/30 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-2xl">
+          {toast}
+        </div>
+      )}
+
+      {/* Removal confirmation modal */}
+      {removeTarget && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleCloseRemoveModal}
+          />
+          <div className="relative z-50 w-full max-w-sm bg-navy-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h2 className="text-white font-bold text-lg mb-3">
+              {removeIsPending
+                ? `Cancel pending invite to ${removeTarget.email}?`
+                : `Remove ${removeDisplay} from the league?`}
+            </h2>
+            <p className="text-slate-400 text-sm mb-6">
+              {removeIsPending
+                ? "They won't be able to use the invite link anymore. You can re-invite them later if you change your mind."
+                : "They'll lose access to this league and can join a different one. This can't be undone."}
+            </p>
+            {removeStatus.kind === 'error' && (
+              <p className="text-red-400 text-sm mb-4">{removeStatus.message}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleCloseRemoveModal}
+                disabled={removeStatus.kind === 'removing'}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 text-sm font-semibold hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleConfirmRemove()}
+                disabled={removeStatus.kind === 'removing'}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-400 text-white text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {removeStatus.kind === 'removing'
+                  ? 'Removing…'
+                  : removeIsPending
+                    ? 'Cancel Invite'
+                    : 'Remove Member'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirmation modal for >10 Resend All */}
       {showResendAllModal && (
@@ -520,7 +646,9 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
                 member={m}
                 resendState={resendStates[m.id] ?? { kind: 'idle' }}
                 onResend={() => void handleResendOne(m)}
+                onRemove={() => handleOpenRemoveModal(m)}
                 showResend={!isLocked}
+                showRemove={canRemove}
               />
             ))}
           </ul>
@@ -536,17 +664,22 @@ function MemberRow({
   member,
   resendState,
   onResend,
+  onRemove,
   showResend,
+  showRemove,
 }: {
   member: MemberWithId;
   resendState: MemberResendState;
   onResend: () => void;
+  onRemove: () => void;
   showResend: boolean;
+  showRemove: boolean;
 }) {
   const initials = getInitials(member);
   const display = member.name?.trim() || member.email;
   const badge = roleBadge(member);
   const isPending = !member.joinedAt && member.role !== 'commissioner';
+  const isCommissioner = member.role === 'commissioner';
 
   // Cooldown tooltip label
   const cooldownLabel =
@@ -564,7 +697,7 @@ function MemberRow({
         <p className="text-xs text-slate-400 truncate">{member.email}</p>
       </div>
 
-      {/* Badge + resend button */}
+      {/* Badge + actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <span
           className={`px-2.5 py-1 rounded-full text-xs font-semibold ${badge.className}`}
@@ -578,6 +711,18 @@ function MemberRow({
             onClick={onResend}
             cooldownLabel={cooldownLabel}
           />
+        )}
+
+        {showRemove && !isCommissioner && (
+          <button
+            type="button"
+            onClick={onRemove}
+            title={isPending ? 'Cancel invite' : 'Remove member'}
+            aria-label={isPending ? 'Cancel invite' : 'Remove member'}
+            className="w-7 h-7 flex items-center justify-center rounded-full text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors text-lg leading-none"
+          >
+            ×
+          </button>
         )}
       </div>
     </li>

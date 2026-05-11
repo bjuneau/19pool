@@ -37,7 +37,18 @@ service cloud.firestore {
     match /users/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
       allow create: if signedIn() && request.auth.uid == uid;
-      allow update: if signedIn() && request.auth.uid == uid;
+      allow update: if (signedIn() && request.auth.uid == uid)
+                    // Commissioner clearing the leagueCode of a member of
+                    // their league (member-removal flow). Tightly scoped:
+                    // only the leagueCode field, only set to '', and only
+                    // when the requester commissioners the old value.
+                    || (
+                      signedIn()
+                      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leagueCode'])
+                      && request.resource.data.leagueCode == ''
+                      && resource.data.leagueCode != ''
+                      && get(/databases/$(database)/documents/leagues/$(resource.data.leagueCode)).data.commissionerId == request.auth.uid
+                    );
       allow delete: if false;
     }
 
@@ -84,7 +95,12 @@ service cloud.firestore {
           )
         );
 
-        allow delete: if isCommissionerOf(code);
+        // Commissioner can remove members during recruiting/assigned only.
+        // Once the season starts (in_season) or finishes (complete), the
+        // roster is frozen.
+        allow delete: if isCommissionerOf(code)
+                      && leagueStatus(code) != 'in_season'
+                      && leagueStatus(code) != 'complete';
       }
 
       // Weekly score results — written by any signed-in user via ESPN polling.

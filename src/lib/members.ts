@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -425,6 +426,75 @@ export function resendCooldownExpiresAt(
   const sentAt = member.lastInviteSentAt.toDate();
   const expiresAt = new Date(sentAt.getTime() + RESEND_COOLDOWN_MS);
   return expiresAt > new Date() ? expiresAt : null;
+}
+
+// ─── Removal ──────────────────────────────────────────────────────────────────
+
+export type RemoveMemberResult =
+  | { ok: true; wasJoined: boolean }
+  | {
+      ok: false;
+      reason: 'commissioner' | 'locked' | 'not_found' | 'error';
+      error?: string;
+    };
+
+/**
+ * Removes a member from a league.
+ *  • If the member was joined (had a uid), also clears users/{uid}.leagueCode.
+ *  • Decrements league.memberCount by 1.
+ *  • Refuses if member.role === 'commissioner'.
+ *  • Refuses if league.status is 'in_season' or 'complete'.
+ *  • In 'assigned' status, also resets skipReassignmentCheck so the
+ *    Teams-tab reassignment banner appears next time it's opened.
+ *
+ * The user-doc clear runs before the member delete. A failure between them
+ * leaves the user with a dangling pointer to a league they no longer belong
+ * to — defensible: the frontend already treats "leagueCode set but no
+ * matching member doc" as not-a-member.
+ *
+ * No transaction in v1 — the small race window is acceptable for an admin
+ * action and Firestore transactions don't compose with the typed-error
+ * pattern used elsewhere here.
+ */
+export async function removeMember(
+  member: MemberWithId,
+  league: League,
+  leagueCode: string
+): Promise<RemoveMemberResult> {
+  if (league.status === 'in_season' || league.status === 'complete') {
+    return { ok: false, reason: 'locked' };
+  }
+  if (member.role === 'commissioner') {
+    return { ok: false, reason: 'commissioner' };
+  }
+
+  try {
+    // 1. Clear users/{uid}.leagueCode for joined members. Skipped for
+    //    pending invites (uid is null).
+    if (member.uid) {
+      await updateDoc(doc(db, 'users', member.uid), { leagueCode: '' });
+    }
+
+    // 2. Delete the member doc.
+    await deleteDoc(doc(db, 'leagues', leagueCode, 'members', member.id));
+
+    // 3. Bump league counters in a single write. The 'assigned' branch
+    //    matches the same hasOnly() rule used by joins, so the affected
+    //    keys must be exactly memberCount + skipReassignmentCheck there.
+    const update: Record<string, unknown> = { memberCount: increment(-1) };
+    if (league.status === 'assigned') {
+      update.skipReassignmentCheck = false;
+    }
+    await updateDoc(doc(db, 'leagues', leagueCode), update);
+
+    return { ok: true, wasJoined: !!member.uid };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: 'error',
+      error: (err as { message?: string })?.message ?? 'Remove failed',
+    };
+  }
 }
 
 // Convenience: re-export ordering helper that callers can apply to a fresh
