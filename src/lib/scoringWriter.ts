@@ -15,8 +15,9 @@ import { fetchEspnWeek } from './espn';
 import {
   computePot,
   computeStatus,
-  computeWeeklyShare,
+  computeWeeklyShareFromPot,
   computeWinningMembers,
+  getSeasonPot,
 } from './scoring';
 import type { League, WeeklyResult } from './types';
 import type { MemberWithId } from './members';
@@ -113,8 +114,9 @@ export async function refreshWeek(
     allResults.set(wr.week, wr);
   }
 
-  // Pure math.
-  const weeklyShare = computeWeeklyShare(league.seasonEntry, league.memberCount);
+  // Pure math. Weekly share is derived from the (possibly overridden) pot
+  // so a manual pot flows through to per-week payouts.
+  const weeklyShare = computeWeeklyShareFromPot(getSeasonPot(league));
   const rollover = rolloverFrom(allResults, week);
   const { teamsAt19, winningMemberIds } = computeWinningMembers(games, members);
   const status = computeStatus(games, winningMemberIds);

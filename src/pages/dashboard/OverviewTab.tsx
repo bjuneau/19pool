@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, doc, onSnapshot, orderBy, query, updateDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { getCurrentNFLWeek } from '../../lib/espn';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
-import { computePot, computeWeeklyShare } from '../../lib/scoring';
+import {
+  computeWeeklyShareFromPot,
+  getSeasonPot,
+  isPotManuallySet,
+} from '../../lib/scoring';
 import { refreshWeek } from '../../lib/scoringWriter';
 import { TEAM_BY_ABBR } from '../../lib/teams';
 import type { GameResult, League, WeeklyResult } from '../../lib/types';
@@ -227,17 +231,19 @@ export default function OverviewTab({
         league={league}
         leagueCode={leagueCode}
         isCommissioner={isCommissioner}
-      />
+      >
+        {(getSeasonPot(league) > 0 || isCommissioner) && (
+          <MoneyCard
+            league={league}
+            leagueCode={leagueCode}
+            isCommissioner={isCommissioner}
+          />
+        )}
+      </PreSeasonOverview>
     );
   }
 
   // In-season.
-  const weeklyShare = computeWeeklyShare(league.seasonEntry, league.memberCount);
-  const seasonPot = league.seasonEntry * league.memberCount;
-  const currentPot = computePot(
-    weeklyShare,
-    currentResult?.rolloverFrom ?? 0
-  );
   const standings = computeStandings(members, weeklyResults);
   const winCounts = teamWinCounts(weeklyResults);
   const seasonNotStarted = currentWeek === null;
@@ -310,14 +316,12 @@ export default function OverviewTab({
         </div>
       )}
 
-      {/* ── Pot summary ── */}
-      {league.seasonEntry > 0 && (
-        <PotSummaryCard
-          seasonPot={seasonPot}
-          weeklyShare={weeklyShare}
-          currentPot={currentPot}
-          rolloverFrom={currentResult?.rolloverFrom ?? 0}
-          currentWeek={currentWeek}
+      {/* ── Money ── */}
+      {(getSeasonPot(league) > 0 || isCommissioner) && (
+        <MoneyCard
+          league={league}
+          leagueCode={leagueCode}
+          isCommissioner={isCommissioner}
         />
       )}
 
@@ -367,11 +371,13 @@ function PreSeasonOverview({
   league,
   leagueCode,
   isCommissioner,
+  children,
 }: {
   firstName: string;
   league: League;
   leagueCode: string;
   isCommissioner: boolean;
+  children?: React.ReactNode;
 }) {
   const statusLabel =
     league.status === 'assigned'
@@ -404,6 +410,8 @@ function PreSeasonOverview({
         </div>
       </div>
 
+      {children}
+
       <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-6 text-center">
         <p className="text-2xl mb-2">🏈</p>
         <p className="text-white font-semibold mb-1">Season hasn't started yet</p>
@@ -419,46 +427,490 @@ function PreSeasonOverview({
   );
 }
 
-// ─── Pot summary ──────────────────────────────────────────────────────────────
+// ─── Money card (entry + season pot + weekly share, commissioner-editable) ─
 
-function PotSummaryCard({
-  seasonPot,
-  weeklyShare,
-  currentPot,
-  rolloverFrom,
-  currentWeek,
+type PotChoice = 'keep' | 'sync';
+
+function MoneyCard({
+  league,
+  leagueCode,
+  isCommissioner,
 }: {
-  seasonPot: number;
-  weeklyShare: number;
-  currentPot: number;
-  rolloverFrom: number;
-  currentWeek: number | null;
+  league: League;
+  leagueCode: string;
+  isCommissioner: boolean;
 }) {
+  const entry = league.seasonEntry;
+  const memberCount = league.memberCount ?? 0;
+  const autoPot = entry * memberCount;
+  const pot = getSeasonPot(league);
+  const isManual = isPotManuallySet(league);
+  const weeklyShare = computeWeeklyShareFromPot(pot);
+
+  const [editingEntry, setEditingEntry] = useState(false);
+  const [entryDraft, setEntryDraft] = useState('');
+  const [editingPot, setEditingPot] = useState(false);
+  const [potDraft, setPotDraft] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [fieldError, setFieldError] = useState('');
+
+  // Modal state: pot-changed → asks what to do with per-player.
+  const [potChoiceModal, setPotChoiceModal] = useState<{
+    newPot: number;
+  } | null>(null);
+  const [potChoice, setPotChoice] = useState<PotChoice | null>(null);
+  const [resetModalOpen, setResetModalOpen] = useState(false);
+
+  const [toast, setToast] = useState('');
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(''), 3500);
+  }
+
+  function beginEditEntry() {
+    setEntryDraft(String(entry));
+    setFieldError('');
+    setEditingEntry(true);
+  }
+
+  async function saveEntry() {
+    const n = parseInt(entryDraft, 10);
+    if (Number.isNaN(n) || n < 1) {
+      setFieldError('Enter a positive whole-dollar amount.');
+      return;
+    }
+    setSaving(true);
+    setFieldError('');
+    try {
+      const update: Record<string, unknown> = { seasonEntry: n };
+      // "Editing entry re-syncs the pot to auto behavior" — drop any override.
+      if (isManual) update.potOverride = null;
+      await updateDoc(doc(db, 'leagues', leagueCode), update);
+      setEditingEntry(false);
+      if (isManual) {
+        showToast(
+          `Entry updated. Pot recalculated to $${(n * memberCount).toLocaleString('en-US')}.`
+        );
+      } else {
+        showToast('Entry updated.');
+      }
+    } catch (err) {
+      setFieldError((err as { message?: string })?.message ?? 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function beginEditPot() {
+    setPotDraft(String(pot));
+    setFieldError('');
+    setEditingPot(true);
+  }
+
+  async function savePot() {
+    const n = parseInt(potDraft, 10);
+    if (Number.isNaN(n) || n < 1) {
+      setFieldError('Enter a positive whole-dollar amount.');
+      return;
+    }
+    // If commissioner types exactly the auto value, silently return to auto.
+    if (n === autoPot) {
+      setSaving(true);
+      setFieldError('');
+      try {
+        await updateDoc(doc(db, 'leagues', leagueCode), { potOverride: null });
+        setEditingPot(false);
+        showToast('Pot back to auto.');
+      } catch (err) {
+        setFieldError((err as { message?: string })?.message ?? 'Save failed.');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+    // Diverges from auto → open the "what about per-player?" modal.
+    setPotChoice(null);
+    setPotChoiceModal({ newPot: n });
+  }
+
+  async function confirmPotChoice() {
+    if (!potChoiceModal || !potChoice) return;
+    const { newPot } = potChoiceModal;
+    setSaving(true);
+    try {
+      if (potChoice === 'keep') {
+        await updateDoc(doc(db, 'leagues', leagueCode), {
+          potOverride: newPot,
+        });
+      } else {
+        // 'sync' — bump entry so the math matches; pot returns to auto.
+        const newEntry =
+          memberCount > 0 ? Math.round(newPot / memberCount) : 0;
+        await updateDoc(doc(db, 'leagues', leagueCode), {
+          seasonEntry: newEntry,
+          potOverride: null,
+        });
+      }
+      setPotChoiceModal(null);
+      setPotChoice(null);
+      setEditingPot(false);
+      showToast('Pot updated.');
+    } catch (err) {
+      setFieldError((err as { message?: string })?.message ?? 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function resetToAuto() {
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'leagues', leagueCode), { potOverride: null });
+      setResetModalOpen(false);
+      showToast('Pot reset to auto.');
+    } catch (err) {
+      setFieldError((err as { message?: string })?.message ?? 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <div className="bg-navy-950/60 border border-amber-500/10 rounded-2xl p-5">
-      <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">Pot Summary</p>
-      <div className="grid grid-cols-3 gap-4 text-center">
-        <div>
-          <p className="text-2xl font-extrabold text-white">{fmtDollars(seasonPot)}</p>
-          <p className="text-xs text-slate-500 mt-1">Season Pot</p>
-        </div>
-        <div>
-          <p className="text-2xl font-extrabold text-white">{fmtDollars(weeklyShare)}</p>
-          <p className="text-xs text-slate-500 mt-1">Weekly Share</p>
-        </div>
-        <div>
-          <p className="text-2xl font-extrabold text-amber-400">{fmtDollars(currentPot)}</p>
-          <p className="text-xs text-slate-500 mt-1">
-            {currentWeek ? `Week ${currentWeek} Pot` : 'Current Pot'}
-          </p>
-          {rolloverFrom > 0 && (
-            <p className="text-xs text-amber-500/70 mt-0.5">
-              +{fmtDollars(rolloverFrom)} rollover
+    <>
+      <div className="bg-navy-950/60 border border-amber-500/10 rounded-2xl p-5">
+        <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">Money</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:divide-x sm:divide-white/10">
+          {/* ── Per-player entry ── */}
+          <div className="sm:pr-5">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+              Per-Player Entry
             </p>
-          )}
+            {!editingEntry ? (
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-2xl font-extrabold text-white">
+                  {fmtDollars(entry)}
+                </p>
+                {isCommissioner && (
+                  <button
+                    type="button"
+                    onClick={beginEditEntry}
+                    className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="mt-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-navy-950/80 border border-white/10 rounded-lg px-2.5 py-1.5 flex-1 min-w-0">
+                    <span className="text-slate-400 mr-1">$</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={entryDraft}
+                      onChange={(e) => setEntryDraft(e.target.value)}
+                      className="bg-transparent text-white text-sm w-full focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void saveEntry()}
+                    disabled={saving}
+                    className="text-xs bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-3 py-1.5 rounded-lg disabled:opacity-60"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingEntry(false);
+                      setFieldError('');
+                    }}
+                    disabled={saving}
+                    className="text-xs text-slate-400 hover:text-white px-2 py-1.5"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            <p className="text-xs text-slate-500 mt-1.5">
+              Each player Venmos you this
+            </p>
+          </div>
+
+          {/* ── Season pot ── */}
+          <div className="sm:pl-5 pt-5 sm:pt-0 border-t border-white/10 sm:border-t-0">
+            <p className="text-[10px] text-slate-500 uppercase tracking-wider">
+              Season Pot
+            </p>
+            {!editingPot ? (
+              <div className="flex items-center justify-between mt-1">
+                <p className="text-2xl font-extrabold text-white">
+                  {fmtDollars(pot)}
+                </p>
+                {isCommissioner && (
+                  <button
+                    type="button"
+                    onClick={beginEditPot}
+                    className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
+                  >
+                    Edit
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="mt-1">
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-navy-950/80 border border-white/10 rounded-lg px-2.5 py-1.5 flex-1 min-w-0">
+                    <span className="text-slate-400 mr-1">$</span>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={potDraft}
+                      onChange={(e) => setPotDraft(e.target.value)}
+                      className="bg-transparent text-white text-sm w-full focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      autoFocus
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => void savePot()}
+                    disabled={saving}
+                    className="text-xs bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-3 py-1.5 rounded-lg disabled:opacity-60"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditingPot(false);
+                      setFieldError('');
+                    }}
+                    disabled={saving}
+                    className="text-xs text-slate-400 hover:text-white px-2 py-1.5"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+            {isManual ? (
+              <>
+                <p className="text-xs text-slate-500 mt-1.5">
+                  Manually set
+                  {isCommissioner && (
+                    <>
+                      {' · '}
+                      <button
+                        type="button"
+                        onClick={() => setResetModalOpen(true)}
+                        className="text-amber-400 hover:text-amber-300 underline-offset-2 hover:underline"
+                      >
+                        Reset to auto
+                      </button>
+                    </>
+                  )}
+                </p>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Auto would be {fmtDollars(autoPot)} ({memberCount} × {fmtDollars(entry)})
+                </p>
+              </>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1.5">
+                {memberCount} member{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {fieldError && (
+          <p className="text-red-400 text-xs mt-3">{fieldError}</p>
+        )}
+
+        <div className="border-t border-white/10 mt-5 pt-4 flex items-baseline justify-between gap-3">
+          <p className="text-sm text-slate-300">
+            Weekly share:{' '}
+            <span className="font-bold text-white">{fmtDollars(weeklyShare)}</span>
+          </p>
+          <p className="text-xs text-slate-500">over 18 weeks</p>
         </div>
       </div>
-    </div>
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[60] bg-navy-900 border border-amber-500/30 text-white text-sm font-semibold px-4 py-2.5 rounded-xl shadow-2xl">
+          {toast}
+        </div>
+      )}
+
+      {/* Pot-choice modal: what to do with per-player entry? */}
+      {potChoiceModal && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center px-4 pt-16 sm:pt-24">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              if (!saving) {
+                setPotChoiceModal(null);
+                setPotChoice(null);
+              }
+            }}
+          />
+          <div className="relative z-50 w-full max-w-sm bg-navy-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h2 className="text-white font-bold text-lg mb-2">
+              You changed the pot to {fmtDollars(potChoiceModal.newPot)}.
+            </h2>
+            <p className="text-slate-400 text-sm mb-5">
+              That's {fmtDollars(Math.abs(potChoiceModal.newPot - autoPot))}{' '}
+              {potChoiceModal.newPot > autoPot ? 'more' : 'less'} than {memberCount}{' '}
+              member{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)} entry.
+            </p>
+            <p className="text-white text-sm font-semibold mb-3">
+              What about the per-player entry?
+            </p>
+            <div className="space-y-2 mb-5">
+              <ChoiceRow
+                selected={potChoice === 'keep'}
+                onClick={() => setPotChoice('keep')}
+                title={`Keep per-player entry at ${fmtDollars(entry)}`}
+                sub={`Pot will show ${fmtDollars(potChoiceModal.newPot)} (manually set).`}
+              />
+              <ChoiceRow
+                selected={potChoice === 'sync'}
+                onClick={() => setPotChoice('sync')}
+                title={`Update per-player entry to ${fmtDollars(
+                  memberCount > 0 ? Math.round(potChoiceModal.newPot / memberCount) : 0
+                )}`}
+                sub={`So the math matches (${fmtDollars(
+                  memberCount > 0 ? Math.round(potChoiceModal.newPot / memberCount) : 0
+                )} × ${memberCount} member${memberCount === 1 ? '' : 's'} = ${fmtDollars(potChoiceModal.newPot)}).`}
+              />
+            </div>
+            {fieldError && (
+              <p className="text-red-400 text-xs mb-3">{fieldError}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPotChoiceModal(null);
+                  setPotChoice(null);
+                }}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 text-sm font-semibold hover:text-white transition-colors disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void confirmPotChoice()}
+                disabled={!potChoice || saving}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset-to-auto modal */}
+      {resetModalOpen && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center px-4 pt-16 sm:pt-24">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => !saving && setResetModalOpen(false)}
+          />
+          <div className="relative z-50 w-full max-w-sm bg-navy-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h2 className="text-white font-bold text-lg mb-3">
+              Reset pot to auto-calculated?
+            </h2>
+            <div className="text-slate-400 text-sm space-y-1 mb-4">
+              <p>
+                Current manual pot:{' '}
+                <span className="text-white font-semibold">{fmtDollars(pot)}</span>
+              </p>
+              <p>
+                Auto-calculated:{' '}
+                <span className="text-white font-semibold">
+                  {fmtDollars(autoPot)}
+                </span>{' '}
+                ({memberCount} member{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)} entry)
+              </p>
+            </div>
+            <p className="text-slate-400 text-sm mb-5">
+              Your pot will change to {fmtDollars(autoPot)}.
+            </p>
+            {fieldError && (
+              <p className="text-red-400 text-xs mb-3">{fieldError}</p>
+            )}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setResetModalOpen(false)}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 text-sm font-semibold hover:text-white transition-colors disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void resetToAuto()}
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {saving ? 'Saving…' : 'Reset'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ChoiceRow({
+  selected,
+  onClick,
+  title,
+  sub,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title: string;
+  sub: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`w-full text-left rounded-xl border px-3 py-2.5 transition-colors ${
+        selected
+          ? 'bg-amber-500/10 border-amber-500/40'
+          : 'bg-navy-950/60 border-white/10 hover:border-white/25'
+      }`}
+    >
+      <div className="flex items-start gap-2.5">
+        <span
+          className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+            selected ? 'border-amber-400' : 'border-slate-500'
+          }`}
+        >
+          {selected && <span className="w-2 h-2 rounded-full bg-amber-400" />}
+        </span>
+        <div className="min-w-0">
+          <p className="text-white text-sm font-semibold">{title}</p>
+          <p className="text-slate-400 text-xs mt-0.5">{sub}</p>
+        </div>
+      </div>
+    </button>
   );
 }
 

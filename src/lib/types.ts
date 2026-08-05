@@ -11,6 +11,9 @@ export type League = {
   commissionerEmail: string;
   commissionerName: string;
   seasonEntry: number;
+  // null → season pot is auto-calculated as (seasonEntry × memberCount).
+  // number → commissioner has manually overridden the pot.
+  potOverride: number | null;
   venmo: string;
   pot: number;
   season: number;
@@ -35,6 +38,8 @@ export function normalizeLeague(raw: Record<string, unknown>): League {
     commissionerEmail: (raw.commissionerEmail as string) ?? '',
     commissionerName: (raw.commissionerName as string) ?? '',
     seasonEntry: (raw.seasonEntry as number) ?? 0,
+    potOverride:
+      typeof raw.potOverride === 'number' ? (raw.potOverride as number) : null,
     venmo: (raw.venmo as string) ?? '',
     pot: (raw.pot as number) ?? 0,
     season: (raw.season as number) ?? new Date().getFullYear(),

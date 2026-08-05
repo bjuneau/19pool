@@ -2,7 +2,7 @@
  * Pure scoring math — no Firestore, no side effects.
  * All functions are deterministic given the same inputs.
  */
-import type { GameResult, WeeklyResultStatus } from './types';
+import type { GameResult, League, WeeklyResultStatus } from './types';
 
 // ─── Winner detection ─────────────────────────────────────────────────────────
 
@@ -64,6 +64,35 @@ export function computeWeeklyShare(
  */
 export function computePot(weeklyShare: number, rolloverFrom: number): number {
   return weeklyShare + rolloverFrom;
+}
+
+// ─── Season pot (auto vs manual) ─────────────────────────────────────────────
+
+/**
+ * The authoritative season pot for the current state of the league.
+ *  • potOverride == null → auto (seasonEntry × memberCount)
+ *  • potOverride != null → the manually-set value
+ * Prefer this over ad-hoc multiplication so auto/manual behavior is honored
+ * everywhere.
+ */
+export function getSeasonPot(league: League): number {
+  if (league.potOverride !== null) return league.potOverride;
+  return league.seasonEntry * (league.memberCount ?? 0);
+}
+
+/** True when the commissioner has manually overridden the pot. */
+export function isPotManuallySet(league: League): boolean {
+  return league.potOverride !== null;
+}
+
+/**
+ * Weekly share derived from the (possibly overridden) pot. This is the
+ * primary path — computeWeeklyShare(entry, count) remains for the pure-math
+ * scoring code that doesn't need to know about overrides.
+ */
+export function computeWeeklyShareFromPot(pot: number, weeks = 18): number {
+  if (weeks <= 0) return 0;
+  return Math.floor(pot / weeks);
 }
 
 // ─── Status ───────────────────────────────────────────────────────────────────

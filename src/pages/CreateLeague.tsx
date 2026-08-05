@@ -17,6 +17,7 @@ import {
   buildDisplayName,
   generateInviteToken,
 } from '../lib/members';
+import { LEAGUE_CAPACITY } from '../lib/types';
 import type { League, Member } from '../lib/types';
 
 // Same algorithm as legacy generateCode() in 19pool_15.html.
@@ -79,6 +80,7 @@ export default function CreateLeague() {
         commissionerEmail: userEmail,
         commissionerName: displayName,
         seasonEntry: entryAmount,
+        potOverride: null,
         venmo: venmo.trim(),
         pot: 0,
         season: new Date().getFullYear(),
@@ -153,15 +155,36 @@ export default function CreateLeague() {
             value={leagueName}
             onChange={(e) => setLeagueName(e.target.value)}
           />
-          <Input
-            label="Season Entry Amount ($)"
-            type="number"
-            min="0"
-            step="1"
-            placeholder="e.g. 50"
-            value={seasonEntry}
-            onChange={(e) => setSeasonEntry(e.target.value)}
-          />
+          <div>
+            <Input
+              label="Per-Player Entry Fee ($)"
+              type="number"
+              min="0"
+              step="1"
+              placeholder="e.g. 50"
+              value={seasonEntry}
+              onChange={(e) => setSeasonEntry(e.target.value)}
+            />
+            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+              Each player Venmos you this amount at league start. You can adjust
+              this later.
+            </p>
+            {(() => {
+              const n = Number(seasonEntry);
+              if (!seasonEntry || Number.isNaN(n) || n <= 0) return null;
+              const potAtCap = n * LEAGUE_CAPACITY;
+              return (
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  If you have {LEAGUE_CAPACITY} players, your season pot will be{' '}
+                  <span className="text-amber-400 font-semibold">
+                    ${potAtCap.toLocaleString('en-US')}
+                  </span>
+                  . You can also adjust the pot directly after creating the
+                  league.
+                </p>
+              );
+            })()}
+          </div>
           <Input
             label="Venmo Handle (optional)"
             type="text"
