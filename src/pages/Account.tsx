@@ -1082,7 +1082,7 @@ function MoneyEditCard({
                 </button>
               </div>
             )}
-            <p className="text-xs text-slate-500 mt-1.5">Each player Venmos you this</p>
+            <p className="text-xs text-slate-500 mt-1.5">Everyone pays the same to enter</p>
           </div>
 
           {/* Season pot */}
@@ -1164,7 +1164,7 @@ function MoneyEditCard({
 
         <div className="border-t border-white/10 mt-5 pt-4 flex items-baseline justify-between gap-3">
           <p className="text-sm text-slate-300">
-            Weekly share:{' '}
+            Weekly pot:{' '}
             <span className="font-bold text-white">{fmtDollars(weeklyShare)}</span>
           </p>
           <p className="text-xs text-slate-500">over 18 weeks</p>

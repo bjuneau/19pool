@@ -441,7 +441,7 @@ function MoneyCard({ league }: { league: League }) {
             {fmtDollars(entry)}
           </p>
           <p className="text-xs text-slate-500 mt-1.5">
-            Each player Venmos you this
+            Everyone pays the same to enter
           </p>
         </div>
 
@@ -470,7 +470,7 @@ function MoneyCard({ league }: { league: League }) {
 
       <div className="border-t border-white/10 mt-5 pt-4 flex items-baseline justify-between gap-3">
         <p className="text-sm text-slate-300">
-          Weekly share:{' '}
+          Weekly pot:{' '}
           <span className="font-bold text-white">{fmtDollars(weeklyShare)}</span>
         </p>
         <p className="text-xs text-slate-500">over 18 weeks</p>
