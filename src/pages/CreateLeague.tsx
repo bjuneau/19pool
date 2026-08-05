@@ -17,6 +17,7 @@ import {
   buildDisplayName,
   generateInviteToken,
 } from '../lib/members';
+import { computeWeeklyShareFromPot } from '../lib/scoring';
 import { LEAGUE_CAPACITY } from '../lib/types';
 import type { League, Member } from '../lib/types';
 
@@ -173,14 +174,19 @@ export default function CreateLeague() {
               const n = Number(seasonEntry);
               if (!seasonEntry || Number.isNaN(n) || n <= 0) return null;
               const potAtCap = n * LEAGUE_CAPACITY;
+              const perWeek = computeWeeklyShareFromPot(potAtCap);
               return (
                 <p className="text-xs text-slate-400 mt-1 leading-relaxed">
                   If you have {LEAGUE_CAPACITY} players, your season pot will be{' '}
                   <span className="text-amber-400 font-semibold">
                     ${potAtCap.toLocaleString('en-US')}
-                  </span>
-                  . You can also adjust the pot directly after creating the
-                  league.
+                  </span>{' '}
+                  — that's{' '}
+                  <span className="text-amber-400 font-semibold">
+                    ${perWeek.toLocaleString('en-US')} per week
+                  </span>{' '}
+                  over the 18-week NFL regular season. You can also adjust the
+                  pot directly after creating the league.
                 </p>
               );
             })()}
