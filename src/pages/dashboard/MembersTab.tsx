@@ -367,7 +367,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
 
       {/* Removal confirmation modal */}
       {removeTarget && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-40 flex items-start justify-center px-4 pt-16 sm:pt-24">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={handleCloseRemoveModal}
@@ -414,7 +414,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
 
       {/* Confirmation modal for >10 Resend All */}
       {showResendAllModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-40 flex items-start justify-center px-4 pt-16 sm:pt-24">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowResendAllModal(false)}
