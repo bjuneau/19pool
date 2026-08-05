@@ -86,13 +86,17 @@ export function isPotManuallySet(league: League): boolean {
 }
 
 /**
- * Weekly share derived from the (possibly overridden) pot. This is the
- * primary path — computeWeeklyShare(entry, count) remains for the pure-math
- * scoring code that doesn't need to know about overrides.
+ * Weekly share derived from the (possibly overridden) pot.
+ *
+ * Rounded to the nearest cent — NOT floored to whole dollars. Reason:
+ * $1,600 / 18 = $88.888…; a whole-dollar floor gives $88 × 18 = $1,584 and
+ * strands $16. Cent-level rounding gives $88.89 × 18 = $1,600.02, i.e.
+ * a 2¢ artifact at worst. Real leagues Venmo cents, so this matches how
+ * commissioners already think about payouts.
  */
 export function computeWeeklyShareFromPot(pot: number, weeks = 18): number {
   if (weeks <= 0) return 0;
-  return Math.floor(pot / weeks);
+  return Math.round((pot / weeks) * 100) / 100;
 }
 
 // ─── Status ───────────────────────────────────────────────────────────────────
