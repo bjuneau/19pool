@@ -130,6 +130,23 @@ export async function findMemberByEmail(
   return { id: d.id, ...(d.data() as Member) };
 }
 
+// Returns the member doc whose uid matches, or null. Preferred over email
+// lookup once a user has joined — uid is stable while email can drift.
+export async function findMemberByUid(
+  leagueCode: string,
+  uid: string
+): Promise<MemberWithId | null> {
+  const q = query(
+    collection(db, 'leagues', leagueCode, 'members'),
+    where('uid', '==', uid),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { id: d.id, ...(d.data() as Member) };
+}
+
 // Resolves a join URL to a league + (optionally) the specific invited member.
 // URL contract:
 //   /join/CODE                  → shared link, returns league with invitedMember=null
@@ -208,6 +225,17 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
       error:
         'This league has already started. Contact the commissioner if you think you should be included.',
     };
+  }
+
+  // Guard: if the user already has a member doc in this league (commissioner
+  // doc, previous claim under a different email alias, whatever), don't
+  // create a second row. This is the root fix for the duplicate-member bug —
+  // findMemberByEmail alone can miss a match when the email in the existing
+  // doc drifted (case, alias, historical write). uid is stable.
+  const existingByUid = await findMemberByUid(leagueCode, user.uid);
+  if (existingByUid) {
+    await ensureUserLeagueLink(user.uid, leagueCode);
+    return { ok: true, alreadyMember: true };
   }
 
   // Case 1 — invite token resolved to a specific member doc.
