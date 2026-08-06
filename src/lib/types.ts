@@ -104,4 +104,8 @@ export type Member = {
   // Set when an invite email is successfully delivered (initial or resend).
   // Null/undefined = never sent, or send failed — treat both as "free to send".
   lastInviteSentAt: Timestamp | null;
+  // Payment tracker. Optional so legacy docs (pre-payment-tracker) read cleanly
+  // as unpaid without a data migration.
+  paid?: boolean;
+  paidAt?: Timestamp | null;
 };

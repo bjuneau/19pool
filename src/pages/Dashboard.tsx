@@ -9,7 +9,9 @@ import { normalizeLeague } from '../lib/types';
 import type { League } from '../lib/types';
 import MembersTab from './dashboard/MembersTab';
 import OverviewTab from './dashboard/OverviewTab';
+import PaymentsTab from './dashboard/PaymentsTab';
 import TeamsTab from './dashboard/TeamsTab';
+import { hasPaymentTracker } from '../lib/features';
 
 type UserDoc = {
   firstName?: string;
@@ -18,7 +20,7 @@ type UserDoc = {
   leagueCode?: string;
 };
 
-type DashTab = 'overview' | 'members' | 'teams';
+type DashTab = 'overview' | 'members' | 'teams' | 'payments';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -100,7 +102,7 @@ export default function Dashboard() {
 
         {/* Tab bar — only for commissioners (members only see overview) */}
         {league && isCommissioner && (
-          <div className="flex bg-navy-950/60 border border-white/10 rounded-xl p-1 mb-6 gap-1 max-w-sm">
+          <div className="flex bg-navy-950/60 border border-white/10 rounded-xl p-1 mb-6 gap-1 max-w-lg">
             <TabButton
               active={activeTab === 'overview'}
               onClick={() => setActiveTab('overview')}
@@ -119,6 +121,14 @@ export default function Dashboard() {
             >
               Teams
             </TabButton>
+            {hasPaymentTracker(league) && (
+              <TabButton
+                active={activeTab === 'payments'}
+                onClick={() => setActiveTab('payments')}
+              >
+                Payments
+              </TabButton>
+            )}
           </div>
         )}
 
@@ -138,8 +148,19 @@ export default function Dashboard() {
               league={league}
               commissionerName={commissionerName}
             />
-          ) : (
+          ) : activeTab === 'teams' ? (
             <TeamsTab leagueCode={leagueCode} league={league} />
+          ) : activeTab === 'payments' && hasPaymentTracker(league) ? (
+            <PaymentsTab leagueCode={leagueCode} league={league} />
+          ) : (
+            <OverviewTab
+              firstName={firstName}
+              league={league}
+              leagueCode={leagueCode}
+              loadingProfile={loadingProfile}
+              userId={user?.uid ?? ''}
+              isCommissioner={isCommissioner}
+            />
           )}
         </Card>
       </div>
