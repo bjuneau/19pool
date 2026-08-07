@@ -11,7 +11,7 @@ import {
   setDoc,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import { fetchEspnWeek } from './espn';
+import { fetchEspnWeek, getEffectiveSeason } from './espn';
 import {
   computePot,
   computeStatus,
@@ -92,10 +92,13 @@ export async function refreshWeek(
     }
   }
 
-  // Fetch ESPN data (via /api/espn-scores proxy).
+  // Fetch ESPN data (via /api/espn-scores proxy). Wrap the season in
+  // getEffectiveSeason so test-mode fetches historical data instead of the
+  // league's declared year.
+  const fetchSeason = getEffectiveSeason(league.season);
   let games;
   try {
-    games = await fetchEspnWeek(league.season, week);
+    games = await fetchEspnWeek(fetchSeason, week);
   } catch (err) {
     console.error('[scoringWriter] ESPN fetch failed for week', week, err);
     return existingData; // serve stale if available
@@ -133,7 +136,10 @@ export async function refreshWeek(
   const nowTs = Timestamp.now();
   const result: WeeklyResult = {
     week,
-    season: league.season,
+    // Store the season actually fetched — not the league's declared year —
+    // so a doc's `season` matches the data inside it. In production this is
+    // identical to league.season; in test mode it becomes the override year.
+    season: fetchSeason,
     fetchedAt: nowTs,
     games,
     teamsAt19,

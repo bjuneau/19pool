@@ -1,6 +1,42 @@
 import { TEAM_BY_ABBR, ESPN_ID_TO_ABBR } from './teams';
 import type { GameResult, GameStatus } from './types';
 
+// ─── Test-mode overrides ──────────────────────────────────────────────────────
+// Set VITE_TEST_SEASON (e.g. "2025") to fetch historical ESPN data instead of
+// the real current year — lets us dry-run the mid-season UI before real 2026
+// games exist. VITE_TEST_CURRENT_WEEK pins the "current week" so we can
+// simulate any week mid-season. Both leave unset = normal behavior.
+
+/** Returns the overridden season year, or null when unset/invalid. */
+export function getTestSeason(): number | null {
+  const raw = import.meta.env.VITE_TEST_SEASON;
+  if (!raw) return null;
+  const year = parseInt(raw, 10);
+  return Number.isFinite(year) && year > 2000 ? year : null;
+}
+
+/** Returns the pinned "current week", or null when unset/invalid. */
+export function getTestCurrentWeek(): number | null {
+  const raw = import.meta.env.VITE_TEST_CURRENT_WEEK;
+  if (!raw) return null;
+  const week = parseInt(raw, 10);
+  return Number.isFinite(week) && week >= 1 && week <= 18 ? week : null;
+}
+
+/** True when the season override is active. */
+export function isTestMode(): boolean {
+  return getTestSeason() !== null;
+}
+
+/**
+ * Returns the season to actually fetch for. Wrap this at every ESPN call site
+ * that would otherwise pass a league's declared season, so historical data is
+ * served in test mode. Keeps fetchEspnWeek honest — it still takes any year.
+ */
+export function getEffectiveSeason(realSeason: number): number {
+  return getTestSeason() ?? realSeason;
+}
+
 // ─── ESPN response shape ──────────────────────────────────────────────────────
 // These are the fields we actually use — ESPN's full response has many more.
 
@@ -174,6 +210,12 @@ export async function fetchEspnWeek(
  * Week advances every 7 days from the season start date.
  */
 export function getCurrentNFLWeek(season: number, now = new Date()): number | null {
+  // Test-mode short-circuit: if both season and week overrides are set, honor
+  // the pinned week directly. Ignore the caller's season here — the test week
+  // is a fixed simulation, not a per-league calculation.
+  const testWeek = getTestCurrentWeek();
+  if (testWeek !== null && isTestMode()) return testWeek;
+
   const SEASON_STARTS: Record<number, string> = {
     2024: '2024-09-05',
     2025: '2025-09-04',
