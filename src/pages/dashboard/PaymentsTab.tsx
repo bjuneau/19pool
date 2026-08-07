@@ -226,7 +226,7 @@ export default function PaymentsTab({ leagueCode, league }: Props) {
               amountOwed={entry}
               hasEntry={hasEntry}
               saving={saving.has(m.id)}
-              venmoHandle={league.venmo}
+              isSelf={m.uid != null && m.uid === league.commissionerId}
               venmoNote={`${league.name} entry fee`}
               onMarkPaid={() => void markPaid(m)}
               onMarkUnpaid={() => void markUnpaid(m)}
@@ -252,7 +252,7 @@ function PaymentRow({
   amountOwed,
   hasEntry,
   saving,
-  venmoHandle,
+  isSelf,
   venmoNote,
   onMarkPaid,
   onMarkUnpaid,
@@ -261,14 +261,18 @@ function PaymentRow({
   amountOwed: number;
   hasEntry: boolean;
   saving: boolean;
-  venmoHandle: string;
+  isSelf: boolean;
   venmoNote: string;
   onMarkPaid: () => void;
   onMarkUnpaid: () => void;
 }) {
   const paid = isPaid(member);
   const initials = initialsOf(member);
-  const hasVenmo = !!venmoHandle && venmoHandle.trim().length > 0;
+  // Use the PLAYER's Venmo — a charge URL targets the recipient, so it needs
+  // to point at the person we're requesting money from. Commissioner's own
+  // row: no self-request (they're the collector).
+  const memberVenmo = (member.venmo ?? '').trim().replace(/^@/, '');
+  const hasVenmo = !isSelf && memberVenmo.length > 0;
 
   return (
     <li className="bg-navy-950/60 border border-white/10 rounded-xl p-4">
@@ -336,15 +340,23 @@ function PaymentRow({
               >
                 {saving ? 'Saving…' : 'Mark Paid'}
               </button>
-              {hasVenmo && (
+              {hasVenmo ? (
                 <a
-                  href={buildVenmoRequestUrl(venmoHandle, amountOwed, venmoNote)}
+                  href={buildVenmoRequestUrl(memberVenmo, amountOwed, venmoNote)}
                   target="_blank"
                   rel="noopener"
                   className="text-xs text-slate-300 hover:text-amber-400 transition-colors font-semibold"
                 >
-                  Send Venmo Request →
+                  Send Venmo Request to{' '}
+                  <span className="text-amber-400">@{memberVenmo}</span> →
                 </a>
+              ) : isSelf ? null : (
+                <span
+                  className="text-xs text-slate-600 italic"
+                  title="Ask them to add their Venmo handle on the Account page."
+                >
+                  No Venmo on file
+                </span>
               )}
             </>
           )}

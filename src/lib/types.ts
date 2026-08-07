@@ -108,4 +108,9 @@ export type Member = {
   // as unpaid without a data migration.
   paid?: boolean;
   paidAt?: Timestamp | null;
+  // Player's own Venmo handle — used by the commissioner's Payments tab to
+  // build a charge-request URL targeting the player. Optional; legacy docs and
+  // members who haven't set it yet read as no-Venmo. Denormalized from
+  // users/{uid}.venmo when the player edits it in Account.
+  venmo?: string;
 };

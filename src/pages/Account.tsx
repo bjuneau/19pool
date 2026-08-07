@@ -48,6 +48,7 @@ type UserDoc = {
   lastName?: string;
   email?: string;
   leagueCode?: string;
+  venmo?: string;
 };
 
 type SaveStatus =
@@ -107,6 +108,7 @@ export default function Account() {
 
   const [profileFirstName, setProfileFirstName] = useState('');
   const [profileLastName, setProfileLastName] = useState('');
+  const [profileVenmo, setProfileVenmo] = useState('');
   const [profileStatus, setProfileStatus] = useState<SaveStatus>({ kind: 'idle' });
 
   // ── Password state ─────────────────────────────────────────────────────────
@@ -149,6 +151,7 @@ export default function Account() {
       // overwriting their input would be jarring.
       setProfileFirstName((cur) => (cur ? cur : ud.firstName ?? ''));
       setProfileLastName((cur) => (cur ? cur : ud.lastName ?? ''));
+      setProfileVenmo((cur) => (cur ? cur : ud.venmo ?? ''));
       setLoadingProfile(false);
     });
     return unsub;
@@ -198,7 +201,8 @@ export default function Account() {
 
   const profileDirty =
     profileFirstName !== (userDoc?.firstName ?? '') ||
-    profileLastName !== (userDoc?.lastName ?? '');
+    profileLastName !== (userDoc?.lastName ?? '') ||
+    profileVenmo.trim() !== (userDoc?.venmo ?? '');
 
   const newPwStrength = useMemo(() => getPasswordStrength(pwNew), [pwNew]);
 
@@ -219,6 +223,9 @@ export default function Account() {
 
     const newFirst = profileFirstName.trim();
     const newLast = profileLastName.trim();
+    // Venmo: strip leading @, whitespace. Handles are case-insensitive on
+    // Venmo but we preserve what the user typed for display.
+    const newVenmo = profileVenmo.trim().replace(/^@/, '');
     const newName = buildDisplayName(newFirst, newLast, user.email?.split('@')[0]);
 
     try {
@@ -227,14 +234,16 @@ export default function Account() {
         firstName: newFirst,
         lastName: newLast,
         name: newName,
+        venmo: newVenmo,
       });
 
-      // 2. Member doc — keeps the standings/members list in sync.
+      // 2. Member doc — keeps the standings/members list + Payments tab in sync.
       if (myMember && leagueCode) {
         await updateDoc(doc(db, 'leagues', leagueCode, 'members', myMember.id), {
           firstName: newFirst,
           lastName: newLast,
           name: newName,
+          venmo: newVenmo,
         });
       }
 
@@ -458,6 +467,19 @@ export default function Account() {
                 />
                 <p className="mt-1.5 text-xs text-slate-500">
                   Email can't be changed.
+                </p>
+              </div>
+              <div>
+                <Input
+                  label="Venmo Handle (optional)"
+                  type="text"
+                  placeholder="your-handle"
+                  autoComplete="off"
+                  value={profileVenmo}
+                  onChange={(e) => setProfileVenmo(e.target.value)}
+                />
+                <p className="mt-1.5 text-xs text-slate-500">
+                  So your commissioner can send you a Venmo request for the entry fee.
                 </p>
               </div>
 
