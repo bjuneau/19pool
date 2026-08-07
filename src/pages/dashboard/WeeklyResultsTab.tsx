@@ -4,6 +4,10 @@ import { db } from '../../lib/firebase';
 import { getCurrentNFLWeek } from '../../lib/espn';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
+import {
+  computeWeeklyShareFromPot,
+  getSeasonPot,
+} from '../../lib/scoring';
 import { refreshWeek } from '../../lib/scoringWriter';
 import { TEAM_BY_ABBR } from '../../lib/teams';
 import type { GameResult, League, WeeklyResult } from '../../lib/types';
@@ -75,6 +79,26 @@ export default function WeeklyResultsTab({
   const currentResult = weeklyResults.find((r) => r.week === currentWeek) ?? null;
   const myMember = members.find((m) => m.uid === userId) ?? null;
 
+  // User-selected week for browsing. null → follow the live "current" week.
+  // Polling still fires against currentWeek regardless — the user viewing
+  // a past week shouldn't interrupt the live-scoring loop.
+  const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
+  const activeWeek = selectedWeek ?? currentWeek;
+  const activeResult =
+    activeWeek != null
+      ? (weeklyResults.find((r) => r.week === activeWeek) ?? null)
+      : null;
+
+  // Payout for the ACTIVE week: fetched share + accumulated rollover when
+  // that week's doc exists; otherwise fall back to the base share so we
+  // display something meaningful even before the week's been refreshed.
+  const baseWeeklyShare = league
+    ? computeWeeklyShareFromPot(getSeasonPot(league))
+    : 0;
+  const activeWeeklyPot = activeResult
+    ? activeResult.weeklyShare + activeResult.rolloverFrom
+    : baseWeeklyShare;
+
   // Subscribe to members.
   useEffect(() => {
     if (!leagueCode) return;
@@ -134,11 +158,14 @@ export default function WeeklyResultsTab({
   }, [isInSeason, currentWeek, currentResult?.status, leagueCode, league]);
 
   async function doRefreshWeek() {
-    if (!league || !currentWeek || members.length === 0) return;
+    // Refresh whichever week the user is currently viewing — not necessarily
+    // the live one — so the dropdown + refresh button work together.
+    const wk = activeWeek;
+    if (!league || !wk || members.length === 0) return;
     setRefreshing(true);
     setRefreshError('');
     try {
-      await refreshWeek(leagueCode, currentWeek, league, members);
+      await refreshWeek(leagueCode, wk, league, members);
     } catch (err) {
       setRefreshError((err as Error).message ?? 'Refresh failed');
     } finally {
@@ -206,32 +233,62 @@ export default function WeeklyResultsTab({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header — title left, weekly-pot callout right (matches legacy) */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">
-            Welcome, <span className="text-amber-400">{firstName}</span>
+          <h1 className="text-3xl font-extrabold text-white leading-tight">
+            Weekly Results
           </h1>
           <p className="text-slate-500 text-sm mt-0.5">
-            {league.name} · {league.season} Season
+            {league.season} Season
           </p>
         </div>
-        {/* Manual refresh */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {isCommissioner && (
-            <button
-              type="button"
-              onClick={doRefreshAll}
-              disabled={refreshAllProgress !== null || refreshing}
-              title="Refresh all 18 weeks from ESPN"
-              className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-white/10 text-slate-400 hover:text-white hover:border-white/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+        <div className="text-right">
+          <p className="text-[10px] uppercase tracking-widest text-green-400 font-semibold flex items-center justify-end gap-1">
+            <span>$</span>
+            <span>Weekly Pot</span>
+          </p>
+          <p className="text-3xl font-extrabold text-amber-400 leading-tight">
+            {fmtDollars(activeWeeklyPot)}
+          </p>
+        </div>
+      </div>
+
+      {/* Filter row — week dropdown left, refresh actions right */}
+      {!seasonNotStarted && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <label className="flex items-center gap-2 bg-navy-950/60 border border-white/10 rounded-xl px-3 py-1.5">
+            <span className="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">
+              Week
+            </span>
+            <select
+              value={activeWeek ?? 1}
+              onChange={(e) => setSelectedWeek(Number(e.target.value))}
+              className="bg-transparent text-white text-sm font-semibold focus:outline-none cursor-pointer pr-1"
             >
-              {refreshAllProgress !== null
-                ? `Refreshing ${refreshAllProgress}/18…`
-                : 'Refresh All Weeks'}
-            </button>
-          )}
-          {!seasonNotStarted && (
+              {Array.from({ length: 18 }, (_, i) => i + 1).map((w) => (
+                <option key={w} value={w} className="bg-navy-900">
+                  Week {w}
+                  {w === currentWeek ? ' (current)' : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {isCommissioner && (
+              <button
+                type="button"
+                onClick={doRefreshAll}
+                disabled={refreshAllProgress !== null || refreshing}
+                title="Refresh all 18 weeks from ESPN"
+                className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-white/10 text-slate-400 hover:text-white hover:border-white/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {refreshAllProgress !== null
+                  ? `Refreshing ${refreshAllProgress}/18…`
+                  : 'Refresh All Weeks'}
+              </button>
+            )}
             <button
               type="button"
               onClick={doRefreshWeek}
@@ -243,11 +300,11 @@ export default function WeeklyResultsTab({
               ) : (
                 '↻'
               )}
-              Refresh scores
+              Refresh
             </button>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {refreshError && (
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs px-4 py-3 rounded-xl flex justify-between items-center">
@@ -272,24 +329,24 @@ export default function WeeklyResultsTab({
         </div>
       )}
 
-      {/* ── My Teams ── */}
+      {/* ── This Week (or the selected week) ── */}
+      {activeWeek && (
+        <ThisWeekCard
+          week={activeWeek}
+          result={activeResult}
+          members={members}
+          loading={loadingResults && !activeResult}
+          refreshing={refreshing}
+        />
+      )}
+
+      {/* ── My Teams (below the scores) ── */}
       {myMember && (
         <MyTeamsCard
           member={myMember}
           weeklyResults={weeklyResults}
           winCounts={winCounts}
           isInSeason={isInSeason}
-        />
-      )}
-
-      {/* ── This Week ── */}
-      {currentWeek && (
-        <ThisWeekCard
-          week={currentWeek}
-          result={currentResult}
-          members={members}
-          loading={loadingResults && !currentResult}
-          refreshing={refreshing}
         />
       )}
     </div>
