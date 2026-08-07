@@ -8,9 +8,10 @@ import { buildDisplayName } from '../lib/members';
 import { normalizeLeague } from '../lib/types';
 import type { League } from '../lib/types';
 import MembersTab from './dashboard/MembersTab';
-import OverviewTab from './dashboard/OverviewTab';
 import PaymentsTab from './dashboard/PaymentsTab';
+import StandingsTab from './dashboard/StandingsTab';
 import TeamsTab from './dashboard/TeamsTab';
+import WeeklyResultsTab from './dashboard/WeeklyResultsTab';
 import { hasPaymentTracker } from '../lib/features';
 
 type UserDoc = {
@@ -20,7 +21,7 @@ type UserDoc = {
   leagueCode?: string;
 };
 
-type DashTab = 'overview' | 'members' | 'teams' | 'payments';
+type DashTab = 'results' | 'standings' | 'members' | 'teams' | 'payments';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -30,7 +31,7 @@ export default function Dashboard() {
   const [league, setLeague] = useState<League | null>(null);
   const [leagueCode, setLeagueCode] = useState<string>('');
   const [loadingProfile, setLoadingProfile] = useState(true);
-  const [activeTab, setActiveTab] = useState<DashTab>('overview');
+  const [activeTab, setActiveTab] = useState<DashTab>('results');
 
   useEffect(() => {
     if (!user) return;
@@ -71,10 +72,11 @@ export default function Dashboard() {
     user?.email?.split('@')[0]
   );
 
-  // Widen the container for Teams tab (drag-and-drop) and Overview in-season (game cards).
+  // Widen the container for Teams tab (drag-and-drop) and Weekly Results
+  // in-season (game cards). Standings stays narrow — it's a leaderboard.
   const wideTab =
     activeTab === 'teams' ||
-    (activeTab === 'overview' && league?.status === 'in_season');
+    (activeTab === 'results' && league?.status === 'in_season');
 
   return (
     <div className="hero-bg min-h-screen px-4 py-16">
@@ -100,41 +102,56 @@ export default function Dashboard() {
           </div>
         </header>
 
-        {/* Tab bar — only for commissioners (members only see overview) */}
-        {league && isCommissioner && (
-          <div className="flex bg-navy-950/60 border border-white/10 rounded-xl p-1 mb-6 gap-1 max-w-lg">
-            <TabButton
-              active={activeTab === 'overview'}
-              onClick={() => setActiveTab('overview')}
-            >
-              Overview
-            </TabButton>
-            <TabButton
-              active={activeTab === 'members'}
-              onClick={() => setActiveTab('members')}
-            >
-              Members
-            </TabButton>
-            <TabButton
-              active={activeTab === 'teams'}
-              onClick={() => setActiveTab('teams')}
-            >
-              Teams
-            </TabButton>
-            {hasPaymentTracker(league) && (
+        {/* Tab bar. Results + Standings for everyone; the admin tabs
+            (Members / Teams / Payments) only render for the commissioner.
+            overflow-x-auto lets the 5-tab commissioner row scroll on
+            narrow phones. */}
+        {league && (
+          <div className="overflow-x-auto mb-6 -mx-1 px-1">
+            <div className="flex bg-navy-950/60 border border-white/10 rounded-xl p-1 gap-1 max-w-2xl w-max">
               <TabButton
-                active={activeTab === 'payments'}
-                onClick={() => setActiveTab('payments')}
+                active={activeTab === 'results'}
+                onClick={() => setActiveTab('results')}
               >
-                Payments
+                Weekly Results
               </TabButton>
-            )}
+              <TabButton
+                active={activeTab === 'standings'}
+                onClick={() => setActiveTab('standings')}
+              >
+                Standings
+              </TabButton>
+              {isCommissioner && (
+                <>
+                  <TabButton
+                    active={activeTab === 'members'}
+                    onClick={() => setActiveTab('members')}
+                  >
+                    Members
+                  </TabButton>
+                  <TabButton
+                    active={activeTab === 'teams'}
+                    onClick={() => setActiveTab('teams')}
+                  >
+                    Teams
+                  </TabButton>
+                  {hasPaymentTracker(league) && (
+                    <TabButton
+                      active={activeTab === 'payments'}
+                      onClick={() => setActiveTab('payments')}
+                    >
+                      Payments
+                    </TabButton>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         )}
 
         <Card>
-          {activeTab === 'overview' || !isCommissioner || !league ? (
-            <OverviewTab
+          {!league ? (
+            <WeeklyResultsTab
               firstName={firstName}
               league={league}
               leagueCode={leagueCode}
@@ -142,18 +159,23 @@ export default function Dashboard() {
               userId={user?.uid ?? ''}
               isCommissioner={isCommissioner}
             />
-          ) : activeTab === 'members' ? (
+          ) : activeTab === 'standings' ? (
+            <StandingsTab
+              league={league}
+              leagueCode={leagueCode}
+            />
+          ) : activeTab === 'members' && isCommissioner ? (
             <MembersTab
               leagueCode={leagueCode}
               league={league}
               commissionerName={commissionerName}
             />
-          ) : activeTab === 'teams' ? (
+          ) : activeTab === 'teams' && isCommissioner ? (
             <TeamsTab leagueCode={leagueCode} league={league} />
-          ) : activeTab === 'payments' && hasPaymentTracker(league) ? (
+          ) : activeTab === 'payments' && isCommissioner && hasPaymentTracker(league) ? (
             <PaymentsTab leagueCode={leagueCode} league={league} />
           ) : (
-            <OverviewTab
+            <WeeklyResultsTab
               firstName={firstName}
               league={league}
               leagueCode={leagueCode}

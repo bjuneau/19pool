@@ -630,11 +630,12 @@ export default function Account() {
             )}
           </Card>
 
-          {/* ── Money (commissioner-only) ────────────────────────────────── */}
-          {league && isCommissioner && (
-            <MoneyEditCard
+          {/* ── Entry Fee (all users) ────────────────────────────────────── */}
+          {league && (
+            <EntryFeeCard
               league={league}
               leagueCode={leagueCode}
+              isCommissioner={isCommissioner}
               onToast={showToast}
             />
           )}
@@ -912,17 +913,22 @@ function ModalDestructive({
   );
 }
 
-// ─── Money edit (commissioner-only) ───────────────────────────────────────────
+// ─── Entry Fee card ───────────────────────────────────────────────────────────
+// Everyone in the league sees the numbers. Commissioner also gets Edit buttons
+// + the pot-choice/reset modals. Players get a "Pay via Venmo" button that
+// hits the commissioner's Venmo handle from league.venmo.
 
 type PotChoice = 'keep' | 'sync';
 
-function MoneyEditCard({
+function EntryFeeCard({
   league,
   leagueCode,
+  isCommissioner,
   onToast,
 }: {
   league: League;
   leagueCode: string;
+  isCommissioner: boolean;
   onToast: (msg: string) => void;
 }) {
   const entry = league.seasonEntry;
@@ -1044,12 +1050,22 @@ function MoneyEditCard({
     }
   }
 
+  const venmoHandle = (league.venmo ?? '').trim().replace(/^@/, '');
+  const commishName = league.commissionerName?.trim() || 'the commissioner';
+  const payVenmoUrl = venmoHandle
+    ? `https://venmo.com/${venmoHandle}?txn=pay&amount=${entry}&note=${encodeURIComponent(
+        `${league.name} entry fee`
+      )}`
+    : null;
+
   return (
     <>
       <Card>
-        <h2 className="text-xl font-bold text-white mb-1">Money</h2>
+        <h2 className="text-xl font-bold text-white mb-1">Entry Fee</h2>
         <p className="text-sm text-slate-400 mb-6">
-          Per-player entry, season pot, and weekly payout. Everyone in your league sees these numbers.
+          {isCommissioner
+            ? 'Per-player entry, season pot, and weekly payout. Everyone in your league sees these numbers.'
+            : `The buy-in for this league. Pay ${commishName} via Venmo to lock in your spot.`}
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:divide-x sm:divide-white/10">
@@ -1061,13 +1077,15 @@ function MoneyEditCard({
             {!editingEntry ? (
               <div className="flex items-center justify-between mt-1">
                 <p className="text-2xl font-extrabold text-white">{fmtDollars(entry)}</p>
-                <button
-                  type="button"
-                  onClick={beginEditEntry}
-                  className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
-                >
-                  Edit
-                </button>
+                {isCommissioner && (
+                  <button
+                    type="button"
+                    onClick={beginEditEntry}
+                    className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
             ) : (
               <div className="mt-1 flex items-center gap-2">
@@ -1115,13 +1133,15 @@ function MoneyEditCard({
             {!editingPot ? (
               <div className="flex items-center justify-between mt-1">
                 <p className="text-2xl font-extrabold text-white">{fmtDollars(pot)}</p>
-                <button
-                  type="button"
-                  onClick={beginEditPot}
-                  className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
-                >
-                  Edit
-                </button>
+                {isCommissioner && (
+                  <button
+                    type="button"
+                    onClick={beginEditPot}
+                    className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
             ) : (
               <div className="mt-1 flex items-center gap-2">
@@ -1161,14 +1181,19 @@ function MoneyEditCard({
             {isManual ? (
               <>
                 <p className="text-xs text-slate-500 mt-1.5">
-                  Manually set ·{' '}
-                  <button
-                    type="button"
-                    onClick={() => setResetModalOpen(true)}
-                    className="text-amber-400 hover:text-amber-300 underline-offset-2 hover:underline"
-                  >
-                    Reset to auto
-                  </button>
+                  Manually set
+                  {isCommissioner && (
+                    <>
+                      {' · '}
+                      <button
+                        type="button"
+                        onClick={() => setResetModalOpen(true)}
+                        className="text-amber-400 hover:text-amber-300 underline-offset-2 hover:underline"
+                      >
+                        Reset to auto
+                      </button>
+                    </>
+                  )}
                 </p>
                 <p className="text-xs text-slate-600 mt-0.5">
                   Auto would be {fmtDollars(autoPot)} ({memberCount} × {fmtDollars(entry)})
@@ -1191,6 +1216,33 @@ function MoneyEditCard({
           </p>
           <p className="text-xs text-slate-500">over 18 weeks</p>
         </div>
+
+        {/* Player-only: pay commissioner. Uses league.venmo which is the
+            commissioner's own handle (captured at CreateLeague). */}
+        {!isCommissioner && entry > 0 && (
+          <div className="border-t border-white/10 mt-4 pt-4">
+            {payVenmoUrl ? (
+              <a
+                href={payVenmoUrl}
+                target="_blank"
+                rel="noopener"
+                className="w-full inline-flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all"
+              >
+                Pay {commishName}{' '}
+                <span className="text-navy-900">
+                  {fmtDollars(entry)}
+                </span>{' '}
+                via Venmo →
+              </a>
+            ) : (
+              <div className="text-center">
+                <p className="text-slate-500 text-xs italic">
+                  {commishName} hasn't set a Venmo handle yet — pay them however you normally do.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </Card>
 
       {/* Pot-choice modal */}

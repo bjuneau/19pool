@@ -4,11 +4,6 @@ import { db } from '../../lib/firebase';
 import { getCurrentNFLWeek } from '../../lib/espn';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
-import {
-  computeWeeklyShareFromPot,
-  getSeasonPot,
-  isPotManuallySet,
-} from '../../lib/scoring';
 import { refreshWeek } from '../../lib/scoringWriter';
 import { TEAM_BY_ABBR } from '../../lib/teams';
 import type { GameResult, League, WeeklyResult } from '../../lib/types';
@@ -24,33 +19,7 @@ type Props = {
   isCommissioner: boolean;
 };
 
-type MemberStats = {
-  member: MemberWithId;
-  wins: number;
-  totalWon: number;
-};
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function computeStandings(
-  members: MemberWithId[],
-  weeklyResults: WeeklyResult[]
-): MemberStats[] {
-  return members
-    .filter((m) => m.joinedAt != null)
-    .map((m) => {
-      let wins = 0;
-      let totalWon = 0;
-      for (const wr of weeklyResults) {
-        if (wr.winningMemberIds.includes(m.id)) {
-          wins++;
-          totalWon += wr.payoutPerWinner;
-        }
-      }
-      return { member: m, wins, totalWon };
-    })
-    .sort((a, b) => b.totalWon - a.totalWon || b.wins - a.wins || a.member.name.localeCompare(b.member.name));
-}
 
 /** Count how many weeks each team was in teamsAt19 across all results. */
 function teamWinCounts(weeklyResults: WeeklyResult[]): Record<string, number> {
@@ -82,7 +51,7 @@ function fmtGameTime(isoStr: string): string {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
-export default function OverviewTab({
+export default function WeeklyResultsTab({
   firstName,
   league,
   leagueCode,
@@ -96,7 +65,6 @@ export default function OverviewTab({
   const [refreshing, setRefreshing] = useState(false);
   const [refreshAllProgress, setRefreshAllProgress] = useState<number | null>(null);
   const [refreshError, setRefreshError] = useState('');
-  const [pastWeeksExpanded, setPastWeeksExpanded] = useState(false);
 
   // Stable ref so poll closure doesn't capture stale members.
   const membersRef = useRef<MemberWithId[]>([]);
@@ -105,9 +73,6 @@ export default function OverviewTab({
   const isInSeason = league?.status === 'in_season';
   const currentWeek = league ? getCurrentNFLWeek(league.season) : null;
   const currentResult = weeklyResults.find((r) => r.week === currentWeek) ?? null;
-  const completedResults = [...weeklyResults]
-    .filter((r) => r.status === 'final' || r.status === 'rolled_over')
-    .sort((a, b) => b.week - a.week);
   const myMember = members.find((m) => m.uid === userId) ?? null;
 
   // Subscribe to members.
@@ -231,14 +196,11 @@ export default function OverviewTab({
         league={league}
         leagueCode={leagueCode}
         isCommissioner={isCommissioner}
-      >
-        {getSeasonPot(league) > 0 && <MoneyCard league={league} />}
-      </PreSeasonOverview>
+      />
     );
   }
 
   // In-season.
-  const standings = computeStandings(members, weeklyResults);
   const winCounts = teamWinCounts(weeklyResults);
   const seasonNotStarted = currentWeek === null;
 
@@ -310,9 +272,6 @@ export default function OverviewTab({
         </div>
       )}
 
-      {/* ── Money ── */}
-      {getSeasonPot(league) > 0 && <MoneyCard league={league} />}
-
       {/* ── My Teams ── */}
       {myMember && (
         <MyTeamsCard
@@ -333,21 +292,6 @@ export default function OverviewTab({
           refreshing={refreshing}
         />
       )}
-
-      {/* ── Standings ── */}
-      {standings.length > 0 && (
-        <StandingsCard standings={standings} />
-      )}
-
-      {/* ── Past Weeks ── */}
-      {completedResults.length > 0 && (
-        <PastWeeksSection
-          results={completedResults}
-          members={members}
-          expanded={pastWeeksExpanded}
-          onToggle={() => setPastWeeksExpanded((v) => !v)}
-        />
-      )}
     </div>
   );
 }
@@ -359,13 +303,11 @@ function PreSeasonOverview({
   league,
   leagueCode,
   isCommissioner,
-  children,
 }: {
   firstName: string;
   league: League;
   leagueCode: string;
   isCommissioner: boolean;
-  children?: React.ReactNode;
 }) {
   const statusLabel =
     league.status === 'assigned'
@@ -398,8 +340,6 @@ function PreSeasonOverview({
         </div>
       </div>
 
-      {children}
-
       <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-6 text-center">
         <p className="text-2xl mb-2">🏈</p>
         <p className="text-white font-semibold mb-1">Season hasn't started yet</p>
@@ -410,70 +350,6 @@ function PreSeasonOverview({
               : 'Teams are assigned. Head to the Teams tab to make adjustments, then lock the league to begin the season.'
             : 'Hang tight — the commissioner will lock the league and start the season soon.'}
         </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Money card (read-only) ──────────────────────────────────────────────────
-// Displays per-player entry, season pot, and weekly share. Editing lives on
-// the Account page — commissioners see the same read-only view as members here.
-
-function MoneyCard({ league }: { league: League }) {
-  const entry = league.seasonEntry;
-  const memberCount = league.memberCount ?? 0;
-  const autoPot = entry * memberCount;
-  const pot = getSeasonPot(league);
-  const isManual = isPotManuallySet(league);
-  const weeklyShare = computeWeeklyShareFromPot(pot);
-
-  return (
-    <div className="bg-navy-950/60 border border-amber-500/10 rounded-2xl p-5">
-      <p className="text-xs text-slate-500 uppercase tracking-widest mb-4">Money</p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:divide-x sm:divide-white/10">
-        {/* Per-player entry */}
-        <div className="sm:pr-5">
-          <p className="text-[10px] text-slate-500 uppercase tracking-wider">
-            Per-Player Entry
-          </p>
-          <p className="text-2xl font-extrabold text-white mt-1">
-            {fmtDollars(entry)}
-          </p>
-          <p className="text-xs text-slate-500 mt-1.5">
-            Everyone pays the same to enter
-          </p>
-        </div>
-
-        {/* Season pot */}
-        <div className="sm:pl-5 pt-5 sm:pt-0 border-t border-white/10 sm:border-t-0">
-          <p className="text-[10px] text-slate-500 uppercase tracking-wider">
-            Season Pot
-          </p>
-          <p className="text-2xl font-extrabold text-white mt-1">
-            {fmtDollars(pot)}
-          </p>
-          {isManual ? (
-            <>
-              <p className="text-xs text-slate-500 mt-1.5">Manually set</p>
-              <p className="text-xs text-slate-600 mt-0.5">
-                Auto would be {fmtDollars(autoPot)} ({memberCount} × {fmtDollars(entry)})
-              </p>
-            </>
-          ) : (
-            <p className="text-xs text-slate-500 mt-1.5">
-              {memberCount} member{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="border-t border-white/10 mt-5 pt-4 flex items-baseline justify-between gap-3">
-        <p className="text-sm text-slate-300">
-          Weekly pot:{' '}
-          <span className="font-bold text-white">{fmtDollars(weeklyShare)}</span>
-        </p>
-        <p className="text-xs text-slate-500">over 18 weeks</p>
       </div>
     </div>
   );
@@ -760,150 +636,6 @@ function TeamScoreRow({
           {is19 ? '🏆' : score}
         </span>
       )}
-    </div>
-  );
-}
-
-// ─── Standings ────────────────────────────────────────────────────────────────
-
-function StandingsCard({ standings }: { standings: MemberStats[] }) {
-  const hasAnyWins = standings.some((s) => s.wins > 0);
-
-  return (
-    <div className="bg-navy-950/60 border border-white/10 rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-white/5">
-        <p className="text-white font-bold">Season Standings</p>
-        <p className="text-xs text-slate-500 mt-0.5">
-          {hasAnyWins ? 'Based on completed weeks' : 'No winners yet this season'}
-        </p>
-      </div>
-      <div className="divide-y divide-white/5">
-        {standings.map((s, i) => (
-          <StandingsRow key={s.member.id} rank={i + 1} stats={s} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function StandingsRow({ rank, stats }: { rank: number; stats: MemberStats }) {
-  const { member, wins, totalWon } = stats;
-  const initials = (
-    (member.firstName || '').charAt(0) + (member.lastName || '').charAt(0)
-  )
-    .toUpperCase()
-    .slice(0, 2) || '?';
-
-  return (
-    <div className="flex items-center gap-3 px-5 py-3">
-      <span className="text-slate-600 text-xs w-5 text-right flex-shrink-0">
-        {rank}
-      </span>
-      <div className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
-        {initials}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-white text-sm font-semibold truncate">
-          {member.name || member.email}
-        </p>
-        <div className="flex flex-wrap gap-0.5 mt-0.5">
-          {(member.teams ?? []).slice(0, 6).map((abbr) => (
-            <span
-              key={abbr}
-              className="text-[10px] font-mono text-slate-500 border border-white/5 px-1 rounded"
-            >
-              {abbr}
-            </span>
-          ))}
-          {(member.teams ?? []).length > 6 && (
-            <span className="text-[10px] text-slate-600">
-              +{(member.teams ?? []).length - 6}
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="text-right flex-shrink-0">
-        <p className={`text-sm font-bold ${totalWon > 0 ? 'text-green-400' : 'text-slate-600'}`}>
-          {fmtDollars(totalWon)}
-        </p>
-        <p className="text-xs text-slate-500">
-          {wins} win{wins === 1 ? '' : 's'}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ─── Past Weeks ───────────────────────────────────────────────────────────────
-
-function PastWeeksSection({
-  results,
-  members,
-  expanded,
-  onToggle,
-}: {
-  results: WeeklyResult[];
-  members: MemberWithId[];
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="bg-navy-950/60 border border-white/10 rounded-2xl overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/2 transition-colors"
-      >
-        <p className="text-white font-semibold">
-          Past Weeks
-          <span className="ml-2 text-xs text-slate-500 font-normal">
-            ({results.length} completed)
-          </span>
-        </p>
-        <span className="text-slate-400 text-sm">{expanded ? '▲' : '▼'}</span>
-      </button>
-
-      {expanded && (
-        <div className="divide-y divide-white/5 border-t border-white/5">
-          {results.map((wr) => (
-            <PastWeekRow key={wr.week} result={wr} members={members} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PastWeekRow({
-  result,
-  members,
-}: {
-  result: WeeklyResult;
-  members: MemberWithId[];
-}) {
-  const winnerNames = result.winningMemberIds.map((id) => {
-    const m = members.find((x) => x.id === id);
-    return m?.name ?? m?.email ?? 'Unknown';
-  });
-
-  return (
-    <div className="flex items-center justify-between px-5 py-3 gap-4">
-      <div className="flex items-center gap-3">
-        <span className="text-slate-500 text-sm w-14 flex-shrink-0">Week {result.week}</span>
-        <StatusPill status={result.status} small />
-      </div>
-      <div className="text-right flex-1 min-w-0">
-        {result.status === 'rolled_over' ? (
-          <p className="text-slate-500 text-xs">No winner — pot rolled over</p>
-        ) : winnerNames.length > 0 ? (
-          <p className="text-xs text-green-400 truncate">
-            🏆 {winnerNames.join(', ')}
-            <span className="text-slate-500 ml-1">· {fmtDollars(result.payoutPerWinner)} each</span>
-          </p>
-        ) : (
-          <p className="text-slate-500 text-xs">—</p>
-        )}
-      </div>
     </div>
   );
 }
