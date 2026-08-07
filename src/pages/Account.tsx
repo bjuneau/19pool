@@ -479,7 +479,7 @@ export default function Account() {
                   onChange={(e) => setProfileVenmo(e.target.value)}
                 />
                 <p className="mt-1.5 text-xs text-slate-500">
-                  So your commissioner can send you a Venmo request for the entry fee.
+                  Used for entry-fee Venmo requests in your league.
                 </p>
               </div>
 
