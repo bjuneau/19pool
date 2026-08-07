@@ -351,12 +351,15 @@ function PaymentRow({
                   <span className="text-amber-400">@{memberVenmo}</span> →
                 </a>
               ) : isSelf ? null : (
-                <span
-                  className="text-xs text-slate-600 italic"
-                  title="Ask them to add their Venmo handle on the Account page."
+                <a
+                  href="https://venmo.com/"
+                  target="_blank"
+                  rel="noopener"
+                  title="No Venmo handle on file — search for them on Venmo."
+                  className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold"
                 >
-                  No Venmo on file
-                </span>
+                  Find on Venmo →
+                </a>
               )}
             </>
           )}
