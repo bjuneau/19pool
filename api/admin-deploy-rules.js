@@ -104,14 +104,13 @@ service cloud.firestore {
           )
         );
 
-        // Member deletion. Commissioner can remove members anytime except
-        // in_season (members are part of the data set during 'complete' so
-        // delete-league needs to be able to wipe them). Self-removal is
-        // allowed during 'recruiting' only.
-        allow delete: if (
-          isCommissionerOf(code)
-          && leagueStatus(code) != 'in_season'
-        ) || (
+        // Member deletion. Commissioner can remove members at any status —
+        // including in_season and complete — so they can fix rosters mid- or
+        // post-season. Historical weeklyResults are separate docs and remain
+        // untouched. Self-removal (a member leaving on their own) stays
+        // limited to 'recruiting' — post-recruiting exits go through the
+        // commissioner so nobody can abandon a paid slot unilaterally.
+        allow delete: if isCommissionerOf(code) || (
           signedIn()
           && resource.data.uid == request.auth.uid
           && leagueStatus(code) == 'recruiting'

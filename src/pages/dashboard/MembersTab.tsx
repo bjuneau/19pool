@@ -348,8 +348,11 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const isLocked = league.status === 'in_season';
-  const canRemove =
-    league.status !== 'in_season' && league.status !== 'complete';
+  const isComplete = league.status === 'complete';
+  // Commissioner can remove members at any status. Historical weeklyResults
+  // aren't touched; the warning banner explains what "removing during the
+  // season" actually means.
+  const canRemove = true;
   const resendAllSending = resendAllStatus.kind === 'sending';
 
   const removeIsPending = removeTarget && !removeTarget.joinedAt;
@@ -378,11 +381,20 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
                 ? `Cancel pending invite to ${removeTarget.email}?`
                 : `Remove ${removeDisplay} from the league?`}
             </h2>
-            <p className="text-slate-400 text-sm mb-6">
-              {removeIsPending
-                ? "They won't be able to use the invite link anymore. You can re-invite them later if you change your mind."
-                : "They'll lose access to this league and can join a different one. This can't be undone."}
-            </p>
+            <div className="mb-6 space-y-1.5">
+              <p className="text-slate-400 text-sm">
+                {removeIsPending
+                  ? "They won't be able to use the invite link anymore. You can re-invite them later if you change your mind."
+                  : "They'll lose access to this league and can join a different one. This can't be undone."}
+              </p>
+              {!removeIsPending && (isLocked || isComplete) && (
+                <p className="text-slate-500 text-xs italic">
+                  {isLocked
+                    ? `This will move ${removeDisplay || 'their'} teams to the unowned pool.`
+                    : 'This will not change any historical weekly results.'}
+                </p>
+              )}
+            </div>
             {removeStatus.kind === 'error' && (
               <p className="text-red-400 text-sm mb-4">{removeStatus.message}</p>
             )}
@@ -462,6 +474,23 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
           />
         </div>
       </div>
+
+      {/* Post-lock warning banner */}
+      {(isLocked || isComplete) && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3.5">
+          <p className="text-amber-300 font-semibold text-sm mb-1">
+            ⚠️{' '}
+            {isLocked
+              ? 'Season is in progress'
+              : 'Season is over'}
+          </p>
+          <p className="text-slate-300 text-sm leading-relaxed">
+            {isLocked
+              ? "Removing a member during the season sends their teams back to the unowned pool. Future weeks where those teams score 19 will roll over. Past results don't change."
+              : "Removing a member here is for correcting records — it doesn't change any historical results."}
+          </p>
+        </div>
+      )}
 
       {/* Invite panels (hidden after lock) */}
       {isLocked ? (

@@ -472,7 +472,10 @@ export type RemoveMemberResult =
  *  • If the member was joined (had a uid), also clears users/{uid}.leagueCode.
  *  • Decrements league.memberCount by 1.
  *  • Refuses if member.role === 'commissioner'.
- *  • Refuses if league.status is 'in_season' or 'complete'.
+ *  • Works at every status (recruiting/assigned/in_season/complete). Callers
+ *    surface a warning banner during in_season and complete so commissioners
+ *    know changes only affect future weeks; historical weeklyResults docs are
+ *    never touched.
  *  • In 'assigned' status, also resets skipReassignmentCheck so the
  *    Teams-tab reassignment banner appears next time it's opened.
  *
@@ -490,9 +493,6 @@ export async function removeMember(
   league: League,
   leagueCode: string
 ): Promise<RemoveMemberResult> {
-  if (league.status === 'in_season' || league.status === 'complete') {
-    return { ok: false, reason: 'locked' };
-  }
   if (member.role === 'commissioner') {
     return { ok: false, reason: 'commissioner' };
   }

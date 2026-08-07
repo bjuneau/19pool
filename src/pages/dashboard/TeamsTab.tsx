@@ -251,6 +251,10 @@ export default function TeamsTab({ leagueCode, league }: Props) {
   const joinedMembers = members.filter((m) => m.joinedAt != null);
   const unownedTeams = league.unownedTeams ?? [];
   const isLocked = league.status === 'in_season';
+  const isComplete = league.status === 'complete';
+  // Editing is enabled for assigned/in_season/complete. Only recruiting is
+  // the empty pre-assignment state.
+  const isPostLock = isLocked || isComplete;
 
   return (
     <div className="space-y-6 relative">
@@ -391,49 +395,81 @@ export default function TeamsTab({ leagueCode, league }: Props) {
         </>
       )}
 
-      {/* ── STATUS: in_season (locked) ───────────────────────────────────── */}
-      {isLocked && (
+      {/* ── STATUS: in_season / complete ─────────────────────────────────── */}
+      {/* Editable post-lock. Reroll/Lock buttons hidden; a warning banner
+          replaces them so the commissioner knows changes affect only future
+          weeks and never historical results. */}
+      {isPostLock && (
         <>
-          <div className="flex items-center gap-2">
-            <span className="text-lg">🔒</span>
-            <div>
-              <p className="text-white font-bold">League locked</p>
-              {league.lockedAt && (
-                <p className="text-slate-400 text-xs">
-                  Locked on{' '}
-                  {new Date(league.lockedAt.toMillis()).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
-                </p>
-              )}
-            </div>
+          {/* Warning banner */}
+          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-4">
+            <p className="text-amber-300 font-semibold text-sm mb-1">
+              ⚠️{' '}
+              {isLocked ? 'Season is in progress' : 'Season is over'}
+            </p>
+            <p className="text-slate-300 text-sm leading-relaxed">
+              {isLocked
+                ? "Changes affect this week's winner detection and future payouts. Past weekly results are not changed. Remove members from the Members tab, or drag teams here to reassign them."
+                : "Edits here are for correcting errors after the fact. Existing weekly results and payouts don't change."}
+            </p>
           </div>
 
+          {/* Compact header */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{isLocked ? '🏈' : '🏁'}</span>
+              <div>
+                <p className="text-white font-bold">
+                  {isLocked ? 'Season in progress' : 'Season complete'}
+                </p>
+                {league.lockedAt && (
+                  <p className="text-slate-400 text-xs">
+                    Locked on{' '}
+                    {new Date(league.lockedAt.toMillis()).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </p>
+                )}
+              </div>
+            </div>
+            <p className="text-slate-400 text-sm">
+              {joinedMembers.length} member{joinedMembers.length === 1 ? '' : 's'} ·{' '}
+              {unownedTeams.length} unowned
+            </p>
+          </div>
+
+          {writing && (
+            <p className="text-slate-500 text-xs text-right">Saving…</p>
+          )}
+
+          {/* Editable member + unowned panels — same handlers as the
+              'assigned' branch. handleDrop persists to Firestore and the
+              onSnapshot listener drives the re-render. */}
           {joinedMembers.map((m) => (
             <MemberTeamCard
               key={m.id}
               member={m}
-              isDragOver={false}
-              onDragOver={() => {}}
-              onDragLeave={() => {}}
-              onDrop={() => {}}
-              onTeamDragStart={() => {}}
-              onTeamDragEnd={() => {}}
-              readonly={true}
+              isDragOver={dragOverId === m.id}
+              onDragOver={(e) => { e.preventDefault(); setDragOverId(m.id); }}
+              onDragLeave={() => { if (dragOverId === m.id) setDragOverId(null); }}
+              onDrop={() => handleDrop(m.id)}
+              onTeamDragStart={(team) => setDragPayload({ team, fromId: m.id })}
+              onTeamDragEnd={() => { setDragPayload(null); setDragOverId(null); }}
+              readonly={false}
             />
           ))}
 
           <UnownedCard
             teams={unownedTeams}
-            isDragOver={false}
-            onDragOver={() => {}}
-            onDragLeave={() => {}}
-            onDrop={() => {}}
-            onTeamDragStart={() => {}}
-            onTeamDragEnd={() => {}}
-            readonly={true}
+            isDragOver={dragOverId === 'unowned'}
+            onDragOver={(e) => { e.preventDefault(); setDragOverId('unowned'); }}
+            onDragLeave={() => { if (dragOverId === 'unowned') setDragOverId(null); }}
+            onDrop={() => handleDrop(null)}
+            onTeamDragStart={(team) => setDragPayload({ team, fromId: null })}
+            onTeamDragEnd={() => { setDragPayload(null); setDragOverId(null); }}
+            readonly={false}
           />
         </>
       )}
