@@ -4,7 +4,9 @@ import { doc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore'
 import {
   LEAGUE_CAPACITY,
   MemberExistsError,
+  buildDisplayName,
   createPendingInvite,
+  findMemberByEmail,
   isInResendCooldown,
   isValidEmail,
   membersCollectionRef,
@@ -69,6 +71,17 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
   const [removeTarget, setRemoveTarget] = useState<MemberWithId | null>(null);
   const [removeStatus, setRemoveStatus] = useState<
     { kind: 'idle' } | { kind: 'removing' } | { kind: 'error'; message: string }
+  >({ kind: 'idle' });
+
+  // Edit-member state — commissioner fixing a name typo or bad email address
+  // on a member doc. Doesn't touch Firebase Auth for joined members; a note
+  // in the modal explains this.
+  const [editTarget, setEditTarget] = useState<MemberWithId | null>(null);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editStatus, setEditStatus] = useState<
+    { kind: 'idle' } | { kind: 'saving' } | { kind: 'error'; message: string }
   >({ kind: 'idle' });
 
   // Toast (success messages)
@@ -345,6 +358,85 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
     setRemoveStatus({ kind: 'idle' });
   }
 
+  function handleOpenEditModal(member: MemberWithId) {
+    setEditStatus({ kind: 'idle' });
+    setEditFirstName(member.firstName ?? '');
+    setEditLastName(member.lastName ?? '');
+    setEditEmail(member.email ?? '');
+    setEditTarget(member);
+  }
+
+  function handleCloseEditModal() {
+    if (editStatus.kind === 'saving') return;
+    setEditTarget(null);
+    setEditStatus({ kind: 'idle' });
+  }
+
+  async function handleSaveEdit() {
+    if (!editTarget) return;
+    const first = editFirstName.trim();
+    const last = editLastName.trim();
+    const email = editEmail.trim().toLowerCase();
+
+    if (!first && !last) {
+      setEditStatus({ kind: 'error', message: 'Enter a first or last name.' });
+      return;
+    }
+    if (!email || !isValidEmail(email)) {
+      setEditStatus({ kind: 'error', message: 'Enter a valid email address.' });
+      return;
+    }
+
+    // Duplicate-email guard. Only runs if the email actually changed — this
+    // is a one-shot query against the league's members subcollection and
+    // uses the same helper that gates createPendingInvite.
+    if (email !== (editTarget.email ?? '').toLowerCase()) {
+      try {
+        const existing = await findMemberByEmail(leagueCode, email);
+        if (existing && existing.id !== editTarget.id) {
+          setEditStatus({
+            kind: 'error',
+            message: 'Another member in this league already uses that email.',
+          });
+          return;
+        }
+      } catch (err) {
+        setEditStatus({
+          kind: 'error',
+          message: (err as { message?: string })?.message ?? 'Duplicate check failed.',
+        });
+        return;
+      }
+    }
+
+    const newName = buildDisplayName(first, last, email.split('@')[0]);
+    setEditStatus({ kind: 'saving' });
+    try {
+      await updateDoc(doc(db, 'leagues', leagueCode, 'members', editTarget.id), {
+        firstName: first,
+        lastName: last,
+        name: newName,
+        email,
+      });
+      // If we somehow edited the commissioner's own row (UI hides the button,
+      // but rule-out for safety), keep the denormalized commissionerName in
+      // sync so headers and standings don't drift.
+      if (editTarget.role === 'commissioner') {
+        await updateDoc(doc(db, 'leagues', leagueCode), {
+          commissionerName: newName,
+        });
+      }
+      setEditTarget(null);
+      setEditStatus({ kind: 'idle' });
+      showToast(`✓ Updated ${newName}`);
+    } catch (err) {
+      setEditStatus({
+        kind: 'error',
+        message: (err as { message?: string })?.message ?? 'Save failed.',
+      });
+    }
+  }
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   const isLocked = league.status === 'in_season';
@@ -418,6 +510,101 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
                   : removeIsPending
                     ? 'Cancel Invite'
                     : 'Remove Member'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit-member modal */}
+      {editTarget && (
+        <div className="fixed inset-0 z-40 flex items-start justify-center px-4 pt-16 sm:pt-24">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={handleCloseEditModal}
+          />
+          <div className="relative z-50 w-full max-w-sm bg-navy-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+            <h2 className="text-white font-bold text-lg mb-1">
+              Edit {editTarget.name?.trim() || editTarget.email}
+            </h2>
+            <p className="text-slate-400 text-sm mb-5">
+              Fix a typo in this member's name or email address.
+            </p>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                    First Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editFirstName}
+                    onChange={(e) => setEditFirstName(e.target.value)}
+                    disabled={editStatus.kind === 'saving'}
+                    autoFocus
+                    className="w-full bg-navy-950/80 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500/40 disabled:opacity-60"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                    Last Name
+                  </label>
+                  <input
+                    type="text"
+                    value={editLastName}
+                    onChange={(e) => setEditLastName(e.target.value)}
+                    disabled={editStatus.kind === 'saving'}
+                    className="w-full bg-navy-950/80 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500/40 disabled:opacity-60"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] text-slate-500 uppercase tracking-wider mb-1">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={editEmail}
+                  onChange={(e) => setEditEmail(e.target.value)}
+                  disabled={editStatus.kind === 'saving'}
+                  className="w-full bg-navy-950/80 border border-white/10 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-amber-500/40 disabled:opacity-60"
+                />
+                {editTarget.joinedAt ? (
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                    This is what's shown in the members list and standings. It
+                    doesn't change how the player signs in — that's set in
+                    their own account.
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                    Their existing invite link stays valid — the token is
+                    tied to the invite, not the email.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {editStatus.kind === 'error' && (
+              <p className="text-red-400 text-sm mt-4">{editStatus.message}</p>
+            )}
+
+            <div className="flex gap-3 mt-6">
+              <button
+                type="button"
+                onClick={handleCloseEditModal}
+                disabled={editStatus.kind === 'saving'}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 text-sm font-semibold hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSaveEdit()}
+                disabled={editStatus.kind === 'saving'}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {editStatus.kind === 'saving' ? 'Saving…' : 'Save Changes'}
               </button>
             </div>
           </div>
@@ -676,8 +863,10 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
                 resendState={resendStates[m.id] ?? { kind: 'idle' }}
                 onResend={() => void handleResendOne(m)}
                 onRemove={() => handleOpenRemoveModal(m)}
+                onEdit={() => handleOpenEditModal(m)}
                 showResend={!isLocked}
                 showRemove={canRemove}
+                showEdit={true}
               />
             ))}
           </ul>
@@ -694,15 +883,19 @@ function MemberRow({
   resendState,
   onResend,
   onRemove,
+  onEdit,
   showResend,
   showRemove,
+  showEdit,
 }: {
   member: MemberWithId;
   resendState: MemberResendState;
   onResend: () => void;
   onRemove: () => void;
+  onEdit: () => void;
   showResend: boolean;
   showRemove: boolean;
+  showEdit: boolean;
 }) {
   const initials = getInitials(member);
   const display = member.name?.trim() || member.email;
@@ -740,6 +933,18 @@ function MemberRow({
             onClick={onResend}
             cooldownLabel={cooldownLabel}
           />
+        )}
+
+        {showEdit && !isCommissioner && (
+          <button
+            type="button"
+            onClick={onEdit}
+            title="Edit name or email"
+            aria-label="Edit name or email"
+            className="w-7 h-7 flex items-center justify-center rounded-full text-slate-500 hover:text-amber-400 hover:bg-amber-500/10 transition-colors text-sm leading-none"
+          >
+            ✎
+          </button>
         )}
 
         {showRemove && !isCommissioner && (
