@@ -41,6 +41,14 @@ export default function TeamsTab({ leagueCode, league }: Props) {
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
   const [dragOverId, setDragOverId] = useState<string | 'unowned' | null>(null);
 
+  // Tap-to-move state — the touch/click equivalent of drag. HTML5 drag events
+  // don't fire on touch devices, so mobile users go tap-chip → tap-card.
+  // Also usable on desktop as an accessible alternative.
+  const [tapSelected, setTapSelected] = useState<{
+    team: string;
+    fromId: string | null;
+  } | null>(null);
+
   // Track toast
   const [toast, setToast] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -201,17 +209,16 @@ export default function TeamsTab({ leagueCode, league }: Props) {
     }
   }
 
-  // ── Drag-and-drop ─────────────────────────────────────────────────────────
+  // ── Move commit (shared by drag-and-drop and tap-to-move) ─────────────────
 
-  async function handleDrop(toId: string | null) {
-    if (!dragPayload) return;
-    const { team, fromId } = dragPayload;
-    if (fromId === toId) return; // dropped on same source
+  async function commitMove(
+    team: string,
+    fromId: string | null,
+    toId: string | null
+  ) {
+    if (fromId === toId) return; // same source → no-op
 
-    setDragPayload(null);
-    setDragOverId(null);
-
-    // Build current assignment state from live members
+    // Build current assignment state from live members.
     const current = {
       assignments: Object.fromEntries(members.map((m) => [m.id, [...m.teams]])),
       unowned: [...(league.unownedTeams ?? [])],
@@ -242,6 +249,31 @@ export default function TeamsTab({ leagueCode, league }: Props) {
     }
   }
 
+  // Drag flow: HTML5 drag-and-drop, desktop only in practice.
+  async function handleDrop(toId: string | null) {
+    if (!dragPayload) return;
+    const { team, fromId } = dragPayload;
+    setDragPayload(null);
+    setDragOverId(null);
+    await commitMove(team, fromId, toId);
+  }
+
+  // Tap flow: touch-friendly alternative. Tap a chip to select it, tap a
+  // member/unowned card to move it there.
+  function handleChipTap(team: string, fromId: string | null) {
+    setTapSelected((cur) => {
+      if (cur && cur.team === team && cur.fromId === fromId) return null; // deselect
+      return { team, fromId };
+    });
+  }
+
+  async function handleZoneTap(toId: string | null) {
+    const sel = tapSelected;
+    if (!sel) return;
+    setTapSelected(null);
+    await commitMove(sel.team, sel.fromId, toId);
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   if (loadingMembers) {
@@ -263,6 +295,27 @@ export default function TeamsTab({ leagueCode, league }: Props) {
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-navy-700 border border-amber-500/30 text-white text-sm font-semibold px-5 py-3 rounded-full shadow-lg">
           {toast}
+        </div>
+      )}
+
+      {/* Tap-to-move active pill. Sticky above the panels so a moving-away
+          finger can still hit Cancel. */}
+      {tapSelected && (
+        <div className="sticky top-2 z-30 flex justify-center pointer-events-none">
+          <div className="pointer-events-auto inline-flex items-center gap-3 bg-navy-900 border border-amber-500/40 text-white text-sm font-semibold px-4 py-2 rounded-full shadow-2xl">
+            <span>
+              Move{' '}
+              <span className="text-amber-400 font-mono">{tapSelected.team}</span>{' '}
+              — tap a member card
+            </span>
+            <button
+              type="button"
+              onClick={() => setTapSelected(null)}
+              className="text-slate-400 hover:text-white transition-colors text-xs font-semibold"
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 
@@ -378,6 +431,10 @@ export default function TeamsTab({ leagueCode, league }: Props) {
               onTeamDragStart={(team) => setDragPayload({ team, fromId: m.id })}
               onTeamDragEnd={() => { setDragPayload(null); setDragOverId(null); }}
               readonly={false}
+              selectedTeamAbbr={tapSelected?.fromId === m.id ? tapSelected.team : null}
+              hasSelection={!!tapSelected}
+              onChipTap={(team) => handleChipTap(team, m.id)}
+              onCardTap={() => handleZoneTap(m.id)}
             />
           ))}
 
@@ -391,6 +448,10 @@ export default function TeamsTab({ leagueCode, league }: Props) {
             onTeamDragStart={(team) => setDragPayload({ team, fromId: null })}
             onTeamDragEnd={() => { setDragPayload(null); setDragOverId(null); }}
             readonly={false}
+            selectedTeamAbbr={tapSelected?.fromId === null ? tapSelected.team : null}
+            hasSelection={!!tapSelected}
+            onChipTap={(team) => handleChipTap(team, null)}
+            onCardTap={() => handleZoneTap(null)}
           />
         </>
       )}
@@ -458,6 +519,10 @@ export default function TeamsTab({ leagueCode, league }: Props) {
               onTeamDragStart={(team) => setDragPayload({ team, fromId: m.id })}
               onTeamDragEnd={() => { setDragPayload(null); setDragOverId(null); }}
               readonly={false}
+              selectedTeamAbbr={tapSelected?.fromId === m.id ? tapSelected.team : null}
+              hasSelection={!!tapSelected}
+              onChipTap={(team) => handleChipTap(team, m.id)}
+              onCardTap={() => handleZoneTap(m.id)}
             />
           ))}
 
@@ -470,6 +535,10 @@ export default function TeamsTab({ leagueCode, league }: Props) {
             onTeamDragStart={(team) => setDragPayload({ team, fromId: null })}
             onTeamDragEnd={() => { setDragPayload(null); setDragOverId(null); }}
             readonly={false}
+            selectedTeamAbbr={tapSelected?.fromId === null ? tapSelected.team : null}
+            hasSelection={!!tapSelected}
+            onChipTap={(team) => handleChipTap(team, null)}
+            onCardTap={() => handleZoneTap(null)}
           />
         </>
       )}
@@ -596,6 +665,10 @@ function MemberTeamCard({
   onTeamDragStart,
   onTeamDragEnd,
   readonly,
+  selectedTeamAbbr,
+  hasSelection,
+  onChipTap,
+  onCardTap,
 }: {
   member: MemberWithId;
   isDragOver: boolean;
@@ -605,22 +678,28 @@ function MemberTeamCard({
   onTeamDragStart: (team: string) => void;
   onTeamDragEnd: () => void;
   readonly: boolean;
+  selectedTeamAbbr: string | null;
+  hasSelection: boolean;
+  onChipTap: (team: string) => void;
+  onCardTap: () => void;
 }) {
   const initials =
     ((member.firstName || '').charAt(0) + (member.lastName || '').charAt(0))
       .toUpperCase()
       .slice(0, 2) || '?';
+  const isTapTarget = hasSelection && !readonly && selectedTeamAbbr === null;
 
   return (
     <div
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={(e) => { e.preventDefault(); onDrop(); }}
+      onClick={readonly ? undefined : onCardTap}
       className={`bg-navy-950/60 border rounded-2xl p-4 transition-all ${
-        isDragOver
+        isDragOver || isTapTarget
           ? 'border-amber-500/60 bg-amber-500/5'
           : 'border-white/10'
-      }`}
+      } ${isTapTarget ? 'cursor-pointer' : ''}`}
     >
       <div className="flex items-center gap-3 mb-3">
         <div className="w-9 h-9 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-sm flex items-center justify-center flex-shrink-0">
@@ -647,6 +726,8 @@ function MemberTeamCard({
               draggable={!readonly}
               onDragStart={() => onTeamDragStart(abbr)}
               onDragEnd={onTeamDragEnd}
+              isSelected={selectedTeamAbbr === abbr}
+              onClick={readonly ? undefined : () => onChipTap(abbr)}
             />
           ))}
         </div>
@@ -666,6 +747,10 @@ function UnownedCard({
   onTeamDragStart,
   onTeamDragEnd,
   readonly,
+  selectedTeamAbbr,
+  hasSelection,
+  onChipTap,
+  onCardTap,
 }: {
   teams: string[];
   isDragOver: boolean;
@@ -675,17 +760,24 @@ function UnownedCard({
   onTeamDragStart: (team: string) => void;
   onTeamDragEnd: () => void;
   readonly: boolean;
+  selectedTeamAbbr: string | null;
+  hasSelection: boolean;
+  onChipTap: (team: string) => void;
+  onCardTap: () => void;
 }) {
+  const isTapTarget = hasSelection && !readonly && selectedTeamAbbr === null;
+
   return (
     <div
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={(e) => { e.preventDefault(); onDrop(); }}
+      onClick={readonly ? undefined : onCardTap}
       className={`bg-navy-950/60 border rounded-2xl p-4 transition-all ${
-        isDragOver
+        isDragOver || isTapTarget
           ? 'border-amber-500/60 bg-amber-500/5'
           : 'border-white/10'
-      }`}
+      } ${isTapTarget ? 'cursor-pointer' : ''}`}
     >
       <p className="text-slate-400 text-xs font-semibold uppercase tracking-wider mb-3">
         Unowned Teams
@@ -697,7 +789,7 @@ function UnownedCard({
       </p>
       {teams.length === 0 ? (
         <p className="text-slate-600 text-sm italic">
-          {isDragOver ? 'Drop here to unassign' : 'All teams are assigned'}
+          {isDragOver || isTapTarget ? 'Drop here to unassign' : 'All teams are assigned'}
         </p>
       ) : (
         <div className="flex flex-wrap gap-1.5">
@@ -708,6 +800,8 @@ function UnownedCard({
               draggable={!readonly}
               onDragStart={() => onTeamDragStart(abbr)}
               onDragEnd={onTeamDragEnd}
+              isSelected={selectedTeamAbbr === abbr}
+              onClick={readonly ? undefined : () => onChipTap(abbr)}
             />
           ))}
         </div>
@@ -723,14 +817,19 @@ function TeamChip({
   draggable,
   onDragStart,
   onDragEnd,
+  isSelected,
+  onClick,
 }: {
   abbr: string;
   draggable: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
+  isSelected?: boolean;
+  onClick?: () => void;
 }) {
   const team = TEAM_BY_ABBR[abbr];
   const label = team ? `${abbr} · ${team.name}` : abbr;
+  const isInteractive = !!onClick;
 
   return (
     <span
@@ -740,9 +839,25 @@ function TeamChip({
         onDragStart();
       }}
       onDragEnd={onDragEnd}
+      onClick={
+        onClick
+          ? (e) => {
+              // Prevent the containing card's onClick (which would treat this
+              // as a "move selected team here" tap) from firing.
+              e.stopPropagation();
+              onClick();
+            }
+          : undefined
+      }
       title={team?.fullName ?? abbr}
-      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border border-white/10 bg-navy-950/80 text-slate-200 select-none transition-opacity ${
-        draggable ? 'cursor-grab active:cursor-grabbing hover:border-amber-500/40 hover:text-white' : ''
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border select-none transition-all ${
+        isSelected
+          ? 'bg-amber-500/20 border-amber-500 text-white ring-2 ring-amber-500/60'
+          : 'bg-navy-950/80 border-white/10 text-slate-200'
+      } ${
+        draggable ? 'cursor-grab active:cursor-grabbing' : ''
+      } ${
+        isInteractive && !isSelected ? 'hover:border-amber-500/40 hover:text-white' : ''
       }`}
     >
       {label}
