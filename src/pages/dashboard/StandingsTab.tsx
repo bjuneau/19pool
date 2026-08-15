@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
+import { getCurrentNFLWeek } from '../../lib/espn';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
 import {
@@ -84,11 +85,21 @@ export default function StandingsTab({ league, leagueCode }: Props) {
     return unsub;
   }, [leagueCode]);
 
-  const standings = computeStandings(members, weeklyResults);
-  const completedResults = [...weeklyResults]
+  // Clip to weeks that have actually happened. "Refresh All Weeks" is a
+  // simple 1..18 loop, so on a fully-played historical season the collection
+  // holds every week — but the standings should only reflect what's happened
+  // through today (or, in test mode, through the pinned test week).
+  // For 'complete' leagues, currentNFLWeek is null → keep everything.
+  const currentWeek = getCurrentNFLWeek(league.season);
+  const upToNow = weeklyResults.filter(
+    (r) => currentWeek === null || r.week <= currentWeek
+  );
+
+  const standings = computeStandings(members, upToNow);
+  const completedResults = [...upToNow]
     .filter((r) => r.status === 'final' || r.status === 'rolled_over')
     .sort((a, b) => b.week - a.week);
-  const totalHits19 = weeklyResults.reduce(
+  const totalHits19 = upToNow.reduce(
     (n, wr) => n + (wr.teamsAt19?.length ?? 0),
     0
   );
