@@ -113,7 +113,7 @@ export default function Dashboard() {
                 active={activeTab === 'results'}
                 onClick={() => setActiveTab('results')}
               >
-                Weekly Results
+                Results
               </TabButton>
               <TabButton
                 active={activeTab === 'standings'}
