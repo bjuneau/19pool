@@ -244,9 +244,8 @@ export default function WeeklyResultsTab({
           </p>
         </div>
         <div className="text-right">
-          <p className="text-[10px] uppercase tracking-widest text-green-400 font-semibold flex items-center justify-end gap-1">
-            <span>$</span>
-            <span>Weekly Pot</span>
+          <p className="text-[10px] uppercase tracking-widest text-green-400 font-semibold">
+            This Week's Pot
           </p>
           <p className="text-3xl font-extrabold text-amber-400 leading-tight">
             {fmtDollars(activeWeeklyPot)}
@@ -482,17 +481,13 @@ function ThisWeekCard({
 }) {
   return (
     <div className="bg-navy-950/60 border border-white/10 rounded-2xl overflow-hidden">
-      {/* Card header */}
+      {/* Card header — pot amount lives in the top-of-page callout, so this
+          row just anchors the week + status. */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/5">
         <div className="flex items-center gap-2">
           <p className="text-white font-bold">Week {week}</p>
           {result && <StatusPill status={result.status} />}
         </div>
-        {result && result.rolloverFrom > 0 && (
-          <p className="text-xs text-amber-400">
-            Pot: {fmtDollars(result.weeklyShare + result.rolloverFrom)} (incl. {fmtDollars(result.rolloverFrom)} rollover)
-          </p>
-        )}
         {refreshing && (
           <span className="text-xs text-slate-500 flex items-center gap-1">
             <span className="inline-block w-3 h-3 border border-slate-500 border-t-transparent rounded-full animate-spin" />
@@ -574,14 +569,8 @@ function WinnerBanner({
           <p key={i} className="text-white font-semibold">
             {name}
             <span className="text-green-400 font-normal text-sm ml-2">
-              {split ? 'splits ' : 'wins '}
-              {fmtDollars(result.weeklyShare + result.rolloverFrom)}
+              wins {fmtDollars(result.payoutPerWinner)}
             </span>
-            {split && (
-              <span className="text-slate-400 text-xs ml-1">
-                ({fmtDollars(result.payoutPerWinner)} each)
-              </span>
-            )}
           </p>
         ))}
       </div>
@@ -690,7 +679,7 @@ function TeamScoreRow({
             is19 ? 'text-amber-400' : 'text-white'
           }`}
         >
-          {is19 ? '🏆' : score}
+          {score}
         </span>
       )}
     </div>
