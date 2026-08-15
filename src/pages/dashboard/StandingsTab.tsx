@@ -96,15 +96,6 @@ export default function StandingsTab({ league, leagueCode }: Props) {
   // Money stats — read-only; editing lives on Account.
   const pot = getSeasonPot(league);
   const weeklyPot = computeWeeklyShareFromPot(pot);
-  const currentWeekResult = weeklyResults.find(
-    (r) => r.status === 'in_progress'
-  );
-  const currentPot = currentWeekResult
-    ? currentWeekResult.weeklyShare + currentWeekResult.rolloverFrom
-    : weeklyPot;
-  const currentWeekLabel = currentWeekResult
-    ? `Week ${currentWeekResult.week} pot`
-    : 'This week';
 
   if (league.status !== 'in_season' && league.status !== 'complete') {
     return (
@@ -132,11 +123,11 @@ export default function StandingsTab({ league, leagueCode }: Props) {
         <p className="text-slate-400 text-sm mt-0.5">Full season leaderboard</p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* Stat cards — three in a row (This Week's Pot lives on the
+          Weekly Results tab, no need to repeat it here). */}
+      <div className="grid grid-cols-3 gap-3">
         <StatCard label="Total Pot" value={fmtDollars(pot)} accent />
         <StatCard label="Weekly Pot" value={fmtDollars(weeklyPot)} accent />
-        <StatCard label={currentWeekLabel} value={fmtDollars(currentPot)} accent />
         <StatCard label="Total 19s" value={String(totalHits19)} accent={totalHits19 > 0} />
       </div>
 
