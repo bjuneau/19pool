@@ -4,57 +4,60 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Editorial palette — warm dark newsprint reverse-print.
-        // paper = background, ink = text, accent = whiskey amber,
-        // hot = vermillion for winning-19 moments.
+        // ── App palette (dark utility, volt-lime accent) ────────────────
+        // paper = background surfaces, ink = text, accent = volt lime,
+        // hot = vermillion for winning-19 / live states.
         paper: {
-          DEFAULT: '#0F0E0C',   // warm near-black
-          2: '#1A1815',         // one step elevated
-          3: '#26221E',         // two steps elevated
+          DEFAULT: '#0A0A0A',   // near-black — matches Landing void
+          2: '#141414',         // elevated card
+          3: '#1E1E1E',         // one more up
         },
         ink: {
-          DEFAULT: '#F2EBDD',   // warm off-white body / heading
-          dim: 'rgba(242, 235, 221, 0.62)',
-          muted: 'rgba(242, 235, 221, 0.40)',
-          line: 'rgba(242, 235, 221, 0.14)',
+          DEFAULT: '#FAFAFA',   // near-white
+          dim: 'rgba(250, 250, 250, 0.65)',
+          muted: 'rgba(250, 250, 250, 0.42)',
+          line: 'rgba(255, 255, 255, 0.08)',
         },
         accent: {
-          DEFAULT: '#F0B537',   // whiskey amber — brand
-          bright: '#FFC856',
-          dim: 'rgba(240, 181, 55, 0.14)',
+          DEFAULT: '#C4F82A',   // volt lime — brand accent
+          bright: '#D3FF3D',
+          dim: 'rgba(196, 248, 42, 0.14)',
         },
         hot: {
           DEFAULT: '#E85D3A',   // vermillion — winners, live states
           dim: 'rgba(232, 93, 58, 0.14)',
         },
-        // Marketing-page dark palette (matches challenge-b reference).
-        // Deliberately named separately from paper/ink so Landing can
-        // use them without affecting the app tokens.
+
+        // ── Backwards-compat aliases ────────────────────────────────────
+        // Legacy pages still reference bg-navy-* / text-amber-* directly.
+        // Both aliases now point at the new void + volt values so those
+        // pages render coherently without needing per-file rewrites.
+        navy: {
+          950: '#0A0A0A',
+          900: '#141414',
+          800: '#1E1E1E',
+          700: '#282828',
+          600: '#333333',
+        },
+        amber: {
+          200: '#EAFF80',
+          300: '#DDFF4A',
+          400: '#D3FF3D',
+          500: '#C4F82A',
+          600: '#A5D619',
+        },
+
+        // ── Landing-namespace aliases (still referenced by hardcoded
+        // classes in Landing.tsx that predate the token unification) ────
         volt: {
-          DEFAULT: '#C4F82A',   // neon lime accent
+          DEFAULT: '#C4F82A',
           soft: 'rgba(196, 248, 42, 0.14)',
         },
         void: {
-          DEFAULT: '#0A0A0A',   // near-black marketing bg
-          2: '#141414',         // elevated card
-          3: '#1E1E1E',         // one more up
+          DEFAULT: '#0A0A0A',
+          2: '#141414',
+          3: '#1E1E1E',
           line: 'rgba(255, 255, 255, 0.08)',
-        },
-        // Kept for backwards compat while pages migrate. Aliased to the
-        // new palette so lingering bg-navy-950 / text-amber-500 refs
-        // render in the new tones instead of the old SaaS blue.
-        navy: {
-          950: '#0F0E0C',
-          900: '#1A1815',
-          800: '#26221E',
-          700: '#332E28',
-          600: '#413A32',
-        },
-        amber: {
-          300: '#FFD584',
-          400: '#FFC856',
-          500: '#F0B537',
-          600: '#D19A28',
         },
       },
       fontFamily: {
@@ -65,7 +68,7 @@ export default {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       letterSpacing: {
-        'kicker': '0.16em',   // small-caps section labels
+        'kicker': '0.16em',
       },
     },
   },

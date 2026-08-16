@@ -103,40 +103,7 @@ function Hero() {
         nineteen — win or lose — and its owner takes the whole weekly pot.
       </p>
 
-      {/* Video / demo placeholder */}
-      <div className="mt-12 mx-auto max-w-3xl">
-        <div className="relative aspect-video bg-void-2 border border-void-line rounded-2xl overflow-hidden group cursor-pointer">
-          {/* Subtle radial glow */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(196,248,42,0.10) 0%, transparent 70%)',
-            }}
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center text-black shadow-2xl transition-transform group-hover:scale-110"
-              style={{ backgroundColor: VOLT }}
-            >
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="ml-1"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            </div>
-          </div>
-          <span className="absolute top-3 left-3 text-[10px] uppercase tracking-widest font-bold text-white/40 bg-black/60 border border-void-line px-2 py-1 rounded">
-            Placeholder · Demo video
-          </span>
-        </div>
-      </div>
-
-      <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
         <Link
           to="/signup"
           className="inline-flex items-center justify-center text-sm font-bold text-black px-6 py-3 rounded-full transition-transform hover:scale-105"

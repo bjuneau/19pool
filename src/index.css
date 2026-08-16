@@ -4,20 +4,16 @@
 
 @layer base {
   body {
-    background-color: #0F0E0C;
-    color: #F2EBDD;
+    background-color: #0A0A0A;
+    color: #FAFAFA;
     font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
   }
 
-  /* Display type: Inter Tight (condensed member of the Inter family) —
-     matches the go.amazing.com/challenge-b reference. Tight tracking
-     because Inter Tight already spaces itself compactly. */
   h1, h2, h3, h4 {
     font-family: 'Inter Tight', Inter, ui-sans-serif, system-ui, sans-serif;
     letter-spacing: -0.02em;
   }
 
-  /* Tabular figures wherever we render scores or leaderboards. */
   .font-mono, .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
@@ -25,40 +21,39 @@
 
 @layer components {
   /* Small-caps kicker label — "SEASON", "WEEKLY POT", numbered
-     section marks, etc. Works on both light and dark surfaces. */
+     section marks, etc. */
   .kicker {
-    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
     font-size: 0.6875rem;
     font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
   }
 
-  /* Compat shims for older pages that still use these classes while
-     we iterate the design system. Look flat (no glass morphism)
-     but stay in the current dark theme. */
+  /* Compat shims for pages that still use these class names. Flat
+     dark cards, no glass morphism. */
   .glass {
-    background: #1A1815;
+    background: #141414;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border: 1px solid rgba(242, 235, 221, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.08);
   }
 
   .glass-darker {
-    background: rgba(15, 14, 12, 0.92);
+    background: rgba(10, 10, 10, 0.92);
     backdrop-filter: blur(6px);
     -webkit-backdrop-filter: blur(6px);
-    border: 1px solid rgba(242, 235, 221, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.06);
   }
 
   .hero-bg {
-    background-color: #0F0E0C;
+    background-color: #0A0A0A;
   }
 
   .grid-bg {
     background-image:
-      linear-gradient(rgba(242, 235, 221, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(242, 235, 221, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
@@ -71,22 +66,22 @@
   }
 }
 
-/* Form focus — accent underline, works on both themes. */
+/* Focus state — volt-lime underline instead of amber. */
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: rgba(240, 181, 55, 0.7) !important;
-  box-shadow: 0 1px 0 0 rgba(240, 181, 55, 0.7) !important;
+  border-color: rgba(196, 248, 42, 0.7) !important;
+  box-shadow: 0 1px 0 0 rgba(196, 248, 42, 0.7) !important;
 }
 
 ::-webkit-scrollbar {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0F0E0C;
+  background: #0A0A0A;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(242, 235, 221, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 0;
 }

@@ -7,17 +7,16 @@ type ButtonProps = {
   children: ReactNode;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
-// Editorial buttons: sharp corners, solid fill for primary, hairline
-// border for secondary. Amber whiskey accent is the brand color; text is
-// on-paper-black so it reads as a headline chip, not a candy button.
+// Dark-utility pill buttons. Primary = volt-lime with near-black text
+// (the challenge-b signature CTA). Secondary = hairline outline ghost.
 const base =
-  'inline-flex items-center justify-center font-semibold tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
+  'inline-flex items-center justify-center font-bold tracking-tight transition-transform disabled:opacity-50 disabled:cursor-not-allowed';
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-accent hover:bg-accent-bright text-paper px-6 py-3 rounded-sm text-base',
+    'bg-accent hover:bg-accent-bright text-paper px-6 py-3 rounded-full text-sm hover:scale-[1.03]',
   secondary:
-    'bg-transparent border border-ink-line hover:border-ink-dim text-ink font-semibold px-6 py-3 rounded-sm text-base',
+    'bg-transparent border border-ink-line hover:border-ink-dim hover:bg-white/5 text-ink px-6 py-3 rounded-full text-sm',
 };
 
 export function Button({

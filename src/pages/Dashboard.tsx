@@ -80,25 +80,28 @@ export default function Dashboard() {
   return (
     <div className="bg-paper min-h-screen">
       <div className={`mx-auto transition-all px-5 sm:px-8 ${wideTab ? 'max-w-5xl' : 'max-w-3xl'}`}>
-        {/* Editorial masthead. "19 Pool" logo left, right-side navigation
-            as plain text links with hairline treatment on hover. */}
-        <header className="flex items-center justify-between py-5 border-b border-ink-line">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span className="font-display font-black text-2xl leading-none text-accent">
+        {/* Dark-utility masthead matching Landing: "19 Pool" logo left,
+            text links right. Volt-lime "19", white "Pool" mark, hairline
+            rule underneath. */}
+        <header className="flex items-center justify-between h-14 border-b border-ink-line">
+          <Link to="/" className="flex items-baseline gap-1.5">
+            <span className="font-display font-extrabold text-2xl leading-none text-accent">
               19
             </span>
-            <span className="kicker text-ink">Pool</span>
+            <span className="font-display font-bold text-lg text-ink tracking-tight">
+              Pool
+            </span>
           </Link>
-          <div className="flex items-center gap-5 sm:gap-6">
+          <div className="flex items-center gap-4 sm:gap-5">
             <Link
               to="/account"
-              className="text-sm text-ink-dim hover:text-ink transition-colors"
+              className="text-sm font-medium text-ink-dim hover:text-ink transition-colors"
             >
               Account
             </Link>
             <button
               onClick={handleSignOut}
-              className="text-sm text-ink-dim hover:text-ink transition-colors"
+              className="text-sm font-medium text-ink-dim hover:text-ink transition-colors"
             >
               Sign out
             </button>

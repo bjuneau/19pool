@@ -7,9 +7,9 @@ type InputProps = {
   endAdornment?: ReactNode;
 } & InputHTMLAttributes<HTMLInputElement>;
 
-// Editorial input: a bare line underneath the field, no filled panel.
-// Label is a small-caps kicker. This is the biggest single visual shift
-// per field — the old "chip inside a chip" wrapper is gone.
+// Dark-utility input — small-caps kicker label + subtle filled field
+// with a hairline outline. Focus lights up volt-lime via the global
+// input:focus rule in index.css.
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   { label, error, endAdornment, className = '', id, ...rest },
   ref
@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div>
       {label && (
-        <label htmlFor={inputId} className="kicker block mb-2">
+        <label htmlFor={inputId} className="kicker block mb-2 text-ink-dim">
           {label}
         </label>
       )}
@@ -29,11 +29,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         <input
           ref={ref}
           id={inputId}
-          className={`w-full bg-transparent border-b border-ink-line focus:border-accent text-ink placeholder-ink-muted px-0 py-2 ${paddingRight} rounded-none text-base transition-colors ${className}`}
+          className={`w-full bg-paper-2 border border-ink-line focus:border-accent text-ink placeholder-ink-muted px-4 py-3 ${paddingRight} rounded-xl text-sm transition-colors ${className}`}
           {...rest}
         />
         {endAdornment && (
-          <div className="absolute inset-y-0 right-0 flex items-center">
+          <div className="absolute inset-y-0 right-3 flex items-center">
             {endAdornment}
           </div>
         )}
