@@ -7,14 +7,17 @@ type ButtonProps = {
   children: ReactNode;
 } & ButtonHTMLAttributes<HTMLButtonElement>;
 
+// Editorial buttons: sharp corners, solid fill for primary, hairline
+// border for secondary. Amber whiskey accent is the brand color; text is
+// on-paper-black so it reads as a headline chip, not a candy button.
 const base =
-  'inline-flex items-center justify-center font-bold tracking-wide transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100';
+  'inline-flex items-center justify-center font-semibold tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
 
 const variants: Record<Variant, string> = {
   primary:
-    'bg-amber-500 hover:bg-amber-400 text-navy-950 px-8 py-4 rounded-full text-lg glow-gold-sm',
+    'bg-accent hover:bg-accent-bright text-paper px-6 py-3 rounded-sm text-base',
   secondary:
-    'glass border border-white/10 hover:border-amber-500/30 text-white font-semibold px-8 py-4 rounded-full text-lg',
+    'bg-transparent border border-ink-line hover:border-ink-dim text-ink font-semibold px-6 py-3 rounded-sm text-base',
 };
 
 export function Button({

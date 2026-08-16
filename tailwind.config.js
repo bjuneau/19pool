@@ -4,17 +4,57 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Editorial palette — warm dark newsprint reverse-print.
+        // paper = background, ink = text, accent = whiskey amber,
+        // hot = vermillion for winning-19 moments.
+        paper: {
+          DEFAULT: '#0F0E0C',   // warm near-black
+          2: '#1A1815',         // one step elevated
+          3: '#26221E',         // two steps elevated
+        },
+        ink: {
+          DEFAULT: '#F2EBDD',   // warm off-white body / heading
+          dim: 'rgba(242, 235, 221, 0.62)',
+          muted: 'rgba(242, 235, 221, 0.40)',
+          line: 'rgba(242, 235, 221, 0.14)',
+        },
+        accent: {
+          DEFAULT: '#F0B537',   // whiskey amber — brand
+          bright: '#FFC856',
+          dim: 'rgba(240, 181, 55, 0.14)',
+        },
+        hot: {
+          DEFAULT: '#E85D3A',   // vermillion — winners, live states
+          dim: 'rgba(232, 93, 58, 0.14)',
+        },
+        // Kept for backwards compat while pages migrate. Aliased to the
+        // new palette so lingering bg-navy-950 / text-amber-500 refs
+        // render in the new tones instead of the old SaaS blue.
         navy: {
-          950: '#0a0f1e',
-          900: '#0d1428',
-          800: '#111d3a',
-          700: '#162550',
-          600: '#1e3166',
+          950: '#0F0E0C',
+          900: '#1A1815',
+          800: '#26221E',
+          700: '#332E28',
+          600: '#413A32',
+        },
+        amber: {
+          300: '#FFD584',
+          400: '#FFC856',
+          500: '#F0B537',
+          600: '#D19A28',
         },
       },
       fontFamily: {
-        sans: ['Lexend', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['"DM Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        // Editorial pair. Fraunces for display + serif body (variable
+        // axes: opsz 9-144, wght 300-900, SOFT 0-100). Instrument Sans
+        // for UI-adjacent copy where a sans reads better.
+        serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        sans: ['"Instrument Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      },
+      letterSpacing: {
+        'kicker': '0.16em',   // small-caps section labels
       },
     },
   },

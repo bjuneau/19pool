@@ -1,248 +1,305 @@
 import { Link } from 'react-router-dom';
-import { Button } from '../components/Button';
+
+// Editorial landing — a weekly-newspaper spread for a football pool.
+// Fraunces display + Instrument Sans body, hairline rules between
+// sections instead of floating cards. Asymmetric grids, big numerals as
+// art, small-caps kickers.
 
 export default function Landing() {
   return (
-    <div>
-      {/* Nav — sticky (not fixed) so the TestModeBanner sits above it in
-          test mode without overlap. */}
-      <nav className="sticky top-0 z-50 glass-darker border-b border-white/5">
-        <div className="h-16 flex items-center px-4 sm:px-6 lg:px-8 gap-4">
-          <Link
-            to="/"
-            className="text-2xl font-extrabold tracking-widest flex-shrink-0 text-left"
-          >
-            <span className="text-amber-400">19</span>
-            <span className="text-white"> POOL</span>
+    <div className="min-h-screen bg-paper text-ink font-sans">
+      {/* ── Masthead ─────────────────────────────────────────────────── */}
+      <nav className="sticky top-0 z-50 bg-paper/95 backdrop-blur-sm border-b border-ink-line">
+        <div className="max-w-6xl mx-auto h-14 flex items-center justify-between px-5 sm:px-8">
+          <Link to="/" className="flex items-baseline gap-2">
+            <span className="font-display font-black text-2xl leading-none text-accent">
+              19
+            </span>
+            <span className="kicker text-ink">Pool</span>
           </Link>
-          <div className="flex items-center gap-3 ml-auto">
+          <div className="flex items-center gap-4 sm:gap-6">
             <Link
               to="/signin"
-              className="text-sm font-medium text-slate-400 hover:text-white transition-colors px-3 py-2"
+              className="text-sm text-ink-dim hover:text-ink transition-colors"
             >
-              Sign In
+              Sign in
             </Link>
             <Link
               to="/signup"
-              className="bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-bold px-5 py-2 rounded-full transition-all hover:scale-105 tracking-wide"
+              className="text-sm font-semibold bg-accent hover:bg-accent-bright text-paper px-4 py-2 rounded-sm transition-colors"
             >
-              Create League
+              Create league →
             </Link>
           </div>
         </div>
       </nav>
 
-      {/* Hero */}
-      <section className="hero-bg grid-bg min-h-screen flex flex-col items-center justify-center text-center px-4 pt-8 pb-16 relative overflow-hidden">
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
+      {/* ── Issue kicker (mimics "Vol. IV · Sunday Edition") ─────────── */}
+      <div className="border-b border-ink-line">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-2 flex items-center justify-between text-[10px] font-mono tracking-widest uppercase text-ink-muted">
+          <span>The 19 Pool · Weekly Ledger</span>
+          <span className="hidden sm:inline">NFL / Regular Season / Sundays</span>
+          <span>Est. 2025</span>
+        </div>
+      </div>
 
-        <div className="relative z-10 max-w-4xl mx-auto">
-          <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            NFL · 32 Players · One Winner Each Week
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-5 sm:px-8 pt-12 sm:pt-24 pb-16 sm:pb-24">
+        <div className="grid sm:grid-cols-12 gap-6 sm:gap-10 items-end">
+          <div className="sm:col-span-8">
+            <p className="kicker text-accent mb-6">
+              A Number Game · Est. Sunday
+            </p>
+            <h1 className="font-display font-black text-[13vw] sm:text-[9rem] leading-[0.85] tracking-[-0.04em] text-ink">
+              Score
+              <br />
+              <span className="italic font-black">nineteen</span>.
+              <br />
+              Take the
+              <br />
+              <span className="text-accent">whole pot</span>.
+            </h1>
           </div>
-
-          <h1 className="text-8xl sm:text-[11rem] font-extrabold tracking-tight leading-none mb-2 text-glow">
-            <span className="text-amber-400">19</span>
-          </h1>
-          <h2 className="text-5xl sm:text-7xl font-extrabold tracking-[0.25em] text-white mb-6 uppercase">
-            POOL
-          </h2>
-
-          <p className="text-xl sm:text-2xl text-slate-400 font-light max-w-2xl mx-auto mb-4">
-            Score exactly{' '}
-            <span className="text-amber-400 font-semibold">19 points</span> — win
-            or lose — and you take home the entire weekly pot.
-          </p>
-          <p className="text-sm text-slate-500 mb-12">
-            32 people. 32 NFL teams. Scores auto-update from ESPN every 30
-            seconds.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/signup">
-              <Button variant="primary">🏆 Create a League</Button>
-            </Link>
-            <Link to="/signup">
-              <Button variant="secondary">Join with a Code</Button>
-            </Link>
+          <div className="sm:col-span-4 sm:pl-6 sm:border-l sm:border-ink-line">
+            <p className="text-lg leading-snug text-ink-dim mb-6">
+              Thirty‑two people, thirty‑two NFL teams. Any team ends the week on
+              exactly nineteen — win or lose — and its owner pockets the pot.
+            </p>
+            <p className="text-sm text-ink-muted mb-8">
+              Scores stream live from ESPN. No spreadsheets. No arguments.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Link
+                to="/signup"
+                className="bg-accent hover:bg-accent-bright text-paper text-sm font-semibold px-5 py-3 rounded-sm text-center transition-colors"
+              >
+                Create a league →
+              </Link>
+              <Link
+                to="/signup"
+                className="border border-ink-line hover:border-ink-dim text-ink text-sm font-semibold px-5 py-3 rounded-sm text-center transition-colors"
+              >
+                Join with a code
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="bg-navy-900 py-24 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-3">
-              The Game
-            </p>
-            <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">
-              Simple rules. Big drama.
+      <SectionRule label="I · The Game" />
+
+      {/* ── How it works ─────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
+        <div className="grid sm:grid-cols-12 gap-6 sm:gap-10 mb-10 sm:mb-16">
+          <div className="sm:col-span-5">
+            <h2 className="font-display font-black text-4xl sm:text-6xl leading-[0.95] tracking-tight">
+              Simple rules.
+              <br />
+              <em className="text-accent not-italic">Big drama.</em>
             </h2>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                n: '01',
-                title: 'Form Your League',
-                body:
-                  'One commissioner creates the league and invites exactly 32 people. You set the weekly stakes.',
-              },
-              {
-                n: '02',
-                title: 'Get Your Team',
-                body:
-                  'The commissioner assigns one NFL team to each player. That team is yours for the entire season.',
-              },
-              {
-                n: '03',
-                title: 'Watch Live Scores',
-                body:
-                  '19 Pool pulls live scores from ESPN every 30 seconds. Zero manual entry — ever.',
-              },
-              {
-                n: '04',
-                title: 'Hit 19, Win It All',
-                body:
-                  'Your team ends on exactly 19 points — win or lose — and you pocket the weekly pot.',
-              },
-            ].map((step) => (
-              <div
-                key={step.n}
-                className="glass rounded-2xl p-8 hover:border-amber-500/20 transition-all group"
-              >
-                <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-5 group-hover:bg-amber-500/20 transition-colors">
-                  <span className="text-amber-400 font-mono font-bold text-lg">
-                    {step.n}
-                  </span>
-                </div>
-                <h3 className="font-bold text-white text-lg mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{step.body}</p>
-              </div>
-            ))}
+          <p className="sm:col-span-6 sm:col-start-7 text-lg text-ink-dim leading-relaxed self-end">
+            The Sunday ritual, formalized. A pool for the friend‑group who
+            already texts about football every week — with an actual reason for
+            the group chat to explode when Cleveland scores nineteen.
+          </p>
+        </div>
+
+        <ol className="divide-y divide-ink-line border-y border-ink-line">
+          {[
+            {
+              n: '01',
+              t: 'Form your league.',
+              b: 'One commissioner creates the league and invites exactly thirty‑two people. Set the weekly stakes on the way in.',
+            },
+            {
+              n: '02',
+              t: 'Get your team.',
+              b: 'The commissioner assigns one NFL team to each player. That team belongs to you for the whole season.',
+            },
+            {
+              n: '03',
+              t: 'Watch live scores.',
+              b: 'Every score refreshes from ESPN every thirty seconds. Zero manual entry. Zero disputes.',
+            },
+            {
+              n: '04',
+              t: 'Hit nineteen. Take the pot.',
+              b: 'Your team ends on exactly nineteen — offense, defense, however it happens — and the weekly prize is yours.',
+            },
+          ].map((s) => (
+            <li key={s.n} className="grid sm:grid-cols-12 gap-4 py-6 sm:py-8">
+              <span className="font-mono text-accent text-sm sm:col-span-1">
+                {s.n}
+              </span>
+              <h3 className="font-display font-black text-xl sm:text-2xl sm:col-span-4 leading-tight">
+                {s.t}
+              </h3>
+              <p className="text-ink-dim sm:col-span-7 leading-relaxed">
+                {s.b}
+              </p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <SectionRule label="II · The Number" />
+
+      {/* ── 19 pull ─────────────────────────────────────────────────── */}
+      <section className="relative overflow-hidden bg-paper-2 py-16 sm:py-32">
+        <span
+          aria-hidden
+          className="absolute -top-16 sm:-top-24 -right-6 sm:right-8 font-display font-black text-[40vw] sm:text-[28rem] leading-none text-accent/25 select-none pointer-events-none"
+        >
+          19
+        </span>
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8">
+          <div className="max-w-2xl">
+            <p className="kicker text-ink-muted mb-6">A Pull‑Quote</p>
+            <blockquote className="font-display font-black text-4xl sm:text-6xl leading-[0.95] tracking-[-0.03em] text-ink">
+              The only number
+              <br />
+              that matters is
+              <br />
+              <span className="text-accent">nineteen.</span>
+            </blockquote>
+            <p className="mt-6 text-ink-dim max-w-md">
+              Offense, defense, safety, blown extra point — however a team
+              lands on nineteen at the final whistle, it wins the week for
+              whoever owns it.
+            </p>
+            <Link
+              to="/signup"
+              className="inline-block mt-8 text-sm font-semibold border-b border-accent text-accent hover:text-ink hover:border-ink transition-colors"
+            >
+              Start your league →
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* The 19 Banner */}
-      <section className="bg-amber-500 py-20 px-4 relative overflow-hidden">
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
-          <span className="text-[300px] font-extrabold text-amber-600/20 leading-none">
-            19
+      <SectionRule label="III · The Stakes" />
+
+      {/* ── Stakes grid ─────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-12 sm:py-20">
+        <div className="grid sm:grid-cols-12 gap-6 sm:gap-10 mb-10 sm:mb-14">
+          <div className="sm:col-span-6">
+            <h2 className="font-display font-black text-4xl sm:text-5xl leading-[0.95] tracking-tight">
+              Win the week.
+              <br />
+              <em className="text-accent not-italic">Or watch it grow.</em>
+            </h2>
+          </div>
+          <p className="sm:col-span-5 sm:col-start-8 text-ink-dim leading-relaxed self-end">
+            Weeks without a nineteen roll into the next. Some weeks pay a
+            little. Some weeks pay months of built‑up rollover to one lucky
+            team owner.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 border-t border-l border-ink-line">
+          {[
+            {
+              t: 'Weekly Pot',
+              b: 'Every entry fee compounds into the weekly prize. Hit nineteen, take it home.',
+            },
+            {
+              t: 'Rollover',
+              b: 'No nineteen this week? The prize rolls into next. Great weeks get very great.',
+            },
+            {
+              t: 'Live Scores',
+              b: 'Every 30 seconds from ESPN. No stat‑keeper, no ties, no arguments.',
+            },
+            {
+              t: 'Thirty‑two Teams',
+              b: 'The whole league is in play every Sunday. Every game matters to somebody.',
+            },
+          ].map((s) => (
+            <div key={s.t} className="border-r border-b border-ink-line p-6 sm:p-8">
+              <h3 className="font-display font-black text-2xl text-ink mb-3 leading-tight">
+                {s.t}
+              </h3>
+              <p className="text-ink-dim text-sm leading-relaxed">{s.b}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <SectionRule label="Coda" />
+
+      {/* ── Final CTA ────────────────────────────────────────────────── */}
+      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
+        <div className="grid sm:grid-cols-12 gap-6 sm:gap-10 items-end">
+          <div className="sm:col-span-7">
+            <h2 className="font-display font-black text-5xl sm:text-7xl leading-[0.9] tracking-[-0.03em]">
+              Ready to run
+              <br />
+              <em className="text-accent not-italic">your league?</em>
+            </h2>
+          </div>
+          <div className="sm:col-span-5 sm:pl-6 sm:border-l sm:border-ink-line">
+            <p className="text-ink-dim mb-6">
+              Two minutes to set up. Sixty‑five days of Sundays.
+            </p>
+            <div className="flex flex-col gap-2">
+              <Link
+                to="/signup"
+                className="bg-accent hover:bg-accent-bright text-paper text-sm font-semibold px-5 py-3 rounded-sm text-center transition-colors"
+              >
+                Create your league →
+              </Link>
+              <Link
+                to="/signup"
+                className="border border-ink-line hover:border-ink-dim text-ink text-sm font-semibold px-5 py-3 rounded-sm text-center transition-colors"
+              >
+                Join with a code
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Colophon / footer ────────────────────────────────────────── */}
+      <footer className="border-t border-ink-line">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] font-mono tracking-widest uppercase text-ink-muted">
+          <div className="flex items-baseline gap-2">
+            <span className="font-display font-black text-ink text-base leading-none">
+              19
+            </span>
+            <span>Pool</span>
+          </div>
+          <span className="text-center">
+            Not affiliated with the NFL or ESPN. © 2026 19 Pool.
           </span>
-        </div>
-        <div className="relative max-w-3xl mx-auto text-center">
-          <h2 className="text-4xl sm:text-6xl font-extrabold text-navy-950 tracking-tight mb-4">
-            The Only Number That Matters
-          </h2>
-          <p className="text-amber-900/70 text-lg mb-8 max-w-xl mx-auto">
-            Win or lose, offense or defense — all that matters is that final
-            scoreboard reads 19. Any given Sunday, lightning can strike.
-          </p>
-          <Link
-            to="/signup"
-            className="inline-block bg-navy-950 text-amber-400 font-bold px-8 py-3 rounded-full text-sm tracking-widest uppercase hover:bg-navy-800 transition-colors"
-          >
-            Start Your League
-          </Link>
-        </div>
-      </section>
-
-      {/* Prizes */}
-      <section className="bg-navy-950 py-24 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <p className="text-amber-400 text-sm font-semibold tracking-widest uppercase mb-3">
-            The Stakes
-          </p>
-          <h2 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight mb-16">
-            Win every week. Or watch the pot grow.
-          </h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                emoji: '💵',
-                title: 'Weekly Pot',
-                body:
-                  "Every member's entry fee rolls into the weekly prize. Hit 19 and it's all yours.",
-              },
-              {
-                emoji: '🎰',
-                title: 'Rollover',
-                body:
-                  'No winner? The pot rolls over and keeps building week after week.',
-              },
-              {
-                emoji: '📡',
-                title: 'Live Scores',
-                body:
-                  'Scores stream from ESPN automatically. No manual entry, no arguments.',
-              },
-              {
-                emoji: '🔥',
-                title: '32 Chances',
-                body:
-                  'All 32 NFL teams in play every single week. Drama guaranteed.',
-              },
-            ].map((p) => (
-              <div
-                key={p.title}
-                className="glass rounded-2xl p-8 text-center hover:glow-gold-sm transition-all"
-              >
-                <div className="text-4xl mb-4">{p.emoji}</div>
-                <h3 className="font-bold text-amber-400 text-xl mb-2">{p.title}</h3>
-                <p className="text-slate-400 text-sm">{p.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="hero-bg py-24 px-4 text-center border-t border-white/5">
-        <div className="max-w-2xl mx-auto">
-          <h2 className="text-4xl sm:text-6xl font-extrabold text-white tracking-tight mb-4">
-            Ready to run your league?
-          </h2>
-          <p className="text-slate-400 text-lg mb-10">
-            Two minutes to set up. A full NFL season of Sunday drama.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/signup">
-              <Button variant="primary">Create Your League</Button>
+          <div className="flex gap-5">
+            <Link to="/signup" className="hover:text-ink transition-colors">
+              Create
             </Link>
-            <Link to="/signup">
-              <Button variant="secondary">Join with a Code</Button>
+            <Link to="/signup" className="hover:text-ink transition-colors">
+              Join
             </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-navy-950 border-t border-white/5 py-12 px-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-2xl font-extrabold tracking-widest">
-            <span className="text-amber-400">19</span>
-            <span className="text-white"> POOL</span>
-          </div>
-          <p className="text-slate-500 text-sm">
-            Not affiliated with the NFL or ESPN. © 2025 19 Pool.
-          </p>
-          <div className="flex gap-6 text-slate-500 text-sm">
-            <Link to="/signup" className="hover:text-white transition-colors">
-              Create League
-            </Link>
-            <Link to="/signup" className="hover:text-white transition-colors">
-              Join League
-            </Link>
-            <Link to="/signin" className="hover:text-white transition-colors">
-              Sign In
+            <Link to="/signin" className="hover:text-ink transition-colors">
+              Sign in
             </Link>
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+// ─── Section rule ─────────────────────────────────────────────────────
+// A hairline divider with a small-caps roman-numeral label sitting in the
+// middle — the sort of thing a Sunday paper does between "articles" on
+// the same page.
+function SectionRule({ label }: { label: string }) {
+  return (
+    <div className="max-w-6xl mx-auto px-5 sm:px-8">
+      <div className="flex items-center gap-4 py-3 border-t border-ink-line">
+        <span className="kicker text-ink-muted">{label}</span>
+        <span className="flex-1 h-px bg-ink-line" />
+      </div>
     </div>
   );
 }

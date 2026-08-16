@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { Card } from '../components/Card';
 import { useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
 import { buildDisplayName } from '../lib/members';
@@ -79,35 +78,39 @@ export default function Dashboard() {
     (activeTab === 'results' && league?.status === 'in_season');
 
   return (
-    <div className="hero-bg min-h-screen px-4 py-16">
-      <div className={`mx-auto transition-all ${wideTab ? 'max-w-4xl' : 'max-w-3xl'}`}>
-        <header className="flex items-center justify-between mb-10">
-          <Link to="/" className="text-2xl font-extrabold tracking-widest">
-            <span className="text-amber-400">19</span>
-            <span className="text-white"> POOL</span>
+    <div className="bg-paper min-h-screen">
+      <div className={`mx-auto transition-all px-5 sm:px-8 ${wideTab ? 'max-w-5xl' : 'max-w-3xl'}`}>
+        {/* Editorial masthead. "19 Pool" logo left, right-side navigation
+            as plain text links with hairline treatment on hover. */}
+        <header className="flex items-center justify-between py-5 border-b border-ink-line">
+          <Link to="/" className="flex items-baseline gap-2">
+            <span className="font-display font-black text-2xl leading-none text-accent">
+              19
+            </span>
+            <span className="kicker text-ink">Pool</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-5 sm:gap-6">
             <Link
               to="/account"
-              className="text-sm text-slate-400 hover:text-amber-400 transition-colors"
+              className="text-sm text-ink-dim hover:text-ink transition-colors"
             >
               Account
             </Link>
             <button
               onClick={handleSignOut}
-              className="text-sm text-slate-400 hover:text-white transition-colors px-4 py-2 rounded-full border border-white/10 hover:border-white/30"
+              className="text-sm text-ink-dim hover:text-ink transition-colors"
             >
-              Sign Out
+              Sign out
             </button>
           </div>
         </header>
 
-        {/* Tab bar. Results + Standings for everyone; the admin tabs
-            (Members / Teams / Payments) only render for the commissioner.
-            Wraps to a second row on narrow screens so nothing scrolls
-            off-canvas. */}
+        {/* Section navigation — text-only tabs with a solid accent
+            underline for the active one. No pill chrome; hairline rule
+            underneath separates from content. Wraps naturally on narrow
+            screens so nothing scrolls off. */}
         {league && (
-          <div className="flex flex-wrap bg-navy-950/60 border border-white/10 rounded-xl p-1 gap-1 mb-6">
+          <nav className="flex flex-wrap gap-x-6 sm:gap-x-8 gap-y-1 border-b border-ink-line pt-4 mb-6">
             <TabButton
               active={activeTab === 'results'}
               onClick={() => setActiveTab('results')}
@@ -122,6 +125,7 @@ export default function Dashboard() {
             </TabButton>
             {isCommissioner && (
               <>
+                <span className="hidden sm:inline-block self-center w-px h-3 bg-ink-line" />
                 <TabButton
                   active={activeTab === 'members'}
                   onClick={() => setActiveTab('members')}
@@ -144,10 +148,10 @@ export default function Dashboard() {
                 )}
               </>
             )}
-          </div>
+          </nav>
         )}
 
-        <Card>
+        <div className="py-4 sm:py-8">
           {!league ? (
             <WeeklyResultsTab
               firstName={firstName}
@@ -182,7 +186,7 @@ export default function Dashboard() {
               isCommissioner={isCommissioner}
             />
           )}
-        </Card>
+        </div>
       </div>
     </div>
   );
@@ -201,8 +205,10 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold transition-all ${
-        active ? 'bg-navy-700 text-white' : 'text-slate-400 hover:text-white'
+      className={`relative pb-3 -mb-px text-sm font-semibold transition-colors border-b-2 ${
+        active
+          ? 'text-ink border-accent'
+          : 'text-ink-dim border-transparent hover:text-ink'
       }`}
     >
       {children}

@@ -4,62 +4,115 @@
 
 @layer base {
   body {
-    background-color: #0a0f1e;
+    background-color: #0F0E0C;
+    color: #F2EBDD;
+    /* Warm paper feel: a subtle grain overlay applied to the whole page.
+       SVG-encoded so it doesn't require an asset request. */
+    background-image:
+      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(240, 181, 55, 0.06) 0%, transparent 55%),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.92  0 0 0 0 0.86  0 0 0 0.045 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-attachment: fixed, fixed;
+  }
+
+  /* Editorial defaults on headings — Fraunces variable, snug tracking. */
+  h1, h2, h3, h4 {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 96, 'SOFT' 0;
+    letter-spacing: -0.02em;
+  }
+
+  /* Fluent numerals — tabular figures in mono contexts (score rows,
+     leaderboards) so columns align. */
+  .font-mono, .tabular-nums {
+    font-variant-numeric: tabular-nums;
   }
 }
 
 @layer components {
+  /* Editorial "flat" card — hairline rule instead of glass panel. Not a
+     floating chip; just a bordered region. */
+  .rule-card {
+    background: #1A1815;
+    border: 1px solid rgba(242, 235, 221, 0.10);
+  }
+
+  /* A thinner rule — used for sub-section dividers inside a rule-card. */
+  .rule-line {
+    border-color: rgba(242, 235, 221, 0.10);
+  }
+
+  /* Small-caps kicker label — "SEASON", "WEEKLY POT", etc. */
+  .kicker {
+    font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.6875rem; /* 11px */
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(242, 235, 221, 0.62);
+  }
+
+  /* Editorial masthead style for the biggest display number/word — the
+     score, the "19", the winner name. Uses Fraunces at heavy opsz. */
+  .masthead {
+    font-family: 'Fraunces', ui-serif, Georgia, serif;
+    font-variation-settings: 'opsz' 144, 'wght' 900, 'SOFT' 0;
+    line-height: 0.9;
+    letter-spacing: -0.04em;
+  }
+
+  /* Legacy component classes kept as compatibility shims so pages we
+     haven't touched still render coherently while we iterate. */
   .glass {
-    background: rgba(17, 29, 58, 0.6);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: #1A1815;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: 1px solid rgba(242, 235, 221, 0.10);
   }
 
   .glass-darker {
-    background: rgba(10, 15, 30, 0.8);
-    backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(15, 14, 12, 0.92);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border: 1px solid rgba(242, 235, 221, 0.08);
   }
 
   .hero-bg {
-    background-color: #0a0f1e;
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245, 158, 11, 0.08) 0%, transparent 60%),
-      radial-gradient(ellipse 60% 40% at 80% 60%, rgba(30, 49, 102, 0.4) 0%, transparent 50%),
-      radial-gradient(ellipse 50% 30% at 20% 80%, rgba(17, 29, 58, 0.6) 0%, transparent 50%);
+    background-color: #0F0E0C;
   }
 
   .grid-bg {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      linear-gradient(rgba(242, 235, 221, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(242, 235, 221, 0.03) 1px, transparent 1px);
     background-size: 48px 48px;
   }
 
   .text-glow {
-    text-shadow: 0 0 40px rgba(245, 158, 11, 0.3);
+    text-shadow: none;
   }
 
   .glow-gold-sm {
-    box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+    box-shadow: none;
   }
 }
 
+/* Form focus — swap the amber glow for a sharper accent rule. */
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   outline: none;
-  border-color: rgba(245, 158, 11, 0.5) !important;
-  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+  border-color: rgba(240, 181, 55, 0.7) !important;
+  box-shadow: 0 1px 0 0 rgba(240, 181, 55, 0.7) !important;
 }
 
+/* Scrollbar — leave alone; the OS default is fine on newsprint. */
 ::-webkit-scrollbar {
-  width: 4px;
+  width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0f1e;
+  background: #0F0E0C;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1e3166;
-  border-radius: 2px;
+  background: rgba(242, 235, 221, 0.12);
+  border-radius: 0;
 }
