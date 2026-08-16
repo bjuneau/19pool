@@ -27,6 +27,19 @@ export default {
           DEFAULT: '#E85D3A',   // vermillion — winners, live states
           dim: 'rgba(232, 93, 58, 0.14)',
         },
+        // Marketing-page dark palette (matches challenge-b reference).
+        // Deliberately named separately from paper/ink so Landing can
+        // use them without affecting the app tokens.
+        volt: {
+          DEFAULT: '#C4F82A',   // neon lime accent
+          soft: 'rgba(196, 248, 42, 0.14)',
+        },
+        void: {
+          DEFAULT: '#0A0A0A',   // near-black marketing bg
+          2: '#141414',         // elevated card
+          3: '#1E1E1E',         // one more up
+          line: 'rgba(255, 255, 255, 0.08)',
+        },
         // Kept for backwards compat while pages migrate. Aliased to the
         // new palette so lingering bg-navy-950 / text-amber-500 refs
         // render in the new tones instead of the old SaaS blue.
