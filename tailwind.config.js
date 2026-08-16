@@ -45,12 +45,12 @@ export default {
         },
       },
       fontFamily: {
-        // Editorial pair. Fraunces for display + serif body (variable
-        // axes: opsz 9-144, wght 300-900, SOFT 0-100). Instrument Sans
-        // for UI-adjacent copy where a sans reads better.
-        serif: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
-        sans: ['"Instrument Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['Fraunces', 'ui-serif', 'Georgia', 'serif'],
+        // Modern SaaS pair. Bricolage Grotesque (variable width + weight,
+        // has real character in headlines) + Manrope (clean geometric
+        // body, wide range of weights). Both from Google Fonts, both
+        // deliberately picked over Inter/Roboto/Söhne clones.
+        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Bricolage Grotesque"', 'Manrope', 'ui-sans-serif', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       letterSpacing: {

@@ -6,62 +6,36 @@
   body {
     background-color: #0F0E0C;
     color: #F2EBDD;
-    /* Warm paper feel: a subtle grain overlay applied to the whole page.
-       SVG-encoded so it doesn't require an asset request. */
-    background-image:
-      radial-gradient(ellipse 90% 60% at 50% -10%, rgba(240, 181, 55, 0.06) 0%, transparent 55%),
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.95  0 0 0 0 0.92  0 0 0 0 0.86  0 0 0 0.045 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
-    background-attachment: fixed, fixed;
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   }
 
-  /* Editorial defaults on headings — Fraunces variable, snug tracking. */
+  /* Modern-SaaS default: Bricolage Grotesque for display type. Pages
+     that want a specific opsz/wdth override with inline styles. */
   h1, h2, h3, h4 {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-variation-settings: 'opsz' 96, 'SOFT' 0;
+    font-family: 'Bricolage Grotesque', Manrope, ui-sans-serif, sans-serif;
     letter-spacing: -0.02em;
   }
 
-  /* Fluent numerals — tabular figures in mono contexts (score rows,
-     leaderboards) so columns align. */
+  /* Tabular figures wherever we render scores or leaderboards. */
   .font-mono, .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
 }
 
 @layer components {
-  /* Editorial "flat" card — hairline rule instead of glass panel. Not a
-     floating chip; just a bordered region. */
-  .rule-card {
-    background: #1A1815;
-    border: 1px solid rgba(242, 235, 221, 0.10);
-  }
-
-  /* A thinner rule — used for sub-section dividers inside a rule-card. */
-  .rule-line {
-    border-color: rgba(242, 235, 221, 0.10);
-  }
-
-  /* Small-caps kicker label — "SEASON", "WEEKLY POT", etc. */
+  /* Small-caps kicker label — "SEASON", "WEEKLY POT", numbered
+     section marks, etc. Works on both light and dark surfaces. */
   .kicker {
-    font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
-    font-size: 0.6875rem; /* 11px */
-    font-weight: 600;
+    font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 700;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: rgba(242, 235, 221, 0.62);
   }
 
-  /* Editorial masthead style for the biggest display number/word — the
-     score, the "19", the winner name. Uses Fraunces at heavy opsz. */
-  .masthead {
-    font-family: 'Fraunces', ui-serif, Georgia, serif;
-    font-variation-settings: 'opsz' 144, 'wght' 900, 'SOFT' 0;
-    line-height: 0.9;
-    letter-spacing: -0.04em;
-  }
-
-  /* Legacy component classes kept as compatibility shims so pages we
-     haven't touched still render coherently while we iterate. */
+  /* Compat shims for older pages that still use these classes while
+     we iterate the design system. Look flat (no glass morphism)
+     but stay in the current dark theme. */
   .glass {
     background: #1A1815;
     backdrop-filter: none;
@@ -96,7 +70,7 @@
   }
 }
 
-/* Form focus — swap the amber glow for a sharper accent rule. */
+/* Form focus — accent underline, works on both themes. */
 input:focus,
 select:focus,
 textarea:focus {
@@ -105,7 +79,6 @@ textarea:focus {
   box-shadow: 0 1px 0 0 rgba(240, 181, 55, 0.7) !important;
 }
 
-/* Scrollbar — leave alone; the OS default is fine on newsprint. */
 ::-webkit-scrollbar {
   width: 6px;
 }
