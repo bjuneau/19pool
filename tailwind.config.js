@@ -58,12 +58,10 @@ export default {
         },
       },
       fontFamily: {
-        // Modern SaaS pair. Bricolage Grotesque (variable width + weight,
-        // has real character in headlines) + Manrope (clean geometric
-        // body, wide range of weights). Both from Google Fonts, both
-        // deliberately picked over Inter/Roboto/Söhne clones.
-        sans: ['Manrope', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        display: ['"Bricolage Grotesque"', 'Manrope', 'ui-sans-serif', 'sans-serif'],
+        // Matches go.amazing.com/challenge-b: Inter for body, Inter Tight
+        // (condensed member of the same family) for chunky display type.
+        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['"Inter Tight"', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       letterSpacing: {

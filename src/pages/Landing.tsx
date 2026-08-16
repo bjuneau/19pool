@@ -9,11 +9,15 @@ import type { ReactNode } from 'react';
 
 const VOLT = '#C4F82A';
 
-// Bricolage Grotesque with pushed-wide variation for the display type.
+// Inter Tight at heaviest weight for chunky headline display, matches
+// the go.amazing.com/challenge-b reference. Inter Tight is a condensed
+// member of the Inter family — no wdth axis, just the tighter default
+// glyphs. Pair with heavy weight + tight tracking for the industrial
+// utility feel.
 const DISPLAY_WIDE: React.CSSProperties = {
-  fontFamily: '"Bricolage Grotesque", Manrope, ui-sans-serif, sans-serif',
-  fontVariationSettings: '"wght" 800, "wdth" 100',
-  letterSpacing: '-0.03em',
+  fontFamily: '"Inter Tight", Inter, ui-sans-serif, system-ui, sans-serif',
+  fontWeight: 900,
+  letterSpacing: '-0.035em',
 };
 
 export default function Landing() {
