@@ -104,48 +104,46 @@ export default function Dashboard() {
 
         {/* Tab bar. Results + Standings for everyone; the admin tabs
             (Members / Teams / Payments) only render for the commissioner.
-            overflow-x-auto lets the 5-tab commissioner row scroll on
-            narrow phones. */}
+            Wraps to a second row on narrow screens so nothing scrolls
+            off-canvas. */}
         {league && (
-          <div className="overflow-x-auto mb-6 -mx-1 px-1">
-            <div className="flex bg-navy-950/60 border border-white/10 rounded-xl p-1 gap-1 max-w-2xl w-max">
-              <TabButton
-                active={activeTab === 'results'}
-                onClick={() => setActiveTab('results')}
-              >
-                Results
-              </TabButton>
-              <TabButton
-                active={activeTab === 'standings'}
-                onClick={() => setActiveTab('standings')}
-              >
-                Standings
-              </TabButton>
-              {isCommissioner && (
-                <>
+          <div className="flex flex-wrap bg-navy-950/60 border border-white/10 rounded-xl p-1 gap-1 mb-6">
+            <TabButton
+              active={activeTab === 'results'}
+              onClick={() => setActiveTab('results')}
+            >
+              Results
+            </TabButton>
+            <TabButton
+              active={activeTab === 'standings'}
+              onClick={() => setActiveTab('standings')}
+            >
+              Standings
+            </TabButton>
+            {isCommissioner && (
+              <>
+                <TabButton
+                  active={activeTab === 'members'}
+                  onClick={() => setActiveTab('members')}
+                >
+                  Members
+                </TabButton>
+                <TabButton
+                  active={activeTab === 'teams'}
+                  onClick={() => setActiveTab('teams')}
+                >
+                  Teams
+                </TabButton>
+                {hasPaymentTracker(league) && (
                   <TabButton
-                    active={activeTab === 'members'}
-                    onClick={() => setActiveTab('members')}
+                    active={activeTab === 'payments'}
+                    onClick={() => setActiveTab('payments')}
                   >
-                    Members
+                    Payments
                   </TabButton>
-                  <TabButton
-                    active={activeTab === 'teams'}
-                    onClick={() => setActiveTab('teams')}
-                  >
-                    Teams
-                  </TabButton>
-                  {hasPaymentTracker(league) && (
-                    <TabButton
-                      active={activeTab === 'payments'}
-                      onClick={() => setActiveTab('payments')}
-                    >
-                      Payments
-                    </TabButton>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </>
+            )}
           </div>
         )}
 

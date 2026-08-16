@@ -4,8 +4,9 @@ import { Button } from '../components/Button';
 export default function Landing() {
   return (
     <div>
-      {/* Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 glass-darker border-b border-white/5">
+      {/* Nav — sticky (not fixed) so the TestModeBanner sits above it in
+          test mode without overlap. */}
+      <nav className="sticky top-0 z-50 glass-darker border-b border-white/5">
         <div className="h-16 flex items-center px-4 sm:px-6 lg:px-8 gap-4">
           <Link
             to="/"
@@ -32,7 +33,7 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section className="hero-bg grid-bg min-h-screen flex flex-col items-center justify-center text-center px-4 pt-24 pb-16 relative overflow-hidden">
+      <section className="hero-bg grid-bg min-h-screen flex flex-col items-center justify-center text-center px-4 pt-8 pb-16 relative overflow-hidden">
         <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 max-w-4xl mx-auto">
