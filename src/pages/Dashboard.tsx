@@ -71,15 +71,9 @@ export default function Dashboard() {
     user?.email?.split('@')[0]
   );
 
-  // Widen the container for Teams tab (drag-and-drop) and Weekly Results
-  // in-season (game cards). Standings stays narrow — it's a leaderboard.
-  const wideTab =
-    activeTab === 'teams' ||
-    (activeTab === 'results' && league?.status === 'in_season');
-
   return (
     <div className="bg-paper min-h-screen">
-      <div className={`mx-auto transition-all px-5 sm:px-8 ${wideTab ? 'max-w-5xl' : 'max-w-3xl'}`}>
+      <div className="mx-auto px-5 sm:px-8 max-w-5xl">
         {/* Dark-utility masthead matching Landing: "19 Pool" logo left,
             text links right. Volt-lime "19", white "Pool" mark, hairline
             rule underneath. */}
