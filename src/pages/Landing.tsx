@@ -534,8 +534,7 @@ function Catch() {
           <p>
             No catch. First season is free while we're in beta. If enough
             leagues run through, we'll add a small per‑league fee for future
-            seasons (probably five to ten bucks) and grandfather in anyone
-            who ran a league during the beta.
+            seasons.
           </p>
           <p>
             Nothing is charged to players individually. You collect entry fees
