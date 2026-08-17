@@ -312,7 +312,7 @@ function PainPoints() {
       >
         <VoltMark>If any of these</VoltMark> sound familiar…
       </h2>
-      <div className="grid md:grid-cols-3 gap-4 mt-12">
+      <ul className="mt-10 max-w-2xl mx-auto space-y-3">
         {[
           'The commissioner also has to be the accountant',
           'Someone always disputes the final score',
@@ -321,15 +321,28 @@ function PainPoints() {
           'By the end of the season the leaderboard is a mystery',
           'You want to run one for your group but the setup is a chore',
         ].map((p) => (
-          <div
+          <li
             key={p}
-            className="bg-void-2 border border-void-line rounded-xl p-5 text-white/80 text-sm sm:text-base"
+            className="flex items-start gap-3 text-white/85 text-base sm:text-lg"
           >
-            {p}
-          </div>
+            <svg
+              viewBox="0 0 20 20"
+              fill="none"
+              className="w-5 h-5 mt-1 flex-shrink-0"
+              aria-hidden="true"
+            >
+              <path
+                d="M5 5l10 10M15 5L5 15"
+                stroke="#E85D3A"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+            <span>{p}</span>
+          </li>
         ))}
-      </div>
-      <p className="text-center mt-10 text-white/60 max-w-xl mx-auto">
+      </ul>
+      <p className="text-center mt-10 font-bold text-white text-lg max-w-xl mx-auto">
         …19 Pool fixes all of it. Try it free this season.
       </p>
       <div className="mt-6 flex justify-center">
