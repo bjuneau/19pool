@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
+import marketingScoresShot from '../../img/19pool-marketing-scores1.jpg';
 
 // Marketing page — dark utility SaaS in the go.amazing.com/challenge-b
 // style. Near-black bg, neon lime accent, chunky uppercase display type,
@@ -370,9 +371,9 @@ function HowItWorks() {
 }
 
 // ─── See it live (real product screenshot) ───────────────────────────
-// Uses a fallback placeholder underneath the img so if the asset is
-// missing (before Brooks drops the file in /public), the layout still
-// looks intentional instead of showing a broken-image icon.
+// Image is imported so Vite bundles it with a hashed URL. Lives in
+// /img/ at the repo root (not /public/) so it's not exposed as a raw
+// static path — routed through the module graph like other assets.
 
 function SeeItLive() {
   return (
@@ -388,27 +389,11 @@ function SeeItLive() {
         sub="A screenshot from the live app. No mockup polish."
       />
       <div className="mt-12 relative max-w-4xl mx-auto">
-        <div className="relative aspect-[16/10] bg-void-2 border border-void-line rounded-2xl overflow-hidden shadow-2xl">
-          {/* Placeholder shown when the img asset is missing. Sits behind
-              the img; the img covers it once loaded (object-cover). */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
-            <p
-              className="text-[10px] uppercase tracking-widest font-bold mb-2"
-              style={{ color: VOLT }}
-            >
-              Placeholder
-            </p>
-            <p className="text-white/40 text-sm">
-              /public/screenshot-weekly-results.png
-            </p>
-          </div>
+        <div className="relative bg-void-2 border border-void-line rounded-2xl overflow-hidden shadow-2xl">
           <img
-            src="/screenshot-weekly-results.png"
+            src={marketingScoresShot}
             alt="19 Pool weekly results: live NFL scores and pot standings"
-            className="absolute inset-0 w-full h-full object-cover"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = 'none';
-            }}
+            className="block w-full h-auto"
           />
         </div>
         <p className="text-center text-white/40 text-xs mt-4">
