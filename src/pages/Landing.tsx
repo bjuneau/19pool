@@ -479,14 +479,22 @@ function Pricing() {
           <p className="text-xs uppercase tracking-widest font-bold text-white/50 mb-2">
             Beta pricing
           </p>
-          <p
-            className="uppercase text-6xl mb-1"
-            style={{ ...DISPLAY_WIDE, color: VOLT }}
-          >
-            $0
-          </p>
+          <div className="flex items-baseline justify-center gap-4 mb-1">
+            <span
+              className="uppercase text-3xl text-white/35 line-through decoration-white/40 decoration-2"
+              style={DISPLAY_WIDE}
+            >
+              $79
+            </span>
+            <span
+              className="uppercase text-6xl"
+              style={{ ...DISPLAY_WIDE, color: VOLT }}
+            >
+              $0
+            </span>
+          </div>
           <p className="text-white/60 text-sm mb-6">
-            per league, for the whole season
+            First season is free while we're in beta.
           </p>
           <ul className="text-left text-sm text-white/80 space-y-2 mb-6 border-t border-void-line pt-6">
             {[
