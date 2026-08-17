@@ -55,10 +55,11 @@ type ResendAllStatus =
 export default function MembersTab({ leagueCode, league, commissionerName }: Props) {
   const [members, setMembers] = useState<MemberWithId[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<InviteTab>('email');
+  const [activeTab, setActiveTab] = useState<InviteTab>('link');
   const [emailsRaw, setEmailsRaw] = useState('');
   const [sendStatus, setSendStatus] = useState<SendStatus>({ kind: 'idle' });
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle');
 
   // Per-member resend state: memberId → state
   const [resendStates, setResendStates] = useState<Record<string, MemberResendState>>({});
@@ -213,6 +214,39 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
     } catch {
       setCopyState('error');
       window.setTimeout(() => setCopyState('idle'), 2500);
+    }
+  }
+
+  // Native share sheet on mobile (iOS/Android Web Share API), silent
+  // clipboard fallback on desktop where navigator.share is undefined.
+  async function handleShareInvite() {
+    const shareData = {
+      title: `Join ${league.name} on 19 Pool`,
+      text: `${commissionerName} invited you to their NFL pool. Score exactly 19, win the week's pot.`,
+      url: inviteUrl,
+    };
+
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        // User dismissed the share sheet — not an error worth surfacing.
+        if ((err as Error)?.name !== 'AbortError') {
+          console.warn('Share failed:', err);
+        }
+      }
+      return;
+    }
+
+    // Desktop fallback: copy to clipboard, feedback on the share button
+    // (kept separate from copyState so each button shows its own state).
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setShareState('copied');
+      window.setTimeout(() => setShareState('idle'), 2000);
+    } catch {
+      setShareState('error');
+      window.setTimeout(() => setShareState('idle'), 2500);
     }
   }
 
@@ -777,17 +811,30 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
               <div className="bg-navy-950/80 border border-white/10 rounded-xl px-4 py-3 font-mono text-sm text-amber-400 break-all">
                 {inviteUrl}
               </div>
-              <button
-                type="button"
-                onClick={handleCopyLink}
-                className="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide"
-              >
-                {copyState === 'copied'
-                  ? '✓ Copied!'
-                  : copyState === 'error'
-                    ? 'Copy failed — select and copy manually'
-                    : 'Copy Invite Link'}
-              </button>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button
+                  type="button"
+                  onClick={handleShareInvite}
+                  className="flex-1 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide"
+                >
+                  {shareState === 'copied'
+                    ? '✓ Link copied'
+                    : shareState === 'error'
+                      ? 'Share failed. Try again.'
+                      : 'Share Invite'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyLink}
+                  className="flex-1 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide"
+                >
+                  {copyState === 'copied'
+                    ? '✓ Copied!'
+                    : copyState === 'error'
+                      ? 'Copy failed. Select and copy manually.'
+                      : 'Copy Invite Link'}
+                </button>
+              </div>
             </div>
           )}
         </div>
