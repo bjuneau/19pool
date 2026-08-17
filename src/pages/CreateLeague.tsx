@@ -158,7 +158,7 @@ export default function CreateLeague() {
           />
           <div>
             <Input
-              label="Per-Player Entry Fee ($)"
+              label="Per-Player Entry Fee (Optional)"
               type="number"
               min="0"
               step="1"
