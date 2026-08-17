@@ -696,6 +696,42 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
         </div>
       </div>
 
+      {/* Prominent share CTA. This is the highest-frequency action a
+          commissioner takes here, so it lives directly under the
+          capacity graphic. On mobile it fires the native share sheet;
+          on desktop it silently falls back to clipboard copy. */}
+      {!isLocked && !isComplete && (
+        <div className="space-y-2">
+          <p className="text-sm text-slate-400">
+            Send friends a link to join your league.
+          </p>
+          <button
+            type="button"
+            onClick={handleShareInvite}
+            className="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-4 rounded-xl transition-all tracking-wide text-base flex items-center justify-center gap-2"
+          >
+            {shareState === 'copied' ? (
+              <>✓ Link copied to clipboard</>
+            ) : shareState === 'error' ? (
+              <>Share failed. Try again.</>
+            ) : (
+              <>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                  className="w-5 h-5"
+                  aria-hidden="true"
+                >
+                  <path d="M13 4.5a2.5 2.5 0 1 1 .702 1.737L6.97 9.604a2.518 2.518 0 0 1 0 .792l6.732 3.367a2.5 2.5 0 1 1-.671 1.341l-6.733-3.367a2.5 2.5 0 1 1 0-3.475l6.733-3.366A2.52 2.52 0 0 1 13 4.5Z" />
+                </svg>
+                Share Invite
+              </>
+            )}
+          </button>
+        </div>
+      )}
+
       {/* Post-lock warning banner. Uses hot (vermillion) so it reads as
           a caution independent of the brand-lime accent. */}
       {(isLocked || isComplete) && (
@@ -811,30 +847,17 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
               <div className="bg-navy-950/80 border border-white/10 rounded-xl px-4 py-3 font-mono text-sm text-amber-400 break-all">
                 {inviteUrl}
               </div>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  type="button"
-                  onClick={handleShareInvite}
-                  className="flex-1 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide"
-                >
-                  {shareState === 'copied'
-                    ? '✓ Link copied'
-                    : shareState === 'error'
-                      ? 'Share failed. Try again.'
-                      : 'Share Invite'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="flex-1 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide"
-                >
-                  {copyState === 'copied'
-                    ? '✓ Copied!'
-                    : copyState === 'error'
-                      ? 'Copy failed. Select and copy manually.'
-                      : 'Copy Invite Link'}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide"
+              >
+                {copyState === 'copied'
+                  ? '✓ Copied!'
+                  : copyState === 'error'
+                    ? 'Copy failed. Select and copy manually.'
+                    : 'Copy Invite Link'}
+              </button>
             </div>
           )}
         </div>
