@@ -98,8 +98,8 @@ function Hero() {
       </h1>
 
       <p className="mt-8 max-w-2xl mx-auto text-lg text-white/70 leading-relaxed">
-        Everyone gets an NFL team. Any week your team ends on exactly 19 —
-        win or lose — you take the pot.
+        Everyone gets an NFL team. Any week your team ends on exactly 19,
+        win or lose, you take the pot.
       </p>
 
       <p
@@ -253,7 +253,7 @@ function NeverStarts() {
             Week 8 nobody remembers who's winning.
           </p>
           <p>
-            19 Pool tracks all of it — scores, standings, who paid, who's
+            19 Pool tracks all of it: scores, standings, who paid, who's
             winning. You just watch football and text the group chat when
             your team lands on 19.
           </p>
@@ -385,7 +385,7 @@ function SeeItLive() {
             <VoltMark>built for the moment.</VoltMark>
           </>
         }
-        sub="A screenshot from the live app — no mockup polish."
+        sub="A screenshot from the live app. No mockup polish."
       />
       <div className="mt-12 relative max-w-4xl mx-auto">
         <div className="relative aspect-[16/10] bg-void-2 border border-void-line rounded-2xl overflow-hidden shadow-2xl">
@@ -404,7 +404,7 @@ function SeeItLive() {
           </div>
           <img
             src="/screenshot-weekly-results.png"
-            alt="19 Pool weekly results — live NFL scores and pot standings"
+            alt="19 Pool weekly results: live NFL scores and pot standings"
             className="absolute inset-0 w-full h-full object-cover"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = 'none';
@@ -533,13 +533,13 @@ function Catch() {
           <p>
             No catch. First season is free while we're in beta. If enough
             leagues run through, we'll add a small per‑league fee for future
-            seasons — probably five to ten bucks — and grandfather in anyone
+            seasons (probably five to ten bucks) and grandfather in anyone
             who ran a league during the beta.
           </p>
           <p>
             Nothing is charged to players individually. You collect entry fees
             from your group however you already do it (Venmo helper included).
-            The app doesn't touch that money — that's between you and your
+            The app doesn't touch that money. That's between you and your
             friends.
           </p>
         </div>
@@ -553,7 +553,7 @@ function Catch() {
 const FAQS = [
   {
     q: 'How many players do I need?',
-    a: 'Anywhere from 8 to 32. 32 is the sweet spot (one team per player), but smaller leagues work fine — the app assigns multiple teams per player automatically.',
+    a: 'Anywhere from 8 to 32. 32 is the sweet spot (one team per player), but smaller leagues work fine. The app assigns multiple teams per player automatically.',
   },
   {
     q: 'What if two players\' teams both hit 19 in the same week?',
@@ -565,7 +565,7 @@ const FAQS = [
   },
   {
     q: 'What if my group uses Zelle, PayPal, or Cash App instead of Venmo?',
-    a: 'That works too. The Venmo integration is optional — the app tracks paid / unpaid regardless of how you actually collect.',
+    a: 'That works too. The Venmo integration is optional. The app tracks paid / unpaid regardless of how you actually collect.',
   },
   {
     q: 'Where do the scores come from?',
