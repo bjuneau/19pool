@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 
 // Marketing page — dark utility SaaS in the go.amazing.com/challenge-b
 // style. Near-black bg, neon lime accent, chunky uppercase display type,
-// two-tone highlighted headlines, small phone-filmstrip screenshots,
-// numbered sections, pricing hammer, FAQ, final CTA.
+// two-tone highlighted headlines, numbered sections, pricing hammer,
+// FAQ, final CTA.
 
 const VOLT = '#C4F82A';
 
@@ -25,14 +25,12 @@ export default function Landing() {
     <div className="min-h-screen bg-void text-white font-sans antialiased">
       <Nav />
       <Hero />
-      <ScreenshotFilmstrip />
       <ProblemSolution />
       <NeverStarts />
       <PainPoints />
       <HowItWorks />
       <SeeItLive />
       <Features />
-      <Testimonials />
       <Pricing />
       <Catch />
       <FAQ />
@@ -100,9 +98,8 @@ function Hero() {
       </h1>
 
       <p className="mt-8 max-w-2xl mx-auto text-lg text-white/70 leading-relaxed">
-        Eight to thirty‑two friends. All thirty‑two NFL teams. Any team lands
-        on exactly nineteen — win or lose — and its owner takes the whole
-        weekly pot.
+        Everyone gets an NFL team. Any week your team ends on exactly 19 —
+        win or lose — you take the pot.
       </p>
 
       <p
@@ -142,62 +139,6 @@ function Hero() {
   );
 }
 
-// ─── Screenshot filmstrip ─────────────────────────────────────────────
-
-function ScreenshotFilmstrip() {
-  const shots = [
-    { l: 'Results', s: '#C4F82A' },
-    { l: 'Standings', s: '#F0B537' },
-    { l: 'Teams', s: '#C4F82A' },
-    { l: 'Payments', s: '#F0B537' },
-    { l: 'Account', s: '#C4F82A' },
-  ];
-  return (
-    <section className="border-y border-void-line bg-void-2/40 py-10 sm:py-14">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8">
-        <p className="text-center text-xs uppercase tracking-widest font-bold text-white/40 mb-8">
-          The whole pool on your phone — placeholder screenshots below
-        </p>
-        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4">
-          {shots.map((s, i) => (
-            <MiniPhone key={i} label={s.l} accent={s.s} />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function MiniPhone({ label, accent }: { label: string; accent: string }) {
-  return (
-    <div className="relative">
-      <div className="bg-black rounded-[1.25rem] p-1.5 shadow-lg ring-1 ring-white/10">
-        <div className="relative bg-void-3 rounded-[1rem] aspect-[9/19] overflow-hidden">
-          <div className="absolute top-1.5 left-1/2 -translate-x-1/2 w-10 h-3 bg-black rounded-full z-10" />
-          <div className="h-full flex flex-col items-center justify-center px-2 text-center">
-            <span
-              className="text-[8px] uppercase tracking-widest font-bold mb-1"
-              style={{ color: accent }}
-            >
-              {label}
-            </span>
-            <span
-              className="font-display font-extrabold text-2xl leading-none"
-              style={{ ...DISPLAY_WIDE, color: 'white' }}
-            >
-              19
-            </span>
-          </div>
-          <div
-            className="absolute bottom-0 left-0 right-0 h-0.5"
-            style={{ backgroundColor: accent }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Problem/solution split ───────────────────────────────────────────
 
 function ProblemSolution() {
@@ -217,20 +158,20 @@ function ProblemSolution() {
           heading="What most pools look like"
           tone="dim"
           items={[
-            'Google Sheet nobody updates on time',
-            'Group text arguing over final scores',
+            'Spreadsheet nobody updates',
+            'Arguments about final scores',
             'Someone forgets who owed what by Week 5',
-            'Winner never quite trusts the math',
+            'Winner never trusts the math',
           ]}
         />
         <ListCard
           heading="What 19 Pool looks like"
           tone="volt"
           items={[
-            'Live ESPN scores auto‑refresh every 30 seconds',
-            'Rollover math handled — including split pots',
-            'Payment tracker with one‑tap Venmo requests',
-            'Season standings, past weeks, everything one tap away',
+            'Live ESPN scores every 30 seconds',
+            'Rollover math done automatically',
+            'One-tap Venmo requests',
+            'Standings updated live on Sunday',
           ]}
         />
       </div>
@@ -312,9 +253,9 @@ function NeverStarts() {
             Week 8 nobody remembers who's winning.
           </p>
           <p>
-            19 Pool is the app that does all of it for you: collect, score,
-            track, pay out. You just watch football and text the group chat
-            when your team lands on nineteen.
+            19 Pool tracks all of it — scores, standings, who paid, who's
+            winning. You just watch football and text the group chat when
+            your team lands on 19.
           </p>
         </div>
       </div>
@@ -351,7 +292,7 @@ function PainPoints() {
         ))}
       </div>
       <p className="text-center mt-10 text-white/60 max-w-xl mx-auto">
-        …you're going to want this app running your league next year.
+        …19 Pool fixes all of it. Try it free this season.
       </p>
       <div className="mt-6 flex justify-center">
         <Link
@@ -374,12 +315,12 @@ function HowItWorks() {
       <SectionHead
         title={
           <>
-            Everyone lands
+            Three steps.
             <br />
-            with <VoltMark>something built.</VoltMark>
+            <VoltMark>Two minutes.</VoltMark>
           </>
         }
-        sub="Three moves from group chat to Sunday routine."
+        sub="Nothing to install. Nothing to configure."
       />
       <div className="grid md:grid-cols-3 gap-4 mt-12">
         {[
@@ -498,7 +439,7 @@ function Features() {
           { t: 'Auto rollover', b: 'Weeks without a 19 compound' },
           { t: 'Payment tracker', b: 'Paid / unpaid at a glance' },
           { t: 'Venmo links', b: 'One tap to pay or charge' },
-          { t: 'Historical', b: 'Every past week preserved' },
+          { t: 'Full history', b: 'Every past week preserved' },
         ].map((f) => (
           <div
             key={f.t}
@@ -515,95 +456,6 @@ function Features() {
         ))}
       </div>
     </Section>
-  );
-}
-
-// ─── Testimonials ────────────────────────────────────────────────────
-
-function Testimonials() {
-  return (
-    <Section tint>
-      <SectionHead
-        title={
-          <>
-            <VoltMark>Real leagues.</VoltMark>
-            <br />
-            Real players.
-          </>
-        }
-        sub="Placeholder quotes below — swap when your first season wraps."
-      />
-      <div className="grid md:grid-cols-3 gap-4 mt-12">
-        {TESTIMONIALS.map((t) => (
-          <Testimonial key={t.name} {...t} />
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-const TESTIMONIALS = [
-  {
-    quote:
-      'Our group chat used to be a spreadsheet nightmare every Sunday. Now it\'s just people yelling at their teams to score exactly nineteen.',
-    name: 'Alex R.',
-    role: 'Commissioner · Chicago',
-    initials: 'AR',
-  },
-  {
-    quote:
-      'I\'ve won the pot twice with two different terrible teams. There\'s something perfect about rooting for exactly 19.',
-    name: 'Sarah C.',
-    role: 'Player · San Francisco',
-    initials: 'SC',
-  },
-  {
-    quote:
-      'The rollover math + auto ESPN scores took my Sunday admin from 30 minutes to zero. My friends still hate me for winning three weeks in a row.',
-    name: 'Mike T.',
-    role: 'Commissioner · Boston',
-    initials: 'MT',
-  },
-] as const;
-
-function Testimonial({
-  quote,
-  name,
-  role,
-  initials,
-}: {
-  quote: string;
-  name: string;
-  role: string;
-  initials: string;
-}) {
-  return (
-    <figure className="relative bg-void-2 border border-void-line rounded-2xl p-6 h-full flex flex-col">
-      <span className="absolute top-3 right-3 text-[9px] uppercase tracking-widest font-bold text-white/30 border border-void-line px-1.5 py-0.5 rounded">
-        Placeholder
-      </span>
-      <blockquote className="text-white/85 text-sm leading-relaxed flex-1">
-        <span
-          className="font-display text-4xl leading-none block mb-2"
-          style={{ color: VOLT }}
-        >
-          &ldquo;
-        </span>
-        {quote}
-      </blockquote>
-      <figcaption className="mt-5 flex items-center gap-3 pt-4 border-t border-void-line">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-black font-display font-extrabold text-sm"
-          style={{ backgroundColor: VOLT }}
-        >
-          {initials}
-        </div>
-        <div>
-          <div className="font-bold text-white text-sm">{name}</div>
-          <div className="text-xs text-white/50">{role}</div>
-        </div>
-      </figcaption>
-    </figure>
   );
 }
 
@@ -701,7 +553,7 @@ function Catch() {
 const FAQS = [
   {
     q: 'How many players do I need?',
-    a: 'Anywhere from 8 to 32. 32 is the sweet spot (one team per player), but smaller leagues work fine — the app just assigns multiple teams per player automatically.',
+    a: 'Anywhere from 8 to 32. 32 is the sweet spot (one team per player), but smaller leagues work fine — the app assigns multiple teams per player automatically.',
   },
   {
     q: 'What if two players\' teams both hit 19 in the same week?',
@@ -709,19 +561,23 @@ const FAQS = [
   },
   {
     q: 'What if no team hits 19?',
-    a: 'The week\'s pot rolls into next week\'s. It compounds until someone hits it. Some late‑season weeks pay real money.',
+    a: 'The week\'s pot rolls into next week\'s. It compounds until someone hits it. Some late-season weeks pay real money.',
   },
   {
-    q: 'Do I need Venmo?',
-    a: 'No, but the app has one‑tap Venmo links built in for anyone who does. You can also just tell people to pay you however you normally do — the app tracks paid/unpaid regardless.',
+    q: 'What if my group uses Zelle, PayPal, or Cash App instead of Venmo?',
+    a: 'That works too. The Venmo integration is optional — the app tracks paid / unpaid regardless of how you actually collect.',
   },
   {
     q: 'Where do the scores come from?',
     a: 'ESPN\'s public API, refreshed every 30 seconds during live games. If ESPN\'s wrong, everyone\'s wrong the same way.',
   },
   {
+    q: 'Where is my league\'s data stored?',
+    a: 'Everything is on Google Firebase. Only your commissioner sees payment status. Nobody outside your league has access.',
+  },
+  {
     q: 'Can I run a league across multiple friend groups?',
-    a: 'Yep. One person is the commissioner, everyone else joins via invite link. Nobody needs to be from the same city or Slack.',
+    a: 'Yes. One person is the commissioner. Everyone else joins via invite link.',
   },
 ];
 
