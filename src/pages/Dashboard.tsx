@@ -20,7 +20,8 @@ type UserDoc = {
   leagueCode?: string;
 };
 
-type DashTab = 'results' | 'standings' | 'members' | 'teams' | 'payments';
+type DashTab = 'results' | 'standings' | 'admin';
+type AdminSubTab = 'members' | 'teams' | 'payments';
 
 export default function Dashboard() {
   const { user, signOut } = useAuth();
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const [leagueCode, setLeagueCode] = useState<string>('');
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [activeTab, setActiveTab] = useState<DashTab>('results');
+  const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('members');
 
   useEffect(() => {
     if (!user) return;
@@ -71,6 +73,11 @@ export default function Dashboard() {
     user?.email?.split('@')[0]
   );
 
+  function goToAdminMembers() {
+    setActiveTab('admin');
+    setAdminSubTab('members');
+  }
+
   return (
     <div className="bg-paper min-h-screen">
       <div className="mx-auto px-5 sm:px-8 max-w-5xl">
@@ -103,9 +110,9 @@ export default function Dashboard() {
         </header>
 
         {/* Section navigation — text-only tabs with a solid accent
-            underline for the active one. No pill chrome; hairline rule
-            underneath separates from content. Wraps naturally on narrow
-            screens so nothing scrolls off. */}
+            underline for the active one. Commissioner-only Members,
+            Teams, and Payments are folded under an Admin parent so
+            the main nav stays on one line. */}
         {league && (
           <nav className="flex flex-wrap gap-x-6 sm:gap-x-8 gap-y-1 border-b border-ink-line pt-4 mb-6">
             <TabButton
@@ -121,29 +128,39 @@ export default function Dashboard() {
               Standings
             </TabButton>
             {isCommissioner && (
-              <>
-                <span className="hidden sm:inline-block self-center w-px h-3 bg-ink-line" />
-                <TabButton
-                  active={activeTab === 'members'}
-                  onClick={() => setActiveTab('members')}
-                >
-                  Members
-                </TabButton>
-                <TabButton
-                  active={activeTab === 'teams'}
-                  onClick={() => setActiveTab('teams')}
-                >
-                  Teams
-                </TabButton>
-                {hasPaymentTracker(league) && (
-                  <TabButton
-                    active={activeTab === 'payments'}
-                    onClick={() => setActiveTab('payments')}
-                  >
-                    Payments
-                  </TabButton>
-                )}
-              </>
+              <TabButton
+                active={activeTab === 'admin'}
+                onClick={() => setActiveTab('admin')}
+              >
+                Admin
+              </TabButton>
+            )}
+          </nav>
+        )}
+
+        {/* Admin sub-nav — only shown when the Admin parent is active.
+            Smaller / lighter than the main nav so the hierarchy reads. */}
+        {league && isCommissioner && activeTab === 'admin' && (
+          <nav className="flex flex-wrap gap-x-5 sm:gap-x-6 gap-y-1 -mt-4 mb-6">
+            <SubTabButton
+              active={adminSubTab === 'members'}
+              onClick={() => setAdminSubTab('members')}
+            >
+              Members
+            </SubTabButton>
+            <SubTabButton
+              active={adminSubTab === 'teams'}
+              onClick={() => setAdminSubTab('teams')}
+            >
+              Teams
+            </SubTabButton>
+            {hasPaymentTracker(league) && (
+              <SubTabButton
+                active={adminSubTab === 'payments'}
+                onClick={() => setAdminSubTab('payments')}
+              >
+                Payments
+              </SubTabButton>
             )}
           </nav>
         )}
@@ -157,22 +174,25 @@ export default function Dashboard() {
               loadingProfile={loadingProfile}
               userId={user?.uid ?? ''}
               isCommissioner={isCommissioner}
+              onGoToMembers={goToAdminMembers}
             />
           ) : activeTab === 'standings' ? (
             <StandingsTab
               league={league}
               leagueCode={leagueCode}
             />
-          ) : activeTab === 'members' && isCommissioner ? (
-            <MembersTab
-              leagueCode={leagueCode}
-              league={league}
-              commissionerName={commissionerName}
-            />
-          ) : activeTab === 'teams' && isCommissioner ? (
-            <TeamsTab leagueCode={leagueCode} league={league} />
-          ) : activeTab === 'payments' && isCommissioner && hasPaymentTracker(league) ? (
-            <PaymentsTab leagueCode={leagueCode} league={league} />
+          ) : activeTab === 'admin' && isCommissioner ? (
+            adminSubTab === 'teams' ? (
+              <TeamsTab leagueCode={leagueCode} league={league} />
+            ) : adminSubTab === 'payments' && hasPaymentTracker(league) ? (
+              <PaymentsTab leagueCode={leagueCode} league={league} />
+            ) : (
+              <MembersTab
+                leagueCode={leagueCode}
+                league={league}
+                commissionerName={commissionerName}
+              />
+            )
           ) : (
             <WeeklyResultsTab
               firstName={firstName}
@@ -181,6 +201,7 @@ export default function Dashboard() {
               loadingProfile={loadingProfile}
               userId={user?.uid ?? ''}
               isCommissioner={isCommissioner}
+              onGoToMembers={goToAdminMembers}
             />
           )}
         </div>
@@ -206,6 +227,30 @@ function TabButton({
         active
           ? 'text-ink border-accent'
           : 'text-ink-dim border-transparent hover:text-ink'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SubTabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative pb-2 -mb-px text-xs font-semibold uppercase tracking-[0.14em] transition-colors border-b-2 ${
+        active
+          ? 'text-ink border-accent'
+          : 'text-ink-muted border-transparent hover:text-ink-dim'
       }`}
     >
       {children}

@@ -21,6 +21,7 @@ type Props = {
   loadingProfile: boolean;
   userId: string;
   isCommissioner: boolean;
+  onGoToMembers?: () => void;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -62,6 +63,7 @@ export default function WeeklyResultsTab({
   loadingProfile,
   userId,
   isCommissioner,
+  onGoToMembers,
 }: Props) {
   const [weeklyResults, setWeeklyResults] = useState<WeeklyResult[]>([]);
   const [members, setMembers] = useState<MemberWithId[]>([]);
@@ -223,6 +225,7 @@ export default function WeeklyResultsTab({
         league={league}
         leagueCode={leagueCode}
         isCommissioner={isCommissioner}
+        onGoToMembers={onGoToMembers}
       />
     );
   }
@@ -359,11 +362,13 @@ function PreSeasonOverview({
   league,
   leagueCode,
   isCommissioner,
+  onGoToMembers,
 }: {
   firstName: string;
   league: League;
   leagueCode: string;
   isCommissioner: boolean;
+  onGoToMembers?: () => void;
 }) {
   const statusLabel =
     league.status === 'assigned'
@@ -406,6 +411,15 @@ function PreSeasonOverview({
               : 'Teams are assigned. Head to the Teams tab to make adjustments, then lock the league to begin the season.'
             : 'Hang tight — the commissioner will lock the league and start the season soon.'}
         </p>
+        {isCommissioner && league.status === 'recruiting' && onGoToMembers && (
+          <button
+            type="button"
+            onClick={onGoToMembers}
+            className="mt-4 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 px-6 rounded-xl transition-all tracking-wide"
+          >
+            Invite Members
+          </button>
+        )}
       </div>
     </div>
   );
