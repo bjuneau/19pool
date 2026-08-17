@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
 import { buildDisplayName } from '../lib/members';
 import { normalizeLeague } from '../lib/types';
 import type { League } from '../lib/types';
+import LeagueAdminTab from './dashboard/LeagueAdminTab';
 import MembersTab from './dashboard/MembersTab';
 import PaymentsTab from './dashboard/PaymentsTab';
 import StandingsTab from './dashboard/StandingsTab';
@@ -21,18 +22,17 @@ type UserDoc = {
 };
 
 type DashTab = 'results' | 'standings' | 'admin';
-type AdminSubTab = 'members' | 'teams' | 'payments';
+type AdminSubTab = 'league' | 'members' | 'teams' | 'payments';
 
 export default function Dashboard() {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
   const [league, setLeague] = useState<League | null>(null);
   const [leagueCode, setLeagueCode] = useState<string>('');
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [activeTab, setActiveTab] = useState<DashTab>('results');
-  const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('members');
+  const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('league');
 
   useEffect(() => {
     if (!user) return;
@@ -58,11 +58,6 @@ export default function Dashboard() {
     return unsub;
   }, [leagueCode]);
 
-  async function handleSignOut() {
-    await signOut();
-    navigate('/', { replace: true });
-  }
-
   const firstName =
     userDoc?.firstName || user?.email?.split('@')[0] || 'there';
   const isCommissioner =
@@ -82,8 +77,9 @@ export default function Dashboard() {
     <div className="bg-paper min-h-screen">
       <div className="mx-auto px-5 sm:px-8 max-w-5xl">
         {/* Dark-utility masthead matching Landing: "19POOL" wordmark left,
-            text links right. Volt-lime "19", white "POOL", hairline rule
-            underneath. Wordmark is one continuous string, no gap. */}
+            person icon on the right that links to /account. Sign-out now
+            lives inside the Account page — the top bar stays visually
+            quiet on every dashboard view. */}
         <header className="flex items-center justify-between h-14 border-b border-ink-line">
           <Link to="/" className="flex items-baseline">
             <span className="font-display font-extrabold text-2xl leading-none tracking-tight text-accent">
@@ -93,26 +89,19 @@ export default function Dashboard() {
               POOL
             </span>
           </Link>
-          <div className="flex items-center gap-4 sm:gap-5">
-            <Link
-              to="/account"
-              className="text-sm font-medium text-ink-dim hover:text-ink transition-colors"
-            >
-              Account
-            </Link>
-            <button
-              onClick={handleSignOut}
-              className="text-sm font-medium text-ink-dim hover:text-ink transition-colors"
-            >
-              Sign out
-            </button>
-          </div>
+          <Link
+            to="/account"
+            aria-label="Account"
+            className="text-ink-dim hover:text-ink transition-colors"
+          >
+            <UserIcon />
+          </Link>
         </header>
 
         {/* Section navigation — text-only tabs with a solid accent
-            underline for the active one. Commissioner-only Members,
-            Teams, and Payments are folded under an Admin parent so
-            the main nav stays on one line. */}
+            underline for the active one. Commissioner-only League,
+            Members, Teams, and Payments are folded under an Admin
+            parent so the main nav stays on one line. */}
         {league && (
           <nav className="flex flex-wrap gap-x-6 sm:gap-x-8 gap-y-1 border-b border-ink-line pt-4 mb-6">
             <TabButton
@@ -142,6 +131,12 @@ export default function Dashboard() {
             Smaller / lighter than the main nav so the hierarchy reads. */}
         {league && isCommissioner && activeTab === 'admin' && (
           <nav className="flex flex-wrap gap-x-5 sm:gap-x-6 gap-y-1 -mt-4 mb-6">
+            <SubTabButton
+              active={adminSubTab === 'league'}
+              onClick={() => setAdminSubTab('league')}
+            >
+              League
+            </SubTabButton>
             <SubTabButton
               active={adminSubTab === 'members'}
               onClick={() => setAdminSubTab('members')}
@@ -182,16 +177,18 @@ export default function Dashboard() {
               leagueCode={leagueCode}
             />
           ) : activeTab === 'admin' && isCommissioner ? (
-            adminSubTab === 'teams' ? (
-              <TeamsTab leagueCode={leagueCode} league={league} />
-            ) : adminSubTab === 'payments' && hasPaymentTracker(league) ? (
-              <PaymentsTab leagueCode={leagueCode} league={league} />
-            ) : (
+            adminSubTab === 'members' ? (
               <MembersTab
                 leagueCode={leagueCode}
                 league={league}
                 commissionerName={commissionerName}
               />
+            ) : adminSubTab === 'teams' ? (
+              <TeamsTab leagueCode={leagueCode} league={league} />
+            ) : adminSubTab === 'payments' && hasPaymentTracker(league) ? (
+              <PaymentsTab leagueCode={leagueCode} league={league} />
+            ) : (
+              <LeagueAdminTab league={league} leagueCode={leagueCode} />
             )
           ) : (
             <WeeklyResultsTab
@@ -255,5 +252,26 @@ function SubTabButton({
     >
       {children}
     </button>
+  );
+}
+
+// Flat outlined user icon — Heroicons "user" (outline, 24×24). No
+// gradients, no fills, matches the utilitarian dashboard chrome.
+function UserIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-6 h-6"
+      aria-hidden="true"
+    >
+      <path d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" />
+      <path d="M4.5 20.25a7.5 7.5 0 0 1 15 0" />
+    </svg>
   );
 }
