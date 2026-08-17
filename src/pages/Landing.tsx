@@ -236,47 +236,70 @@ function ListCard({
 // ─── Most groups never finish ────────────────────────────────────────
 
 function NeverStarts() {
+  // Custom section markup instead of <Section tint> so we can:
+  //  • md:overflow-hidden on the section itself (clips image at bottom rule)
+  //  • md:min-h-[570px] on the wrapper to force the section tall enough
+  //    that the image's bottom pixels genuinely extend past the bottom rule
+  //  • position:absolute on the image (md+) so its layout doesn't drive
+  //    the section's height — only the text does, plus our forced min-h.
+  //
+  // Math on md+: wrapper has sm:py-24 = 96px top/bottom padding, min-h 570.
+  // Image (max-w-[360px], native 600x1116) renders at ~360x670. Positioned
+  // top: -50 relative to wrapper puts image top 50px above the section
+  // top rule. Image extends 670px → bottom at y=620. Section bottom
+  // rule at y≈570. Bottom 50px of image sits past the rule and gets
+  // clipped by md:overflow-hidden — the "cut off at the rule" effect.
   return (
-    <Section tint>
-      <div className="grid md:grid-cols-12 gap-8 md:gap-12 items-start">
-        {/* Left: headline stacked with the two paragraphs underneath. */}
-        <div className="md:col-span-7 space-y-6 sm:space-y-8">
-          <h2
-            className="uppercase text-4xl sm:text-5xl leading-[0.95]"
-            style={DISPLAY_WIDE}
-          >
-            Most pools <br />
-            never finish the season. <br />
-            <VoltMark>This changes that.</VoltMark>
-          </h2>
-          <div className="text-white/75 leading-relaxed space-y-4 text-base sm:text-lg max-w-xl">
-            <p>
-              Every year a friend starts a pool, someone forgets to collect the
-              entry fees, the sheet stops getting updated by Week 3, and by
-              Week 8 nobody remembers who's winning.
-            </p>
-            <p>
-              19 Pool tracks all of it: scores, standings, who paid, who's
-              winning. You just watch football and text the group chat when
-              your team lands on 19.
-            </p>
+    <section className="relative border-y border-void-line bg-void-2/40 md:overflow-hidden">
+      <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24 md:min-h-[570px]">
+        <div className="grid md:grid-cols-12 gap-8 md:gap-12 items-start">
+          <div className="md:col-span-7 space-y-6 sm:space-y-8">
+            <h2
+              className="uppercase text-4xl sm:text-5xl leading-[0.95]"
+              style={DISPLAY_WIDE}
+            >
+              Most pools <br />
+              never finish the season. <br />
+              <VoltMark>This changes that.</VoltMark>
+            </h2>
+            <div className="text-white/75 leading-relaxed space-y-4 text-base sm:text-lg max-w-xl">
+              <p>
+                Every year a friend starts a pool, someone forgets to collect the
+                entry fees, the sheet stops getting updated by Week 3, and by
+                Week 8 nobody remembers who's winning.
+              </p>
+              <p>
+                19 Pool tracks all of it: scores, standings, who paid, who's
+                winning. You just watch football and text the group chat when
+                your team lands on 19.
+              </p>
+            </div>
           </div>
+          {/* Empty grid slot so text column stays constrained to col-span-7
+              — the phone image sits absolutely on top of this area on md+. */}
+          <div className="hidden md:block md:col-span-5" />
         </div>
 
-        {/* Right: phone hero image. On md+ it breaks upward past the
-            section's top rule by 50px (section has sm:py-24 = 96px of
-            padding-top, so mt-[-146px] puts the top edge 50px above the
-            rule). On mobile the negative margin doesn't apply and the
-            image stacks under the text with normal flow. */}
-        <div className="md:col-span-5 flex justify-center md:justify-end md:-mt-[146px]">
+        {/* md+ phone hero — absolute so it doesn't drive layout height.
+            Top extends 50px above the top rule; bottom 50px clipped by
+            md:overflow-hidden on the section. */}
+        <img
+          src={marketingPhoneHero}
+          alt="19 Pool app on a phone — weekly results screen"
+          className="hidden md:block absolute pointer-events-none w-full max-w-[360px] h-auto right-5 sm:right-8"
+          style={{ top: '-50px' }}
+        />
+
+        {/* Mobile: phone stacks under the text in normal flow, no clipping. */}
+        <div className="md:hidden mt-10 flex justify-center">
           <img
             src={marketingPhoneHero}
-            alt="19 Pool app on a phone — weekly results screen"
-            className="w-full max-w-[360px] h-auto block"
+            alt=""
+            className="w-full max-w-[300px] h-auto block"
           />
         </div>
       </div>
-    </Section>
+    </section>
   );
 }
 
