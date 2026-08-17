@@ -30,6 +30,7 @@ export default function Landing() {
       <NeverStarts />
       <PainPoints />
       <HowItWorks />
+      <SeeItLive />
       <Features />
       <Testimonials />
       <Pricing />
@@ -99,11 +100,19 @@ function Hero() {
       </h1>
 
       <p className="mt-8 max-w-2xl mx-auto text-lg text-white/70 leading-relaxed">
-        Thirty‑two friends. Thirty‑two NFL teams. Any team lands on exactly
-        nineteen — win or lose — and its owner takes the whole weekly pot.
+        Eight to thirty‑two friends. All thirty‑two NFL teams. Any team lands
+        on exactly nineteen — win or lose — and its owner takes the whole
+        weekly pot.
       </p>
 
-      <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <p
+        className="mt-6 text-[10px] uppercase tracking-widest font-bold"
+        style={{ color: VOLT }}
+      >
+        Free during the 2026 season
+      </p>
+
+      <div className="mt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
         <Link
           to="/signup"
           className="inline-flex items-center justify-center text-sm font-bold text-black px-6 py-3 rounded-full transition-transform hover:scale-105"
@@ -118,6 +127,17 @@ function Hero() {
           Join with a code
         </Link>
       </div>
+
+      <p className="mt-6 text-sm text-white/50">
+        Got an invite from your commissioner?{' '}
+        <Link
+          to="/signup"
+          className="underline underline-offset-4 hover:text-white transition-colors"
+          style={{ color: VOLT }}
+        >
+          Join with your code →
+        </Link>
+      </p>
     </section>
   );
 }
@@ -213,6 +233,20 @@ function ProblemSolution() {
             'Season standings, past weeks, everything one tap away',
           ]}
         />
+      </div>
+
+      {/* Money example — real numbers so visitors can visualize the pot. */}
+      <div className="mt-10 max-w-2xl mx-auto bg-void-2 border border-void-line rounded-xl px-5 py-4 text-center">
+        <p className="text-xs uppercase tracking-widest font-bold text-white/40 mb-2">
+          For example
+        </p>
+        <p className="text-white/85 text-sm sm:text-base leading-relaxed">
+          16 friends × $50 entry ÷ 18 weeks ={' '}
+          <span className="font-bold" style={{ color: VOLT }}>
+            ~$44 per weekly winner
+          </span>
+          . No 19 that week? The pot rolls into next week.
+        </p>
       </div>
     </Section>
   );
@@ -352,7 +386,7 @@ function HowItWorks() {
           {
             n: '01',
             t: 'Form your league',
-            b: 'Invite up to thirty‑two players. Set the entry fee. Whole thing takes two minutes.',
+            b: 'Invite 8 to 32 players. Set the entry fee. Whole thing takes two minutes.',
           },
           {
             n: '02',
@@ -389,6 +423,56 @@ function HowItWorks() {
             <p className="text-white/70 text-sm leading-relaxed">{s.b}</p>
           </div>
         ))}
+      </div>
+    </Section>
+  );
+}
+
+// ─── See it live (real product screenshot) ───────────────────────────
+// Uses a fallback placeholder underneath the img so if the asset is
+// missing (before Brooks drops the file in /public), the layout still
+// looks intentional instead of showing a broken-image icon.
+
+function SeeItLive() {
+  return (
+    <Section>
+      <SectionHead
+        title={
+          <>
+            Sunday scoreboard,
+            <br />
+            <VoltMark>built for the moment.</VoltMark>
+          </>
+        }
+        sub="A screenshot from the live app — no mockup polish."
+      />
+      <div className="mt-12 relative max-w-4xl mx-auto">
+        <div className="relative aspect-[16/10] bg-void-2 border border-void-line rounded-2xl overflow-hidden shadow-2xl">
+          {/* Placeholder shown when the img asset is missing. Sits behind
+              the img; the img covers it once loaded (object-cover). */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-6 pointer-events-none">
+            <p
+              className="text-[10px] uppercase tracking-widest font-bold mb-2"
+              style={{ color: VOLT }}
+            >
+              Placeholder
+            </p>
+            <p className="text-white/40 text-sm">
+              /public/screenshot-weekly-results.png
+            </p>
+          </div>
+          <img
+            src="/screenshot-weekly-results.png"
+            alt="19 Pool weekly results — live NFL scores and pot standings"
+            className="absolute inset-0 w-full h-full object-cover"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        </div>
+        <p className="text-center text-white/40 text-xs mt-4">
+          Live ESPN scores. Winner detection when a team hits 19.
+        </p>
       </div>
     </Section>
   );
@@ -553,7 +637,7 @@ function Pricing() {
           </p>
           <ul className="text-left text-sm text-white/80 space-y-2 mb-6 border-t border-void-line pt-6">
             {[
-              'Up to 32 players per league',
+              '8 to 32 players per league',
               'Live ESPN scoring, all 18 weeks',
               'Payment tracker + Venmo integration',
               'Full historical results + standings',
@@ -617,7 +701,7 @@ function Catch() {
 const FAQS = [
   {
     q: 'How many players do I need?',
-    a: 'The app works with any number up to 32, but the design assumes one team per player, so 32 is the sweet spot. Smaller leagues assign multiple teams per player automatically.',
+    a: 'Anywhere from 8 to 32. 32 is the sweet spot (one team per player), but smaller leagues work fine — the app just assigns multiple teams per player automatically.',
   },
   {
     q: 'What if two players\' teams both hit 19 in the same week?',
