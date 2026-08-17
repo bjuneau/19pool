@@ -1,20 +1,24 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { doc, updateDoc } from 'firebase/firestore';
 import { Card } from '../../components/Card';
 import { EntryFeeCard } from '../../components/EntryFeeCard';
 import { Modal, ModalCancel, ModalDestructive } from '../../components/Modal';
+import { db } from '../../lib/firebase';
 import { deleteLeague as deleteLeagueHelper } from '../../lib/members';
 import type { League, LeagueStatus } from '../../lib/types';
 
-// Commissioner-only view of the league. Owns the league identity card
-// (name / code / status / role), the entry-fee editor, and the
-// Delete League affordance + confirmation. Members see the same
-// information on their Account page instead — they don't have Admin.
+// Commissioner-only view of the league. Owns the entry-fee editor
+// (top) plus the league identity card underneath — name, code,
+// status, rename, delete. Members see the same information on their
+// Account page instead; they don't have Admin access.
 
 type SaveStatus =
   | { kind: 'idle' }
   | { kind: 'saving' }
   | { kind: 'error'; message: string };
+
+const LEAGUE_NAME_MAX = 40;
 
 function statusPill(status: LeagueStatus): { label: string; className: string } {
   switch (status) {
@@ -54,12 +58,52 @@ export default function LeagueAdminTab({
   const [deleteTyped, setDeleteTyped] = useState('');
   const [deleteStatus, setDeleteStatus] = useState<SaveStatus>({ kind: 'idle' });
 
+  // Inline rename state — mirrors the EntryFeeCard's Edit / Save / Cancel
+  // pattern so the affordance reads the same to a commissioner.
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
+  const [nameSaving, setNameSaving] = useState(false);
+  const [nameError, setNameError] = useState('');
+
   const [toast, setToast] = useState('');
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function showToast(msg: string) {
     setToast(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(''), 4000);
+  }
+
+  function beginEditName() {
+    setNameDraft(league.name);
+    setNameError('');
+    setEditingName(true);
+  }
+
+  async function saveName() {
+    const trimmed = nameDraft.trim();
+    if (!trimmed) {
+      setNameError('League name is required.');
+      return;
+    }
+    if (trimmed.length > LEAGUE_NAME_MAX) {
+      setNameError(`Keep it under ${LEAGUE_NAME_MAX} characters.`);
+      return;
+    }
+    if (trimmed === league.name) {
+      setEditingName(false);
+      return;
+    }
+    setNameSaving(true);
+    setNameError('');
+    try {
+      await updateDoc(doc(db, 'leagues', leagueCode), { name: trimmed });
+      setEditingName(false);
+      showToast('✓ League name updated.');
+    } catch (err) {
+      setNameError((err as { message?: string })?.message ?? 'Save failed.');
+    } finally {
+      setNameSaving(false);
+    }
   }
 
   async function handleDeleteLeague() {
@@ -91,21 +135,77 @@ export default function LeagueAdminTab({
         </div>
       )}
 
-      {/* League identity + status */}
+      {/* Entry fee + season pot */}
+      <EntryFeeCard
+        league={league}
+        leagueCode={leagueCode}
+        isCommissioner={true}
+        onToast={showToast}
+      />
+
+      {/* League identity + rename + delete */}
       <Card>
-        <h2 className="text-xl font-bold text-white mb-1">League</h2>
-        <p className="text-sm text-slate-400 mb-6">
-          Your league at a glance.
-        </p>
+        <h2 className="text-xl font-bold text-white mb-6">League Name</h2>
 
         <div className="bg-navy-950/60 border border-white/10 rounded-xl p-4">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-white font-bold text-lg truncate">
+          {/* Name row — takes the full width. In edit mode the input +
+              Save + Cancel need room, so the status pill drops below
+              instead of squeezing into the same row. */}
+          {!editingName ? (
+            <div className="flex items-center gap-3">
+              <p className="text-white font-bold text-lg truncate flex-1 min-w-0">
                 {league.name}
               </p>
-              <p className="text-xs text-slate-400 font-mono mt-0.5">
-                {leagueCode}
+              <button
+                type="button"
+                onClick={beginEditName}
+                className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold flex-shrink-0"
+              >
+                Edit
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={nameDraft}
+                onChange={(e) => setNameDraft(e.target.value)}
+                maxLength={LEAGUE_NAME_MAX}
+                autoFocus
+                className="flex-1 min-w-0 bg-navy-950/80 border border-white/10 text-white text-base font-bold px-3 py-1.5 rounded-lg focus:outline-none focus:border-amber-500/50"
+              />
+              <button
+                type="button"
+                onClick={() => void saveName()}
+                disabled={nameSaving}
+                className="text-xs bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold px-3 py-1.5 rounded-lg disabled:opacity-60"
+              >
+                Save
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingName(false);
+                  setNameError('');
+                }}
+                disabled={nameSaving}
+                className="text-xs text-slate-400 hover:text-white px-2 py-1.5"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+          {nameError && (
+            <p className="text-red-400 text-xs mt-2">{nameError}</p>
+          )}
+
+          {/* Meta row: code + role on the left, status pill on the right. */}
+          <div className="flex items-end justify-between gap-3 mt-3">
+            <div className="min-w-0">
+              <p className="text-xs text-slate-400 font-mono">{leagueCode}</p>
+              <p className="text-sm text-slate-400 mt-2">
+                Role:{' '}
+                <span className="text-white font-semibold">Commissioner</span>
               </p>
             </div>
             <span
@@ -114,9 +214,6 @@ export default function LeagueAdminTab({
               {statusPill(league.status).label}
             </span>
           </div>
-          <p className="text-sm text-slate-400 mt-3">
-            Role: <span className="text-white font-semibold">Commissioner</span>
-          </p>
         </div>
 
         <div className="mt-4">
@@ -139,14 +236,6 @@ export default function LeagueAdminTab({
           )}
         </div>
       </Card>
-
-      {/* Entry fee + season pot */}
-      <EntryFeeCard
-        league={league}
-        leagueCode={leagueCode}
-        isCommissioner={true}
-        onToast={showToast}
-      />
 
       {/* Delete league modal */}
       {deleteOpen && (

@@ -32,7 +32,7 @@ export default function Dashboard() {
   const [leagueCode, setLeagueCode] = useState<string>('');
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [activeTab, setActiveTab] = useState<DashTab>('results');
-  const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('league');
+  const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('members');
 
   useEffect(() => {
     if (!user) return;
@@ -132,12 +132,6 @@ export default function Dashboard() {
         {league && isCommissioner && activeTab === 'admin' && (
           <nav className="flex flex-wrap gap-x-5 sm:gap-x-6 gap-y-1 -mt-4 mb-6">
             <SubTabButton
-              active={adminSubTab === 'league'}
-              onClick={() => setAdminSubTab('league')}
-            >
-              League
-            </SubTabButton>
-            <SubTabButton
               active={adminSubTab === 'members'}
               onClick={() => setAdminSubTab('members')}
             >
@@ -157,6 +151,12 @@ export default function Dashboard() {
                 Payments
               </SubTabButton>
             )}
+            <SubTabButton
+              active={adminSubTab === 'league'}
+              onClick={() => setAdminSubTab('league')}
+            >
+              League
+            </SubTabButton>
           </nav>
         )}
 
