@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import marketingScoresShot from '../../img/19pool-marketing-scores1.jpg';
+import marketingPhoneHero from '../../img/19pool-marketing-phone-hero1.png';
 
 // Marketing page — dark utility SaaS in the go.amazing.com/challenge-b
 // style. Near-black bg, neon lime accent, chunky uppercase display type,
@@ -237,27 +238,43 @@ function ListCard({
 function NeverStarts() {
   return (
     <Section tint>
-      <div className="grid md:grid-cols-12 gap-8 items-start">
-        <h2
-          className="uppercase md:col-span-6 text-4xl sm:text-6xl leading-[0.95]"
-          style={DISPLAY_WIDE}
-        >
-          Most pools <br />
-          never finish <br />
-          the season. <br />
-          <VoltMark>This changes that.</VoltMark>
-        </h2>
-        <div className="md:col-span-6 md:pt-4 text-white/75 leading-relaxed space-y-4 text-base sm:text-lg">
-          <p>
-            Every year a friend starts a pool, someone forgets to collect the
-            entry fees, the sheet stops getting updated by Week 3, and by
-            Week 8 nobody remembers who's winning.
-          </p>
-          <p>
-            19 Pool tracks all of it: scores, standings, who paid, who's
-            winning. You just watch football and text the group chat when
-            your team lands on 19.
-          </p>
+      <div className="grid md:grid-cols-12 gap-8 md:gap-12 items-start">
+        {/* Left: headline stacked with the two paragraphs underneath. */}
+        <div className="md:col-span-7 space-y-6 sm:space-y-8">
+          <h2
+            className="uppercase text-4xl sm:text-6xl leading-[0.95]"
+            style={DISPLAY_WIDE}
+          >
+            Most pools <br />
+            never finish <br />
+            the season. <br />
+            <VoltMark>This changes that.</VoltMark>
+          </h2>
+          <div className="text-white/75 leading-relaxed space-y-4 text-base sm:text-lg max-w-xl">
+            <p>
+              Every year a friend starts a pool, someone forgets to collect the
+              entry fees, the sheet stops getting updated by Week 3, and by
+              Week 8 nobody remembers who's winning.
+            </p>
+            <p>
+              19 Pool tracks all of it: scores, standings, who paid, who's
+              winning. You just watch football and text the group chat when
+              your team lands on 19.
+            </p>
+          </div>
+        </div>
+
+        {/* Right: phone hero image. On md+ it breaks upward past the
+            section's top rule by 50px (section has sm:py-24 = 96px of
+            padding-top, so mt-[-146px] puts the top edge 50px above the
+            rule). On mobile the negative margin doesn't apply and the
+            image stacks under the text with normal flow. */}
+        <div className="md:col-span-5 flex justify-center md:justify-end md:-mt-[146px]">
+          <img
+            src={marketingPhoneHero}
+            alt="19 Pool app on a phone — weekly results screen"
+            className="w-full max-w-[300px] h-auto block"
+          />
         </div>
       </div>
     </Section>
