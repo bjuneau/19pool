@@ -242,12 +242,11 @@ function NeverStarts() {
         {/* Left: headline stacked with the two paragraphs underneath. */}
         <div className="md:col-span-7 space-y-6 sm:space-y-8">
           <h2
-            className="uppercase text-4xl sm:text-6xl leading-[0.95]"
+            className="uppercase text-4xl sm:text-5xl leading-[0.95]"
             style={DISPLAY_WIDE}
           >
             Most pools <br />
-            never finish <br />
-            the season. <br />
+            never finish the season. <br />
             <VoltMark>This changes that.</VoltMark>
           </h2>
           <div className="text-white/75 leading-relaxed space-y-4 text-base sm:text-lg max-w-xl">
@@ -273,7 +272,7 @@ function NeverStarts() {
           <img
             src={marketingPhoneHero}
             alt="19 Pool app on a phone — weekly results screen"
-            className="w-full max-w-[300px] h-auto block"
+            className="w-full max-w-[360px] h-auto block"
           />
         </div>
       </div>
