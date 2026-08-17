@@ -48,15 +48,15 @@ function Nav() {
   return (
     <nav className="sticky top-0 z-50 bg-void/90 backdrop-blur-md border-b border-void-line">
       <div className="max-w-6xl mx-auto flex items-center justify-between px-5 sm:px-8 h-14">
-        <Link to="/" className="flex items-baseline gap-1.5">
+        <Link to="/" className="flex items-baseline">
           <span
-            className="font-display font-extrabold text-2xl leading-none"
+            className="font-display font-extrabold text-2xl leading-none tracking-tight"
             style={{ color: VOLT }}
           >
             19
           </span>
-          <span className="font-display font-bold text-lg tracking-tight">
-            Pool
+          <span className="font-display font-extrabold text-2xl leading-none tracking-tight text-white">
+            POOL
           </span>
         </Link>
         <div className="flex items-center gap-4">
@@ -118,12 +118,6 @@ function Hero() {
           style={{ backgroundColor: VOLT }}
         >
           Create your league →
-        </Link>
-        <Link
-          to="/signup"
-          className="inline-flex items-center justify-center text-sm font-bold text-white border border-white/25 hover:border-white/60 hover:bg-white/5 px-6 py-3 rounded-full transition-all"
-        >
-          Join with a code
         </Link>
       </div>
 
@@ -236,24 +230,24 @@ function ListCard({
 // ─── Most groups never finish ────────────────────────────────────────
 
 function NeverStarts() {
-  // Custom section markup instead of <Section tint> so we can:
-  //  • md:overflow-hidden on the section itself (clips image at bottom rule)
-  //  • md:min-h-[570px] on the wrapper to force the section tall enough
-  //    that the image's bottom pixels genuinely extend past the bottom rule
-  //  • position:absolute on the image (md+) so its layout doesn't drive
-  //    the section's height — only the text does, plus our forced min-h.
+  // Custom section markup (not <Section tint>) so we can position the
+  // phone image absolutely and let its top break out above the section
+  // rule while its bottom gets cropped at the section rule.
   //
-  // Math on md+: wrapper has sm:py-24 = 96px top/bottom padding, min-h 570.
-  // Image (max-w-[360px], native 600x1116) renders at ~360x670. Positioned
-  // top: -50 relative to wrapper puts image top 50px above the section
-  // top rule. Image extends 670px → bottom at y=620. Section bottom
-  // rule at y≈570. Bottom 50px of image sits past the rule and gets
-  // clipped by md:overflow-hidden — the "cut off at the rule" effect.
+  // Clipping strategy: NOT overflow-hidden on the section (that would
+  // clip the top overhang too). Instead, clip-path on the image itself
+  // hides its bottom 50px — the top is unaffected and free to overhang.
+  //
+  // Math on md+: wrapper has sm:py-24 = 96px top/bottom padding, min-h
+  // forces total to 570. Image renders at ~360x670. Positioned top: -50
+  // relative to wrapper puts image top 50px above section top rule.
+  // clip-path inset(0 0 50px 0) hides the last 50px of the image; the
+  // visible cropped edge lands exactly at section bottom rule (y=570).
   return (
-    <section className="relative border-y border-void-line bg-void-2/40 md:overflow-hidden">
+    <section className="relative border-y border-void-line bg-void-2/40">
       <div className="relative max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24 md:min-h-[570px]">
         <div className="grid md:grid-cols-12 gap-8 md:gap-12 items-start">
-          <div className="md:col-span-7 space-y-6 sm:space-y-8">
+          <div className="md:col-span-7">
             <h2
               className="uppercase text-4xl sm:text-5xl leading-[0.95]"
               style={DISPLAY_WIDE}
@@ -262,7 +256,19 @@ function NeverStarts() {
               never finish the season. <br />
               <VoltMark>This changes that.</VoltMark>
             </h2>
-            <div className="text-white/75 leading-relaxed space-y-4 text-base sm:text-lg max-w-xl">
+
+            {/* Mobile-only phone image between headline and body. Tighter
+                margins than the desktop pass so the phone doesn't dominate
+                a phone screen. Hidden on md+ (absolute image takes over). */}
+            <div className="md:hidden mt-4 flex justify-center">
+              <img
+                src={marketingPhoneHero}
+                alt=""
+                className="w-full max-w-[260px] h-auto block"
+              />
+            </div>
+
+            <div className="text-white/75 leading-relaxed space-y-4 text-base sm:text-lg max-w-xl mt-4 md:mt-8">
               <p>
                 Every year a friend starts a pool, someone forgets to collect the
                 entry fees, the sheet stops getting updated by Week 3, and by
@@ -276,28 +282,20 @@ function NeverStarts() {
             </div>
           </div>
           {/* Empty grid slot so text column stays constrained to col-span-7
-              — the phone image sits absolutely on top of this area on md+. */}
+              — the absolute phone image sits on top of this area on md+. */}
           <div className="hidden md:block md:col-span-5" />
         </div>
 
         {/* md+ phone hero — absolute so it doesn't drive layout height.
-            Top extends 50px above the top rule; bottom 50px clipped by
-            md:overflow-hidden on the section. */}
+            Top overhangs the section top rule (no section overflow-hidden,
+            so this shows freely). clip-path hides the bottom 50px so it
+            visually terminates at the section bottom rule. */}
         <img
           src={marketingPhoneHero}
-          alt="19 Pool app on a phone — weekly results screen"
-          className="hidden md:block absolute pointer-events-none w-full max-w-[360px] h-auto right-5 sm:right-8"
+          alt="19 Pool app on a phone: weekly results screen"
+          className="hidden md:block absolute pointer-events-none w-full max-w-[360px] h-auto right-5 sm:right-8 [clip-path:inset(0_0_50px_0)]"
           style={{ top: '-50px' }}
         />
-
-        {/* Mobile: phone stacks under the text in normal flow, no clipping. */}
-        <div className="md:hidden mt-10 flex justify-center">
-          <img
-            src={marketingPhoneHero}
-            alt=""
-            className="w-full max-w-[300px] h-auto block"
-          />
-        </div>
       </div>
     </section>
   );
@@ -715,14 +713,16 @@ function Footer() {
   return (
     <footer className="border-t border-void-line bg-void">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
-        <Link to="/" className="flex items-baseline gap-1.5">
+        <Link to="/" className="flex items-baseline">
           <span
-            className="font-display font-extrabold text-lg leading-none"
+            className="font-display font-extrabold text-lg leading-none tracking-tight"
             style={{ color: VOLT }}
           >
             19
           </span>
-          <span className="font-display font-bold text-white/70">Pool</span>
+          <span className="font-display font-extrabold text-lg leading-none tracking-tight text-white/70">
+            POOL
+          </span>
         </Link>
         <p className="uppercase tracking-widest">
           Not affiliated with NFL or ESPN · © 2026 19 Pool

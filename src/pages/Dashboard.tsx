@@ -74,16 +74,16 @@ export default function Dashboard() {
   return (
     <div className="bg-paper min-h-screen">
       <div className="mx-auto px-5 sm:px-8 max-w-5xl">
-        {/* Dark-utility masthead matching Landing: "19 Pool" logo left,
-            text links right. Volt-lime "19", white "Pool" mark, hairline
-            rule underneath. */}
+        {/* Dark-utility masthead matching Landing: "19POOL" wordmark left,
+            text links right. Volt-lime "19", white "POOL", hairline rule
+            underneath. Wordmark is one continuous string, no gap. */}
         <header className="flex items-center justify-between h-14 border-b border-ink-line">
-          <Link to="/" className="flex items-baseline gap-1.5">
-            <span className="font-display font-extrabold text-2xl leading-none text-accent">
+          <Link to="/" className="flex items-baseline">
+            <span className="font-display font-extrabold text-2xl leading-none tracking-tight text-accent">
               19
             </span>
-            <span className="font-display font-bold text-lg text-ink tracking-tight">
-              Pool
+            <span className="font-display font-extrabold text-2xl leading-none tracking-tight text-ink">
+              POOL
             </span>
           </Link>
           <div className="flex items-center gap-4 sm:gap-5">
