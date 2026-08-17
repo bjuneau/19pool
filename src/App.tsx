@@ -62,8 +62,8 @@ function TestModeBanner() {
   const week = getTestCurrentWeek();
   const weekLabel = week !== null ? `, week ${week}` : '';
   return (
-    <div className="sticky top-0 z-[70] bg-amber-500/20 border-b border-amber-500/40 text-amber-200 text-xs text-center py-1.5 px-3">
-      🧪 Test mode: showing {season} season{weekLabel}
+    <div className="sticky top-0 z-[70] bg-paper-2 border-b border-ink-line text-ink-dim text-xs text-center py-1.5 px-3">
+      🧪 <span className="text-accent font-semibold">Test mode:</span> showing {season} season{weekLabel}
     </div>
   );
 }

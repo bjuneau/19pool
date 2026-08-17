@@ -386,13 +386,14 @@ export default function TeamsTab({ leagueCode, league }: Props) {
             </div>
           )}
 
-          {/* Roster mismatch banner */}
+          {/* Roster mismatch banner — hot vermillion so it reads as
+              caution instead of borrowing the brand-lime accent. */}
           {rosterMismatch && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-4">
-              <p className="text-amber-300 font-semibold text-sm mb-1">
+            <div className="bg-hot-dim border border-hot/40 rounded-xl px-4 py-4">
+              <p className="text-hot font-semibold text-sm mb-1">
                 ⚠️ Roster changed
               </p>
-              <p className="text-slate-300 text-sm mb-3">
+              <p className="text-ink-dim text-sm mb-3">
                 {newMemberNames} joined after teams were assigned. Choose how to handle:
               </p>
               <div className="flex gap-2">
@@ -462,13 +463,13 @@ export default function TeamsTab({ leagueCode, league }: Props) {
           weeks and never historical results. */}
       {isPostLock && (
         <>
-          {/* Warning banner */}
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-4">
-            <p className="text-amber-300 font-semibold text-sm mb-1">
+          {/* Warning banner — hot vermillion */}
+          <div className="bg-hot-dim border border-hot/40 rounded-xl px-4 py-4">
+            <p className="text-hot font-semibold text-sm mb-1">
               ⚠️{' '}
               {isLocked ? 'Season is in progress' : 'Season is over'}
             </p>
-            <p className="text-slate-300 text-sm leading-relaxed">
+            <p className="text-ink-dim text-sm leading-relaxed">
               {isLocked
                 ? "Changes affect this week's winner detection and future payouts. Past weekly results are not changed. Remove members from the Members tab, or drag teams here to reassign them."
                 : "Edits here are for correcting errors after the fact. Existing weekly results and payouts don't change."}
@@ -702,7 +703,7 @@ function MemberTeamCard({
       } ${isTapTarget ? 'cursor-pointer' : ''}`}
     >
       <div className="flex items-center gap-3 mb-3">
-        <div className="w-9 h-9 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-sm flex items-center justify-center flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-paper-3 border border-ink-line text-ink font-bold text-sm flex items-center justify-center flex-shrink-0">
           {initials}
         </div>
         <div className="min-w-0">

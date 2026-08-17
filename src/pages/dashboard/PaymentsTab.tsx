@@ -278,7 +278,7 @@ function PaymentRow({
     <li className="bg-navy-950/60 border border-white/10 rounded-xl p-4">
       <div className="flex items-center gap-3">
         {/* Avatar */}
-        <div className="w-10 h-10 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-sm flex items-center justify-center flex-shrink-0">
+        <div className="w-10 h-10 rounded-full bg-paper-3 border border-ink-line text-ink font-bold text-sm flex items-center justify-center flex-shrink-0">
           {initials}
         </div>
 

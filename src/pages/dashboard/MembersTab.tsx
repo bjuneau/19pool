@@ -662,16 +662,17 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
         </div>
       </div>
 
-      {/* Post-lock warning banner */}
+      {/* Post-lock warning banner. Uses hot (vermillion) so it reads as
+          a caution independent of the brand-lime accent. */}
       {(isLocked || isComplete) && (
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3.5">
-          <p className="text-amber-300 font-semibold text-sm mb-1">
+        <div className="bg-hot-dim border border-hot/40 rounded-xl px-4 py-3.5">
+          <p className="text-hot font-semibold text-sm mb-1">
             ⚠️{' '}
             {isLocked
               ? 'Season is in progress'
               : 'Season is over'}
           </p>
-          <p className="text-slate-300 text-sm leading-relaxed">
+          <p className="text-ink-dim text-sm leading-relaxed">
             {isLocked
               ? "Removing a member during the season sends their teams back to the unowned pool. Future weeks where those teams score 19 will roll over. Past results don't change."
               : "Removing a member here is for correcting records — it doesn't change any historical results."}
@@ -911,7 +912,7 @@ function MemberRow({
 
   return (
     <li className="flex items-center gap-3 bg-navy-950/60 border border-white/10 rounded-xl px-4 py-3">
-      <div className="w-10 h-10 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-sm flex items-center justify-center flex-shrink-0">
+      <div className="w-10 h-10 rounded-full bg-paper-3 border border-ink-line text-ink font-bold text-sm flex items-center justify-center flex-shrink-0">
         {initials}
       </div>
       <div className="flex-1 min-w-0">

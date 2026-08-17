@@ -224,7 +224,7 @@ function StandingsRow({ rank, stats }: { rank: number; stats: MemberStats }) {
       >
         {rank}
       </span>
-      <div className="w-7 h-7 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold flex items-center justify-center flex-shrink-0">
+      <div className="w-7 h-7 rounded-full bg-paper-3 border border-ink-line text-ink text-xs font-bold flex items-center justify-center flex-shrink-0">
         {initials}
       </div>
       <div className="flex-1 min-w-0">
