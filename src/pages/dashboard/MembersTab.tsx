@@ -116,6 +116,12 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
     () => `${window.location.origin}/join/${leagueCode}`,
     [leagueCode]
   );
+  // Web Share API is only exposed on browsers with a native share sheet
+  // (essentially: mobile Safari, Android Chrome). On desktop it either
+  // doesn't exist or opens a clunky OS-level dialog, so we hide the
+  // prominent Share CTA there and let Copy Invite Link carry that flow.
+  const canNativeShare =
+    typeof navigator !== 'undefined' && typeof navigator.share === 'function';
   const knownEmails = useMemo(
     () => new Set(members.map((m) => m.email.toLowerCase())),
     [members]
@@ -698,9 +704,10 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
 
       {/* Prominent share CTA. This is the highest-frequency action a
           commissioner takes here, so it lives directly under the
-          capacity graphic. On mobile it fires the native share sheet;
-          on desktop it silently falls back to clipboard copy. */}
-      {!isLocked && !isComplete && (
+          capacity graphic. Only rendered where the Web Share API
+          actually exists (mobile) — desktop users get the Copy Invite
+          Link button in the tab below instead. */}
+      {canNativeShare && !isLocked && !isComplete && (
         <div className="space-y-2">
           <p className="text-sm text-slate-400">
             Send friends a link to join your league.
