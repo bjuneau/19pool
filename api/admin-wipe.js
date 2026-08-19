@@ -54,19 +54,30 @@ export default async function handler(req, res) {
     const summary = {
         leaguesDeleted: 0,
         membersDeleted: 0,
+        weeklyResultsDeleted: 0,
         usersDeleted: 0,
         purchasesDeleted: 0,
         authUsersDeleted: 0,
     };
 
     try {
-        // 1. Delete every league + its members subcollection.
+        // 1. Delete every league + its subcollections (members, weeklyResults).
+        // Firestore does NOT cascade — deleting the parent doc leaves the
+        // subcollection docs orphaned — so each subcollection is cleared
+        // explicitly before the league doc goes.
         const leagues = await db.collection('leagues').listDocuments();
         for (const leagueDoc of leagues) {
             const members = await leagueDoc.collection('members').listDocuments();
             if (members.length > 0) {
                 await Promise.all(members.map((m) => m.delete()));
                 summary.membersDeleted += members.length;
+            }
+            const weeklyResults = await leagueDoc
+                .collection('weeklyResults')
+                .listDocuments();
+            if (weeklyResults.length > 0) {
+                await Promise.all(weeklyResults.map((w) => w.delete()));
+                summary.weeklyResultsDeleted += weeklyResults.length;
             }
             await leagueDoc.delete();
             summary.leaguesDeleted += 1;
