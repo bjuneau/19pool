@@ -9,6 +9,7 @@ import type { League } from '../lib/types';
 import LeagueAdminTab from './dashboard/LeagueAdminTab';
 import MembersTab from './dashboard/MembersTab';
 import PaymentsTab from './dashboard/PaymentsTab';
+import PlayersTab from './dashboard/PlayersTab';
 import StandingsTab from './dashboard/StandingsTab';
 import TeamsTab from './dashboard/TeamsTab';
 import WeeklyResultsTab from './dashboard/WeeklyResultsTab';
@@ -21,7 +22,7 @@ type UserDoc = {
   leagueCode?: string;
 };
 
-type DashTab = 'results' | 'standings' | 'admin';
+type DashTab = 'results' | 'standings' | 'players' | 'admin';
 type AdminSubTab = 'league' | 'members' | 'teams' | 'payments';
 
 export default function Dashboard() {
@@ -116,6 +117,12 @@ export default function Dashboard() {
             >
               Standings
             </TabButton>
+            <TabButton
+              active={activeTab === 'players'}
+              onClick={() => setActiveTab('players')}
+            >
+              Players
+            </TabButton>
             {isCommissioner && (
               <TabButton
                 active={activeTab === 'admin'}
@@ -176,6 +183,8 @@ export default function Dashboard() {
               league={league}
               leagueCode={leagueCode}
             />
+          ) : activeTab === 'players' ? (
+            <PlayersTab league={league} leagueCode={leagueCode} />
           ) : activeTab === 'admin' && isCommissioner ? (
             adminSubTab === 'members' ? (
               <MembersTab
