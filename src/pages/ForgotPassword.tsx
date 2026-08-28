@@ -47,7 +47,7 @@ export default function ForgotPassword() {
   }
 
   return (
-    <div className="hero-bg min-h-screen flex items-center justify-center px-4 py-16">
+    <div className="hero-bg flex-1 flex items-center justify-center px-4 py-16">
       <Card className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="text-3xl font-extrabold mb-1 inline-block">

@@ -132,7 +132,7 @@ export default function CreateLeague() {
   }
 
   return (
-    <div className="hero-bg min-h-screen flex items-center justify-center px-4 py-16">
+    <div className="hero-bg flex-1 flex items-center justify-center px-4 py-16">
       <Card className="w-full max-w-lg">
         <div className="mb-6">
           <h1 className="text-2xl font-extrabold text-white">Create Your League</h1>

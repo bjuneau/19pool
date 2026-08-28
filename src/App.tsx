@@ -11,13 +11,15 @@ import Terms from './pages/legal/Terms';
 import Privacy from './pages/legal/Privacy';
 import Contact from './pages/legal/Contact';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import SiteFooter from './components/SiteFooter';
 import { getTestCurrentWeek, getTestSeason, isTestMode } from './lib/espn';
 
 export default function App() {
   return (
-    <>
+    <div className="min-h-screen flex flex-col">
       <TestModeBanner />
-      <Routes>
+      <div className="flex-1 flex flex-col">
+        <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
@@ -53,7 +55,9 @@ export default function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
+      </div>
+      <SiteFooter />
+    </div>
   );
 }
 

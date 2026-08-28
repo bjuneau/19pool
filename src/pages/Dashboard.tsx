@@ -98,7 +98,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="bg-paper min-h-screen">
+    <div className="bg-paper flex-1">
       {isSuper && (
         <SuperBar selectedCode={superLeagueCode} onSelect={handleSuperSelect} />
       )}

@@ -518,7 +518,7 @@ function CenteredCard({
   wide?: boolean;
 }) {
   return (
-    <div className="hero-bg min-h-screen flex items-center justify-center px-4 py-16">
+    <div className="hero-bg flex-1 flex items-center justify-center px-4 py-16">
       <Card className={`w-full ${wide ? 'max-w-md' : 'max-w-md'}`}>{children}</Card>
     </div>
   );

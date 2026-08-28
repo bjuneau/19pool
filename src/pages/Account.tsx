@@ -351,7 +351,7 @@ export default function Account() {
 
   if (loadingProfile) {
     return (
-      <div className="bg-paper min-h-screen flex items-center justify-center text-ink-dim text-sm">
+      <div className="bg-paper flex-1 flex items-center justify-center text-ink-dim text-sm">
         Loading…
       </div>
     );
@@ -372,7 +372,7 @@ export default function Account() {
   const canLeave = league?.status === 'recruiting';
 
   return (
-    <div className="bg-paper min-h-screen">
+    <div className="bg-paper flex-1">
       <div className="mx-auto px-5 sm:px-8 max-w-5xl">
         {/* Toast */}
         {toast && (
