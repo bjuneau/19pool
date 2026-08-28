@@ -118,11 +118,13 @@ function PlayerRow({
 }) {
   // Compose from firstName + lastName directly so this always reflects
   // the player's Account page. `member.name` is denormalized and can lag
-  // when a rename hasn't propagated. Empty-name fallback is "Player" —
-  // never the email prefix, which would leak identity to other members.
+  // when a rename hasn't propagated. Show first name + last initial only
+  // ("Brooks J.") so the roster doesn't expose full identities to fellow
+  // players. Empty-name fallback is "Player" — never the email prefix.
   const first = (member.firstName ?? '').trim();
   const last = (member.lastName ?? '').trim();
-  const displayName = [first, last].filter(Boolean).join(' ') || 'Player';
+  const lastInitial = last ? `${last[0]}.` : '';
+  const displayName = [first, lastInitial].filter(Boolean).join(' ') || 'Player';
   const initials = getInitials(first, last);
   const isCommissioner = member.role === 'commissioner';
   const teams = member.teams ?? [];
