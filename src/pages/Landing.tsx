@@ -760,9 +760,25 @@ function Footer() {
             </Link>
           </div>
         </div>
-        <p className="text-center sm:text-left text-xs text-white/40 uppercase tracking-widest">
-          Not affiliated with NFL or ESPN · © 2026 19 Pool
-        </p>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-white/40">
+          <p className="text-center sm:text-left uppercase tracking-widest">
+            Not affiliated with NFL or ESPN · © 2026 19 Pool
+          </p>
+          <a
+            href={
+              'https://venmo.com/Brooks-Juneau?txn=pay&amount=5&note=' +
+              encodeURIComponent('Keep 19pool.com rolling')
+            }
+            target="_blank"
+            rel="noopener"
+            className="hover:text-white transition-colors"
+          >
+            Keep 19pool.com rolling,{' '}
+            <span className="font-semibold" style={{ color: VOLT }}>
+              donate $5
+            </span>
+          </a>
+        </div>
       </div>
     </footer>
   );
