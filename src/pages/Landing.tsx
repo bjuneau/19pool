@@ -725,32 +725,44 @@ function FinalCTA() {
 function Footer() {
   return (
     <footer className="border-t border-void-line bg-void">
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/40">
-        <Link to="/" className="flex items-baseline">
-          <span
-            className="font-display font-extrabold text-lg leading-none tracking-tight"
-            style={{ color: VOLT }}
-          >
-            19
-          </span>
-          <span className="font-display font-extrabold text-lg leading-none tracking-tight text-white/70">
-            POOL
-          </span>
-        </Link>
-        <p className="uppercase tracking-widest">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-8 flex flex-col gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <Link to="/" className="flex items-baseline">
+            <span
+              className="font-display font-extrabold text-lg leading-none tracking-tight"
+              style={{ color: VOLT }}
+            >
+              19
+            </span>
+            <span className="font-display font-extrabold text-lg leading-none tracking-tight text-white/70">
+              POOL
+            </span>
+          </Link>
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs uppercase tracking-widest font-bold text-white/50">
+            <Link to="/signup" className="hover:text-white transition-colors">
+              Create
+            </Link>
+            <Link to="/signup" className="hover:text-white transition-colors">
+              Join
+            </Link>
+            <Link to="/signin" className="hover:text-white transition-colors">
+              Sign in
+            </Link>
+            <span className="text-white/20">·</span>
+            <Link to="/terms" className="hover:text-white transition-colors">
+              Terms
+            </Link>
+            <Link to="/privacy" className="hover:text-white transition-colors">
+              Privacy
+            </Link>
+            <Link to="/contact" className="hover:text-white transition-colors">
+              Contact
+            </Link>
+          </div>
+        </div>
+        <p className="text-center sm:text-left text-xs text-white/40 uppercase tracking-widest">
           Not affiliated with NFL or ESPN · © 2026 19 Pool
         </p>
-        <div className="flex gap-5 uppercase tracking-widest font-bold">
-          <Link to="/signup" className="hover:text-white transition-colors">
-            Create
-          </Link>
-          <Link to="/signup" className="hover:text-white transition-colors">
-            Join
-          </Link>
-          <Link to="/signin" className="hover:text-white transition-colors">
-            Sign in
-          </Link>
-        </div>
       </div>
     </footer>
   );

@@ -7,6 +7,9 @@ import CreateLeague from './pages/CreateLeague';
 import Dashboard from './pages/Dashboard';
 import Join from './pages/Join';
 import Account from './pages/Account';
+import Terms from './pages/legal/Terms';
+import Privacy from './pages/legal/Privacy';
+import Contact from './pages/legal/Contact';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { getTestCurrentWeek, getTestSeason, isTestMode } from './lib/espn';
 
@@ -45,6 +48,9 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/contact" element={<Contact />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
