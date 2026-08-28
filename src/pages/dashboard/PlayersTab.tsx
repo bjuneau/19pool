@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { onSnapshot } from 'firebase/firestore';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
+import { TEAM_BY_ABBR } from '../../lib/teams';
 import { LEAGUE_CAPACITY } from '../../lib/types';
 import type { League } from '../../lib/types';
 
@@ -112,9 +113,16 @@ function PlayerRow({
   member: MemberWithId;
   pending?: boolean;
 }) {
-  const displayName = (member.name || 'Member').trim();
-  const initials = getInitials(displayName);
+  // Compose from firstName + lastName directly so this always reflects
+  // the player's Account page. `member.name` is denormalized and can lag
+  // when a rename hasn't propagated. Empty-name fallback is "Player" —
+  // never the email prefix, which would leak identity to other members.
+  const first = (member.firstName ?? '').trim();
+  const last = (member.lastName ?? '').trim();
+  const displayName = [first, last].filter(Boolean).join(' ') || 'Player';
+  const initials = getInitials(first, last);
   const isCommissioner = member.role === 'commissioner';
+  const teams = member.teams ?? [];
 
   return (
     <li
@@ -138,16 +146,35 @@ function PlayerRow({
           </p>
         )}
       </div>
+      {teams.length > 0 && (
+        <div className="flex flex-wrap justify-end gap-1.5 flex-shrink-0 max-w-[45%]">
+          {teams.map((abbr) => (
+            <TeamPill key={abbr} abbr={abbr} />
+          ))}
+        </div>
+      )}
     </li>
   );
 }
 
-function getInitials(nameOrEmail: string): string {
-  const trimmed = (nameOrEmail || '').trim();
-  if (!trimmed) return '?';
-  const parts = trimmed.split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-  }
-  return trimmed.slice(0, 2).toUpperCase();
+function TeamPill({ abbr }: { abbr: string }) {
+  const team = TEAM_BY_ABBR[abbr];
+  const label = team?.fullName ?? abbr;
+  return (
+    <span
+      title={label}
+      className="text-[11px] font-mono font-bold bg-white/5 border border-white/10 text-slate-200 px-2 py-1 rounded-md tracking-wider"
+    >
+      {abbr}
+    </span>
+  );
+}
+
+function getInitials(first: string, last: string): string {
+  const a = first.trim()[0];
+  const b = last.trim()[0];
+  if (a && b) return (a + b).toUpperCase();
+  if (a) return a.toUpperCase();
+  if (b) return b.toUpperCase();
+  return '?';
 }
