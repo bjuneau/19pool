@@ -109,12 +109,4 @@ export function UL({ children }: { children: ReactNode }) {
   );
 }
 
-export function Callout({ children }: { children: ReactNode }) {
-  return (
-    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 text-sm text-amber-100/90 mb-8">
-      {children}
-    </div>
-  );
-}
-
 export const CONTACT_EMAIL = 'bjuneau@gmail.com';

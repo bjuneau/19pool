@@ -1,14 +1,8 @@
-import { LegalPage, H2, P, UL, Callout, CONTACT_EMAIL } from './LegalPage';
+import { LegalPage, H2, P, UL, CONTACT_EMAIL } from './LegalPage';
 
 export default function Privacy() {
   return (
     <LegalPage title="Privacy Policy" effectiveDate="2026-08-28">
-      <Callout>
-        Plain-English starter draft, not legal advice. Have a privacy
-        lawyer review before shipping to a broader audience, especially
-        if you plan to serve users in the EU, UK, or California.
-      </Callout>
-
       <P>
         This policy explains what 19 Pool collects when you use
         19pool.com (the "Service"), what we do with it, who we share it

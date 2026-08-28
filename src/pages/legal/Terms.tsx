@@ -1,15 +1,8 @@
-import { LegalPage, H2, P, UL, Callout, CONTACT_EMAIL } from './LegalPage';
+import { LegalPage, H2, P, UL, CONTACT_EMAIL } from './LegalPage';
 
 export default function Terms() {
   return (
     <LegalPage title="Terms of Service" effectiveDate="2026-08-28">
-      <Callout>
-        This is a plain-English starter draft written for a small,
-        commissioner-run football pool. It is not legal advice. Have a
-        lawyer review it before you scale up or if real money starts
-        moving through the site.
-      </Callout>
-
       <P>
         Welcome to 19 Pool. By creating an account or joining a league on
         19pool.com (the "Service"), you agree to these Terms. If you
