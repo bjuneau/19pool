@@ -48,6 +48,7 @@ export default function PlayersTab({ leagueCode, league }: Props) {
     100,
     (joinedMembers.length / LEAGUE_CAPACITY) * 100
   );
+  const isRecruiting = league.status === 'recruiting';
 
   return (
     <div className="space-y-6">
@@ -83,7 +84,7 @@ export default function PlayersTab({ leagueCode, league }: Props) {
           {joinedMembers.length > 0 && (
             <ul className="space-y-2">
               {joinedMembers.map((m) => (
-                <PlayerRow key={m.id} member={m} />
+                <PlayerRow key={m.id} member={m} isRecruiting={isRecruiting} />
               ))}
             </ul>
           )}
@@ -95,7 +96,7 @@ export default function PlayersTab({ leagueCode, league }: Props) {
               </h3>
               <ul className="space-y-2">
                 {pendingMembers.map((m) => (
-                  <PlayerRow key={m.id} member={m} pending />
+                  <PlayerRow key={m.id} member={m} isRecruiting={isRecruiting} pending />
                 ))}
               </ul>
             </div>
@@ -108,9 +109,11 @@ export default function PlayersTab({ leagueCode, league }: Props) {
 
 function PlayerRow({
   member,
+  isRecruiting,
   pending = false,
 }: {
   member: MemberWithId;
+  isRecruiting: boolean;
   pending?: boolean;
 }) {
   // Compose from firstName + lastName directly so this always reflects
@@ -146,13 +149,13 @@ function PlayerRow({
           </p>
         )}
       </div>
-      {teams.length > 0 && (
-        <div className="flex flex-wrap justify-end gap-1.5 flex-shrink-0 max-w-[45%]">
-          {teams.map((abbr) => (
-            <TeamPill key={abbr} abbr={abbr} />
-          ))}
-        </div>
-      )}
+      <div className="flex flex-wrap justify-end gap-1.5 flex-shrink-0 max-w-[55%]">
+        {teams.length > 0 ? (
+          teams.map((abbr) => <TeamPill key={abbr} abbr={abbr} />)
+        ) : isRecruiting ? (
+          <RecruitingPill />
+        ) : null}
+      </div>
     </li>
   );
 }
@@ -163,9 +166,17 @@ function TeamPill({ abbr }: { abbr: string }) {
   return (
     <span
       title={label}
-      className="text-[11px] font-mono font-bold bg-white/5 border border-white/10 text-slate-200 px-2 py-1 rounded-md tracking-wider"
+      className="text-xs font-semibold bg-white/5 border border-white/10 text-slate-200 px-2.5 py-1 rounded-md whitespace-nowrap"
     >
-      {abbr}
+      {label}
+    </span>
+  );
+}
+
+function RecruitingPill() {
+  return (
+    <span className="text-xs font-semibold italic text-slate-500 px-2.5 py-1 whitespace-nowrap">
+      Recruiting
     </span>
   );
 }
