@@ -12,6 +12,11 @@ import { auth } from './firebase';
 type AuthContextValue = {
   user: User | null;
   loading: boolean;
+  // Reflects the `super: true` custom claim set server-side on the single
+  // super-admin account (bjuneau+super@gmail.com). Refreshed alongside
+  // onAuthStateChanged. Client-side check for UI-gating only — real
+  // security lives in Firestore rules via isSuper().
+  isSuper: boolean;
   signIn: (email: string, password: string) => Promise<UserCredential>;
   signUp: (email: string, password: string) => Promise<UserCredential>;
   signOut: () => Promise<void>;
@@ -21,11 +26,25 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [isSuper, setIsSuper] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (u) => {
+    const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setUser(u);
+      if (u) {
+        try {
+          // Force-refresh so a freshly-applied custom claim (via
+          // /api/admin-create-super) is picked up on the next sign-in
+          // without the user needing to sign out and back in.
+          const token = await u.getIdTokenResult(true);
+          setIsSuper(token.claims.super === true);
+        } catch {
+          setIsSuper(false);
+        }
+      } else {
+        setIsSuper(false);
+      }
       setLoading(false);
     });
     return unsubscribe;
@@ -34,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value: AuthContextValue = {
     user,
     loading,
+    isSuper,
     signIn: (email, password) => signInWithEmailAndPassword(auth, email, password),
     signUp: (email, password) => createUserWithEmailAndPassword(auth, email, password),
     signOut: () => fbSignOut(auth),

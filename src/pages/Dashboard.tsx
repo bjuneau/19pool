@@ -6,6 +6,10 @@ import { db } from '../lib/firebase';
 import { buildDisplayName } from '../lib/members';
 import { normalizeLeague } from '../lib/types';
 import type { League } from '../lib/types';
+import SuperBar, {
+  readSuperLeagueCode,
+  writeSuperLeagueCode,
+} from '../components/SuperBar';
 import LeagueAdminTab from './dashboard/LeagueAdminTab';
 import MembersTab from './dashboard/MembersTab';
 import PaymentsTab from './dashboard/PaymentsTab';
@@ -26,21 +30,39 @@ type DashTab = 'results' | 'standings' | 'players' | 'admin';
 type AdminSubTab = 'league' | 'members' | 'teams' | 'payments';
 
 export default function Dashboard() {
-  const { user } = useAuth();
+  const { user, isSuper } = useAuth();
 
   const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
   const [league, setLeague] = useState<League | null>(null);
-  const [leagueCode, setLeagueCode] = useState<string>('');
+  // The user's own league (from users/{uid}.leagueCode). Super mode
+  // ignores this in favor of superLeagueCode below.
+  const [ownLeagueCode, setOwnLeagueCode] = useState<string>('');
+  const [superLeagueCode, setSuperLeagueCodeState] = useState<string>(() =>
+    readSuperLeagueCode()
+  );
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [activeTab, setActiveTab] = useState<DashTab>('results');
   const [adminSubTab, setAdminSubTab] = useState<AdminSubTab>('members');
+
+  // Effective league code: super picks any league; everyone else uses
+  // whatever's on their own user doc.
+  const leagueCode = isSuper ? superLeagueCode : ownLeagueCode;
+
+  function handleSuperSelect(code: string) {
+    setSuperLeagueCodeState(code);
+    writeSuperLeagueCode(code);
+    // Reset the active tab so a super-user landing on a new league
+    // starts at Results, not (say) an Admin sub-tab left over from
+    // the previous league.
+    setActiveTab('results');
+  }
 
   useEffect(() => {
     if (!user) return;
     const unsub = onSnapshot(doc(db, 'users', user.uid), (snap) => {
       const ud = (snap.exists() ? snap.data() : {}) as UserDoc;
       setUserDoc(ud);
-      setLeagueCode(ud.leagueCode ?? '');
+      setOwnLeagueCode(ud.leagueCode ?? '');
       setLoadingProfile(false);
     });
     return unsub;
@@ -62,7 +84,8 @@ export default function Dashboard() {
   const firstName =
     userDoc?.firstName || user?.email?.split('@')[0] || 'there';
   const isCommissioner =
-    !!user && !!league && league.commissionerId === user.uid;
+    isSuper ||
+    (!!user && !!league && league.commissionerId === user.uid);
   const commissionerName = buildDisplayName(
     userDoc?.firstName ?? '',
     userDoc?.lastName ?? '',
@@ -76,6 +99,9 @@ export default function Dashboard() {
 
   return (
     <div className="bg-paper min-h-screen">
+      {isSuper && (
+        <SuperBar selectedCode={superLeagueCode} onSelect={handleSuperSelect} />
+      )}
       <div className="mx-auto px-5 sm:px-8 max-w-5xl">
         {/* Dark-utility masthead matching Landing: "19POOL" wordmark left,
             person icon on the right that links to /account. Sign-out now
@@ -168,7 +194,16 @@ export default function Dashboard() {
         )}
 
         <div className="py-4 sm:py-8">
-          {!league ? (
+          {!league && isSuper ? (
+            <div className="max-w-lg mx-auto text-center py-16">
+              <p className="text-2xl mb-2">👑</p>
+              <p className="text-white font-semibold mb-1">Super mode</p>
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Pick a league from the bar at the top to load its full
+                commissioner view.
+              </p>
+            </div>
+          ) : !league ? (
             <WeeklyResultsTab
               firstName={firstName}
               league={league}

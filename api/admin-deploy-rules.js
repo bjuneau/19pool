@@ -22,12 +22,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Super-user bypass. bjuneau+super@gmail.com is provisioned with a
+    // custom claim { super: true } (set server-side via admin SDK, never
+    // client-settable). Every commissioner-only rule below allows a
+    // super-user through as if they commissionered the league.
+    function isSuper() {
+      return signedIn() && request.auth.token.super == true;
+    }
+
     function leagueData(code) {
       return get(/databases/$(database)/documents/leagues/$(code)).data;
     }
 
     function isCommissionerOf(code) {
-      return signedIn() && leagueData(code).commissionerId == request.auth.uid;
+      return isSuper() || (signedIn() && leagueData(code).commissionerId == request.auth.uid);
     }
 
     function leagueStatus(code) {
@@ -35,7 +43,7 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
+      allow read: if signedIn() && (request.auth.uid == uid || isSuper());
       allow create: if signedIn() && request.auth.uid == uid;
       allow update: if (signedIn() && request.auth.uid == uid)
                     // Commissioner clearing the leagueCode of a member of
@@ -48,7 +56,8 @@ service cloud.firestore {
                       && request.resource.data.leagueCode == ''
                       && resource.data.leagueCode != ''
                       && get(/databases/$(database)/documents/leagues/$(resource.data.leagueCode)).data.commissionerId == request.auth.uid
-                    );
+                    )
+                    || isSuper();
       allow delete: if false;
     }
 
@@ -57,8 +66,9 @@ service cloud.firestore {
       allow create: if signedIn()
                     && request.resource.data.commissionerId == request.auth.uid;
       allow update: if signedIn() && (
+        isSuper()
         // Commissioner can change anything.
-        resource.data.commissionerId == request.auth.uid
+        || resource.data.commissionerId == request.auth.uid
         // Any signed-in user can bump memberCount by 1 (join — recruiting status).
         || (
           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount'])
@@ -81,8 +91,10 @@ service cloud.firestore {
           && resource.data.status == 'recruiting'
         )
       );
-      allow delete: if signedIn()
-                    && resource.data.commissionerId == request.auth.uid;
+      allow delete: if signedIn() && (
+        isSuper()
+        || resource.data.commissionerId == request.auth.uid
+      );
 
       match /members/{memberId} {
         allow read: if true;
