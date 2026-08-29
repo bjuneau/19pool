@@ -113,6 +113,78 @@ export async function createPendingInvite({
   return { id: ref.id, ...member };
 }
 
+type CreateManualMemberArgs = {
+  leagueCode: string;
+  league: League;
+  firstName: string;
+  lastName: string;
+  email: string;
+};
+
+// Commissioner-driven manual add. Writes a JOINED-looking member doc
+// (uid: null, joinedAt: now) with a proper name and email, so the
+// commissioner can assign teams immediately without waiting on the
+// person to sign up. Team assignment and standings both key off
+// joinedAt, so this row counts as fully present.
+//
+// If the person later signs up themselves with the same email, the
+// existing claimOrCreateMember flow matches by email and backfills
+// their uid onto this doc — no duplicate created, teams and history
+// stay intact.
+//
+// Honors LEAGUE_CAPACITY and rejects a duplicate email in the same
+// league with MemberExistsError so callers can surface it cleanly.
+export async function createManualMember({
+  leagueCode,
+  league,
+  firstName,
+  lastName,
+  email,
+}: CreateManualMemberArgs): Promise<MemberWithId> {
+  const lower = email.trim().toLowerCase();
+  const first = firstName.trim();
+  const last = lastName.trim();
+
+  if (league.status === 'in_season') {
+    throw new Error(
+      "You can't add a player once the season has started."
+    );
+  }
+  if (league.memberCount >= LEAGUE_CAPACITY) {
+    throw new Error('This league is full.');
+  }
+
+  const existing = await findMemberByEmail(leagueCode, lower);
+  if (existing) {
+    throw new MemberExistsError(existing);
+  }
+
+  const member: Member = {
+    uid: null,
+    email: lower,
+    firstName: first,
+    lastName: last,
+    name: buildDisplayName(first, last),
+    phone: '',
+    teams: [],
+    wins: 0,
+    closest: 0,
+    role: 'member',
+    invitedAt: null,
+    joinedAt: null,
+    inviteToken: generateInviteToken(),
+    lastInviteSentAt: null,
+  };
+  const ref = doc(collection(db, 'leagues', leagueCode, 'members'));
+  await setDoc(ref, {
+    ...member,
+    invitedAt: serverTimestamp(),
+    joinedAt: serverTimestamp(),
+  });
+  await bumpLeagueOnJoin(leagueCode, league.status);
+  return { id: ref.id, ...member };
+}
+
 // Returns the member doc whose lowercased email matches, or null.
 export async function findMemberByEmail(
   leagueCode: string,

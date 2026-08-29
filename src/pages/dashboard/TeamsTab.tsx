@@ -181,7 +181,7 @@ export default function TeamsTab({ leagueCode, league }: Props) {
     if (noTeamMembers.length > 0) {
       const names = noTeamMembers.map((m) => m.name || m.email).join(', ');
       setLockError(
-        `All members must have teams before locking. ${noTeamMembers.length} member${noTeamMembers.length === 1 ? '' : 's'} without teams: ${names}`
+        `All players must have teams before locking. ${noTeamMembers.length} player${noTeamMembers.length === 1 ? '' : 's'} without teams: ${names}`
       );
       return;
     }
@@ -349,7 +349,7 @@ export default function TeamsTab({ leagueCode, league }: Props) {
             <div>
               <p className="text-white font-bold text-lg">Teams assigned</p>
               <p className="text-slate-400 text-sm">
-                {joinedMembers.length} member{joinedMembers.length === 1 ? '' : 's'} ·{' '}
+                {joinedMembers.length} player{joinedMembers.length === 1 ? '' : 's'} ·{' '}
                 {unownedTeams.length} unowned
               </p>
             </div>
@@ -471,7 +471,7 @@ export default function TeamsTab({ leagueCode, league }: Props) {
             </p>
             <p className="text-ink-dim text-sm leading-relaxed">
               {isLocked
-                ? "Changes affect this week's winner detection and future payouts. Past weekly results are not changed. Remove members from the Members tab, or drag teams here to reassign them."
+                ? "Changes affect this week's winner detection and future payouts. Past weekly results are not changed. Remove players from the Players tab, or drag teams here to reassign them."
                 : "Edits here are for correcting errors after the fact. Existing weekly results and payouts don't change."}
             </p>
           </div>

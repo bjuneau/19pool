@@ -5,6 +5,7 @@ import {
   LEAGUE_CAPACITY,
   MemberExistsError,
   buildDisplayName,
+  createManualMember,
   createPendingInvite,
   findMemberByEmail,
   isInResendCooldown,
@@ -32,7 +33,13 @@ type Props = {
   commissionerName: string;
 };
 
-type InviteTab = 'email' | 'link';
+type InviteTab = 'email' | 'link' | 'manual';
+
+type ManualStatus =
+  | { kind: 'idle' }
+  | { kind: 'saving' }
+  | { kind: 'ok' }
+  | { kind: 'error'; message: string };
 
 type SendStatus =
   | { kind: 'idle' }
@@ -60,6 +67,15 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
   const [sendStatus, setSendStatus] = useState<SendStatus>({ kind: 'idle' });
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle');
   const [shareState, setShareState] = useState<'idle' | 'copied' | 'error'>('idle');
+
+  // Manual Add tab state — commissioner types first/last/email for a
+  // player who isn't signing up on their own, so teams can be assigned
+  // right away without waiting.
+  const [manualFirstName, setManualFirstName] = useState('');
+  const [manualLastName, setManualLastName] = useState('');
+  const [manualEmail, setManualEmail] = useState('');
+  const [manualAlsoEmail, setManualAlsoEmail] = useState(false);
+  const [manualStatus, setManualStatus] = useState<ManualStatus>({ kind: 'idle' });
 
   // Per-member resend state: memberId → state
   const [resendStates, setResendStates] = useState<Record<string, MemberResendState>>({});
@@ -212,6 +228,82 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
     }
   }
 
+  // ── Manual add ────────────────────────────────────────────────────────────
+  // Writes a joined member doc with no Firebase Auth account, so the
+  // commissioner can populate a full roster (and assign teams) even for
+  // people who haven't signed up. If the checkbox is on, we also fire
+  // the existing invite email so they know how to log in later.
+  async function handleManualAdd(e: FormEvent) {
+    e.preventDefault();
+    const first = manualFirstName.trim();
+    const last = manualLastName.trim();
+    const email = manualEmail.trim().toLowerCase();
+
+    if (!first) {
+      setManualStatus({ kind: 'error', message: 'First name is required.' });
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setManualStatus({ kind: 'error', message: 'Enter a valid email.' });
+      return;
+    }
+
+    setManualStatus({ kind: 'saving' });
+    try {
+      const member = await createManualMember({
+        leagueCode,
+        league,
+        firstName: first,
+        lastName: last,
+        email,
+      });
+
+      if (manualAlsoEmail) {
+        const tokenUrl = `${window.location.origin}/join/${leagueCode}?invite=${member.inviteToken}`;
+        try {
+          await sendInviteEmail({
+            to: email,
+            subject: buildInviteEmailSubject(commissionerName, league.name),
+            html: buildInviteEmailHtml({
+              leagueName: league.name,
+              commissionerName,
+              inviteUrl: tokenUrl,
+              leagueCode,
+            }),
+            replyTo: league.commissionerEmail,
+          });
+          await updateDoc(
+            doc(db, 'leagues', leagueCode, 'members', member.id),
+            { lastInviteSentAt: serverTimestamp() }
+          );
+        } catch {
+          // The player is already added — surface as a soft warning
+          // instead of throwing away the successful add.
+          setManualStatus({
+            kind: 'error',
+            message: `${member.name} added, but the invite email failed to send.`,
+          });
+          setManualFirstName('');
+          setManualLastName('');
+          setManualEmail('');
+          return;
+        }
+      }
+
+      setManualStatus({ kind: 'ok' });
+      setManualFirstName('');
+      setManualLastName('');
+      setManualEmail('');
+      showToast(`✓ ${member.name} added.`);
+    } catch (err) {
+      const message =
+        err instanceof MemberExistsError
+          ? 'Someone with that email is already in this league.'
+          : (err as { message?: string })?.message ?? 'Add failed.';
+      setManualStatus({ kind: 'error', message });
+    }
+  }
+
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(inviteUrl);
@@ -361,7 +453,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
         result.reason === 'commissioner'
           ? "The commissioner can't be removed."
           : result.reason === 'locked'
-            ? "Members can't be removed once the season has started."
+            ? "Players can't be removed once the season has started."
             : result.error ?? 'Remove failed.';
       setRemoveStatus({ kind: 'error', message });
       return;
@@ -612,7 +704,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
                 />
                 {editTarget.joinedAt ? (
                   <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                    This is what's shown in the members list and standings. It
+                    This is what's shown in the players list and standings. It
                     doesn't change how the player signs in — that's set in
                     their own account.
                   </p>
@@ -663,7 +755,7 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
             <p className="text-slate-400 text-sm mb-6">
               Resend invites to{' '}
               <span className="text-white font-semibold">{sendablePendingCount}</span>{' '}
-              pending members who aren't in cooldown?
+              pending players who aren't in cooldown?
             </p>
             <div className="flex gap-3">
               <button
@@ -688,10 +780,10 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
       {/* Capacity bar */}
       <div>
         <div className="flex items-end justify-between mb-2">
-          <h2 className="text-xl font-bold text-white">Members</h2>
+          <h2 className="text-xl font-bold text-white">Players</h2>
           <p className="text-sm text-slate-400">
             <span className="text-white font-semibold">{memberCount}</span> of{' '}
-            {LEAGUE_CAPACITY} members
+            {LEAGUE_CAPACITY} players
           </p>
         </div>
         <div className="h-2 w-full bg-white/10 rounded-full overflow-hidden">
@@ -764,35 +856,31 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
           <div>
             <p className="text-white font-semibold text-sm">League is locked</p>
             <p className="text-slate-400 text-sm mt-0.5">
-              No new members can be added once the season begins.
+              No new players can be added once the season begins.
             </p>
           </div>
         </div>
       ) : (
         <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-5">
           <div className="flex bg-navy-950/80 rounded-xl p-1 mb-4 gap-1">
-            <button
-              type="button"
-              onClick={() => setActiveTab('email')}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === 'email'
-                  ? 'bg-navy-700 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Send Email Invite
-            </button>
-            <button
-              type="button"
+            <InvitePanelTab
+              active={activeTab === 'link'}
               onClick={() => setActiveTab('link')}
-              className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
-                activeTab === 'link'
-                  ? 'bg-navy-700 text-white'
-                  : 'text-slate-400 hover:text-white'
-              }`}
             >
-              Copy Shareable Link
-            </button>
+              Shareable Link
+            </InvitePanelTab>
+            <InvitePanelTab
+              active={activeTab === 'email'}
+              onClick={() => setActiveTab('email')}
+            >
+              Email Invite
+            </InvitePanelTab>
+            <InvitePanelTab
+              active={activeTab === 'manual'}
+              onClick={() => setActiveTab('manual')}
+            >
+              Manual Add
+            </InvitePanelTab>
           </div>
 
           {activeTab === 'email' ? (
@@ -844,6 +932,84 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
                   )}
                 </div>
               )}
+            </form>
+          ) : activeTab === 'manual' ? (
+            <form onSubmit={handleManualAdd} className="space-y-3">
+              <p className="text-sm text-slate-400">
+                Add a player directly. No email is sent by default and no
+                password is created — the row is joined immediately so you
+                can assign teams. If the player later signs up on their
+                own with the same email, their account attaches to this
+                row automatically.
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="block">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                    First Name
+                  </span>
+                  <input
+                    type="text"
+                    value={manualFirstName}
+                    onChange={(e) => setManualFirstName(e.target.value)}
+                    placeholder="Tom"
+                    autoComplete="off"
+                    className="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2.5 rounded-xl text-sm"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                    Last Name
+                  </span>
+                  <input
+                    type="text"
+                    value={manualLastName}
+                    onChange={(e) => setManualLastName(e.target.value)}
+                    placeholder="Mulkeen"
+                    autoComplete="off"
+                    className="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2.5 rounded-xl text-sm"
+                  />
+                </label>
+              </div>
+              <label className="block">
+                <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                  Email
+                </span>
+                <input
+                  type="email"
+                  value={manualEmail}
+                  onChange={(e) => setManualEmail(e.target.value)}
+                  placeholder="tom@example.com"
+                  autoComplete="off"
+                  className="w-full bg-navy-950/60 border border-white/10 text-white placeholder-slate-600 px-3 py-2.5 rounded-xl text-sm"
+                />
+              </label>
+              <label className="flex items-start gap-2.5 text-sm text-slate-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={manualAlsoEmail}
+                  onChange={(e) => setManualAlsoEmail(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 accent-amber-500"
+                />
+                <span>
+                  Also email them the sign-up link
+                  <span className="text-slate-500 block text-xs mt-0.5">
+                    Off by default. Flip on if you want them to be able
+                    to log in and see their own standings.
+                  </span>
+                </span>
+              </label>
+
+              {manualStatus.kind === 'error' && (
+                <p className="text-sm text-red-400">{manualStatus.message}</p>
+              )}
+
+              <button
+                type="submit"
+                disabled={manualStatus.kind === 'saving'}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 rounded-xl transition-all tracking-wide disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {manualStatus.kind === 'saving' ? 'Adding…' : 'Add Player'}
+              </button>
             </form>
           ) : (
             <div className="space-y-3">
@@ -929,9 +1095,9 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
         )}
 
         {loading ? (
-          <p className="text-slate-500 text-sm">Loading members…</p>
+          <p className="text-slate-500 text-sm">Loading players…</p>
         ) : members.length === 0 ? (
-          <p className="text-slate-500 text-sm">No members yet.</p>
+          <p className="text-slate-500 text-sm">No players yet.</p>
         ) : (
           <ul className="space-y-2">
             {members.map((m) => (
@@ -1129,4 +1295,30 @@ function parseEmails(input: string): string[] {
       seen.add(s);
       return true;
     });
+}
+
+// Pill button used in the invite panel's tab row. Extracted so all
+// three tabs render identically without repeating a long className.
+function InvitePanelTab({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+        active
+          ? 'bg-navy-700 text-white'
+          : 'text-slate-400 hover:text-white'
+      }`}
+    >
+      {children}
+    </button>
+  );
 }

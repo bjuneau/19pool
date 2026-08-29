@@ -417,7 +417,7 @@ function PreSeasonOverview({
             onClick={onGoToMembers}
             className="mt-4 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 px-6 rounded-xl transition-all tracking-wide"
           >
-            Invite Members
+            Invite Players
           </button>
         )}
       </div>

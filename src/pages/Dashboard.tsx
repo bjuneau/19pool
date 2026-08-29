@@ -168,7 +168,7 @@ export default function Dashboard() {
               active={adminSubTab === 'members'}
               onClick={() => setAdminSubTab('members')}
             >
-              Members
+              Players
             </SubTabButton>
             <SubTabButton
               active={adminSubTab === 'teams'}
