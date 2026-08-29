@@ -147,7 +147,7 @@ export default function StandingsTab({ league, leagueCode }: Props) {
         <div className="px-5 py-4 border-b border-white/5">
           <p className="text-white font-bold">{league.season} Season</p>
           {standings.length === 0 && (
-            <p className="text-xs text-slate-500 mt-0.5">No joined members yet.</p>
+            <p className="text-xs text-slate-500 mt-0.5">No joined players yet.</p>
           )}
         </div>
         {standings.length > 0 && (
@@ -155,7 +155,7 @@ export default function StandingsTab({ league, leagueCode }: Props) {
             <div className="flex items-center gap-3 px-5 py-2 border-b border-white/5 bg-white/[0.02] text-[10px] uppercase tracking-wider text-slate-500 font-semibold">
               <span className="w-5 text-right">#</span>
               <span className="w-7" />
-              <span className="flex-1">Member</span>
+              <span className="flex-1">Player</span>
               <span className="text-right">19s</span>
             </div>
             <div className="divide-y divide-white/5">

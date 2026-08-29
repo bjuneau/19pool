@@ -102,9 +102,9 @@ export default function Terms() {
 
       <H2>6. Your content</H2>
       <P>
-        Anything you enter — league names, member names, Venmo handles
+        Anything you enter, like league names, player names, Venmo handles
         — you keep. You grant 19 Pool the license needed to display it
-        inside your league (to other members of that league) and to
+        inside your league (to other players of that league) and to
         operate the Service. You represent that you have the right to
         enter what you enter, especially anyone else's name or email
         that you invite.
@@ -122,7 +122,7 @@ export default function Terms() {
       <P>
         You can delete your account at any time from Account → Danger
         Zone. Doing so removes your user data and pulls you out of any
-        league you're a member of. Commissioners must delete their
+        league you're in. Commissioners must delete their
         league first.
       </P>
       <P>

@@ -303,7 +303,7 @@ export function EntryFeeCard({
               </>
             ) : (
               <p className="text-xs text-slate-500 mt-1.5">
-                {memberCount} member{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)}
+                {memberCount} player{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)}
               </p>
             )}
           </div>
@@ -361,7 +361,7 @@ export function EntryFeeCard({
           <p className="text-slate-400 text-sm mb-5">
             That's {fmtDollars(Math.abs(potChoiceModal.newPot - autoPot))}{' '}
             {potChoiceModal.newPot > autoPot ? 'more' : 'less'} than {memberCount}{' '}
-            member{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)} entry.
+            player{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)} entry.
           </p>
           <p className="text-white text-sm font-semibold mb-3">
             What about the per-player entry?
@@ -381,7 +381,7 @@ export function EntryFeeCard({
               )}`}
               sub={`So the math matches (${fmtDollars(
                 memberCount > 0 ? Math.round(potChoiceModal.newPot / memberCount) : 0
-              )} × ${memberCount} member${memberCount === 1 ? '' : 's'} = ${fmtDollars(
+              )} × ${memberCount} player${memberCount === 1 ? '' : 's'} = ${fmtDollars(
                 potChoiceModal.newPot
               )}).`}
             />
@@ -421,7 +421,7 @@ export function EntryFeeCard({
             <p>
               Auto-calculated:{' '}
               <span className="text-white font-semibold">{fmtDollars(autoPot)}</span>{' '}
-              ({memberCount} member{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)}{' '}
+              ({memberCount} player{memberCount === 1 ? '' : 's'} × {fmtDollars(entry)}{' '}
               entry)
             </p>
           </div>

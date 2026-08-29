@@ -373,7 +373,7 @@ function PreSeasonOverview({
   const statusLabel =
     league.status === 'assigned'
       ? 'Teams assigned — ready to lock'
-      : 'Recruiting members';
+      : 'Recruiting players';
 
   return (
     <div className="space-y-5">
@@ -391,7 +391,7 @@ function PreSeasonOverview({
           <span className="w-2 h-2 rounded-full bg-amber-400/60 flex-shrink-0" />
           {statusLabel}
           <span className="text-slate-600">·</span>
-          {league.memberCount} member{league.memberCount === 1 ? '' : 's'}
+          {league.memberCount} player{league.memberCount === 1 ? '' : 's'}
           {league.seasonEntry > 0 && (
             <>
               <span className="text-slate-600">·</span>
@@ -407,7 +407,7 @@ function PreSeasonOverview({
         <p className="text-slate-400 text-sm leading-relaxed">
           {isCommissioner
             ? league.status === 'recruiting'
-              ? 'Invite members, then assign teams on the Teams tab. Lock the league when everyone is ready.'
+              ? 'Invite players, then assign teams on the Teams tab. Lock the league when everyone is ready.'
               : 'Teams are assigned. Head to the Teams tab to make adjustments, then lock the league to begin the season.'
             : 'Hang tight — the commissioner will lock the league and start the season soon.'}
         </p>

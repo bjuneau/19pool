@@ -535,7 +535,7 @@ export default function Account() {
                   <Card>
                     <h2 className="text-xl font-bold text-white mb-1">League</h2>
                     <p className="text-sm text-slate-400 mb-6">
-                      Your league membership and role.
+                      Your league and role.
                     </p>
 
                     <div className="space-y-4">
@@ -557,7 +557,7 @@ export default function Account() {
                         </div>
                         <p className="text-sm text-slate-400 mt-3">
                           Role:{' '}
-                          <span className="text-white font-semibold">Member</span>
+                          <span className="text-white font-semibold">Player</span>
                         </p>
                       </div>
 
@@ -684,7 +684,7 @@ export default function Account() {
             cannot be undone.
           </p>
           <ul className="text-sm text-slate-400 mb-5 space-y-1 list-disc list-inside">
-            <li>You'll be removed from any league you're a member of</li>
+            <li>You'll be removed from any league you're in</li>
             <li>
               If you're a commissioner of a league, that league must be deleted first
             </li>

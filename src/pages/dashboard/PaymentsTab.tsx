@@ -201,7 +201,7 @@ export default function PaymentsTab({ leagueCode, league }: Props) {
       {memberCount === 0 ? (
         <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-8 text-center">
           <p className="text-slate-400 text-sm">
-            No members to track yet. Invite members from the Members tab.
+            No players to track yet. Invite players from the Players tab.
           </p>
         </div>
       ) : filtered.length === 0 ? (

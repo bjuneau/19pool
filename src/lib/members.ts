@@ -29,7 +29,7 @@ export type MemberWithId = Member & { id: string };
  */
 export class MemberExistsError extends Error {
   constructor(public existing: MemberWithId) {
-    super('A member with this email already exists in this league.');
+    super('A player with this email already exists in this league.');
     this.name = 'MemberExistsError';
   }
 }
@@ -43,7 +43,7 @@ export function buildDisplayName(firstName: string, lastName: string, fallback?:
   const combined = `${firstName} ${lastName}`.trim();
   if (combined) return combined;
   if (fallback) return fallback;
-  return 'Member';
+  return 'Player';
 }
 
 export function isValidEmail(email: string): boolean {

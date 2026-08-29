@@ -17,7 +17,7 @@ export default function Privacy() {
           receive invite emails.
         </li>
         <li>
-          <strong>First and last name</strong> — shown to other members
+          <strong>First and last name</strong> shown to other players
           of your league. Players in a league see first name + last
           initial only.
         </li>
@@ -48,7 +48,7 @@ export default function Privacy() {
 
       <H2>How we use it</H2>
       <UL>
-        <li>To run the Service — show your league its members, teams, and results.</li>
+        <li>To run the Service: show your league its players, teams, and results.</li>
         <li>To send you the emails you'd expect: invites, password reset, occasional service-important notices.</li>
         <li>To debug problems (server logs).</li>
       </UL>
@@ -105,7 +105,7 @@ export default function Privacy() {
         </li>
       </UL>
       <P>
-        Members of one league cannot see members of a different league.
+        Players in one league cannot see players in a different league.
       </P>
 
       <H2>Cookies and local storage</H2>
@@ -139,7 +139,7 @@ export default function Privacy() {
       <P>
         We keep your data for as long as your account exists. When you
         delete your account, your user document and Firebase Auth
-        record are deleted, and your member row in any league is
+        record are deleted, and your player entry in any league is
         removed. Historical weekly-score results tied to a completed
         league remain until the commissioner deletes that league.
       </P>

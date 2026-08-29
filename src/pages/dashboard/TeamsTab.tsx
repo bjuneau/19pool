@@ -569,7 +569,7 @@ export default function TeamsTab({ leagueCode, league }: Props) {
           title="Lock the league and start the season?"
           body={
             <ul className="list-disc list-inside text-slate-300 text-sm space-y-1 mt-2">
-              <li>Add or remove members</li>
+              <li>Add or remove players</li>
               <li>Change team assignments</li>
               <li>Send new invites</li>
             </ul>
