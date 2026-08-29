@@ -862,24 +862,24 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
         </div>
       ) : (
         <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-5">
-          <div className="flex bg-navy-950/80 rounded-xl p-1 mb-4 gap-1">
+          <div className="flex border-b border-white/10 mb-4">
             <InvitePanelTab
               active={activeTab === 'link'}
               onClick={() => setActiveTab('link')}
             >
-              Shareable Link
+              Link
             </InvitePanelTab>
             <InvitePanelTab
               active={activeTab === 'email'}
               onClick={() => setActiveTab('email')}
             >
-              Email Invite
+              Email
             </InvitePanelTab>
             <InvitePanelTab
               active={activeTab === 'manual'}
               onClick={() => setActiveTab('manual')}
             >
-              Manual Add
+              Manual
             </InvitePanelTab>
           </div>
 
@@ -1295,8 +1295,10 @@ function parseEmails(input: string): string[] {
     });
 }
 
-// Pill button used in the invite panel's tab row. Extracted so all
-// three tabs render identically without repeating a long className.
+// Underlined tab used in the invite panel's tab row. Matches the
+// dashboard nav aesthetic — hairline row separator, volt-lime bar
+// under the active tab. Equal-width so three short labels sit on
+// one line even on narrow mobile viewports.
 function InvitePanelTab({
   active,
   onClick,
@@ -1310,10 +1312,10 @@ function InvitePanelTab({
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${
+      className={`flex-1 pb-2.5 -mb-px text-sm font-semibold transition-colors border-b-2 whitespace-nowrap ${
         active
-          ? 'bg-navy-700 text-white'
-          : 'text-slate-400 hover:text-white'
+          ? 'text-white border-accent'
+          : 'text-slate-400 border-transparent hover:text-white'
       }`}
     >
       {children}
