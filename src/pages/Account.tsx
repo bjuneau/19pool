@@ -457,8 +457,8 @@ export default function Account() {
                       }
                     />
                     <p className="mt-1.5 text-xs text-slate-500">
-                      Just your username. Used for entry-fee Venmo
-                      requests in your league.
+                      Just your username. Used for entry-fee requests
+                      and weekly payouts.
                     </p>
                   </div>
 
