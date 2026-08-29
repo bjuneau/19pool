@@ -4,18 +4,21 @@ import type { InputHTMLAttributes, ReactNode } from 'react';
 type InputProps = {
   label?: string;
   error?: string;
+  startAdornment?: ReactNode;
   endAdornment?: ReactNode;
 } & InputHTMLAttributes<HTMLInputElement>;
 
 // Dark-utility input — small-caps kicker label + subtle filled field
 // with a hairline outline. Focus lights up volt-lime via the global
-// input:focus rule in index.css.
+// input:focus rule in index.css. Optional start/end adornments sit
+// inside the field (e.g. an "@" prefix, a Show/Hide password toggle).
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { label, error, endAdornment, className = '', id, ...rest },
+  { label, error, startAdornment, endAdornment, className = '', id, ...rest },
   ref
 ) {
   const reactId = useId();
   const inputId = id ?? reactId;
+  const paddingLeft = startAdornment ? 'pl-8' : '';
   const paddingRight = endAdornment ? 'pr-14' : '';
 
   return (
@@ -26,10 +29,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         </label>
       )}
       <div className="relative">
+        {startAdornment && (
+          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-ink-muted text-sm">
+            {startAdornment}
+          </div>
+        )}
         <input
           ref={ref}
           id={inputId}
-          className={`w-full bg-paper-2 border border-ink-line focus:border-accent text-ink placeholder-ink-muted px-4 py-3 ${paddingRight} rounded-xl text-sm transition-colors ${className}`}
+          className={`w-full bg-paper-2 border border-ink-line focus:border-accent text-ink placeholder-ink-muted px-4 py-3 ${paddingLeft} ${paddingRight} rounded-xl text-sm transition-colors ${className}`}
           {...rest}
         />
         {endAdornment && (

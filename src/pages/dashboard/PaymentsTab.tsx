@@ -211,7 +211,7 @@ export default function PaymentsTab({ leagueCode, league }: Props) {
             <button
               type="button"
               onClick={() => void markAllPaid()}
-              className="text-xs font-semibold text-slate-400 hover:text-accent transition-colors underline-offset-2 hover:underline"
+              className="text-xs font-bold bg-amber-500 hover:bg-amber-400 text-navy-950 px-3 py-1.5 rounded-lg transition-colors tracking-wide"
             >
               Mark All Paid
             </button>

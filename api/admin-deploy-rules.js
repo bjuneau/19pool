@@ -109,10 +109,21 @@ service cloud.firestore {
 
         allow update: if signedIn() && (
           isCommissionerOf(code)
+          // Initial claim of a pending invite: uid null → my uid, email matches.
           || (
             resource.data.uid == null
             && request.resource.data.uid == request.auth.uid
             && resource.data.email == request.auth.token.email.lower()
+          )
+          // Self-edit of profile fields on my own member doc. Scoped to
+          // firstName / lastName / name / venmo — teams, wins, closest,
+          // paid, role, etc all stay commissioner-only.
+          || (
+            resource.data.uid == request.auth.uid
+            && request.resource.data
+                .diff(resource.data)
+                .affectedKeys()
+                .hasOnly(['firstName', 'lastName', 'name', 'venmo'])
           )
         );
 

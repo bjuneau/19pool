@@ -450,11 +450,15 @@ export default function Account() {
                       type="text"
                       placeholder="your-handle"
                       autoComplete="off"
-                      value={profileVenmo}
-                      onChange={(e) => setProfileVenmo(e.target.value)}
+                      startAdornment="@"
+                      value={profileVenmo.replace(/^@/, '')}
+                      onChange={(e) =>
+                        setProfileVenmo(e.target.value.replace(/^@/, ''))
+                      }
                     />
                     <p className="mt-1.5 text-xs text-slate-500">
-                      Used for entry-fee Venmo requests in your league.
+                      Just your username. Used for entry-fee Venmo
+                      requests in your league.
                     </p>
                   </div>
 
