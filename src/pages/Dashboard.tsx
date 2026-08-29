@@ -116,13 +116,21 @@ export default function Dashboard() {
               POOL
             </span>
           </Link>
-          <Link
-            to="/account"
-            aria-label="Account"
-            className="text-ink-dim hover:text-ink transition-colors"
-          >
-            <UserIcon />
-          </Link>
+          <div className="flex items-center gap-4 sm:gap-5">
+            <Link
+              to="/contact"
+              className="text-sm font-medium text-ink-dim hover:text-ink transition-colors"
+            >
+              Feedback
+            </Link>
+            <Link
+              to="/account"
+              aria-label="Account"
+              className="text-ink-dim hover:text-ink transition-colors"
+            >
+              <UserIcon />
+            </Link>
+          </div>
         </header>
 
         {/* Section navigation — text-only tabs with a solid accent

@@ -4,8 +4,9 @@ export default function Contact() {
   return (
     <LegalPage title="Contact">
       <P>
-        Questions, feedback, bug reports, or a stuck league? Email us
-        and a real person will reply — usually within a day.
+        This is 19 Pool's first season open to the public, which is
+        why it's free. We'd love to hear if you're running into any
+        issues or have features you'd like added.
       </P>
 
       <div className="my-8">
@@ -13,7 +14,7 @@ export default function Contact() {
           href={`mailto:${CONTACT_EMAIL}`}
           className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-navy-950 font-bold py-3 px-6 rounded-xl transition-all tracking-wide"
         >
-          Email {CONTACT_EMAIL}
+          Email us now
         </a>
       </div>
 
