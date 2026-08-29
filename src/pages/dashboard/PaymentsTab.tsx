@@ -114,6 +114,43 @@ export default function PaymentsTab({ leagueCode, league }: Props) {
     }
   }
 
+  // Bulk-marks every joined player who isn't already paid. Already-paid
+  // rows are skipped — we don't rewrite their paidAt timestamp. The
+  // optimistic-cache pattern from markPaid extends: onSnapshot fires with
+  // the new local state before the server round-trips.
+  async function markAllPaid() {
+    const targets = joined.filter((m) => !isPaid(m));
+    if (targets.length === 0) return;
+
+    setSaving((s) => {
+      const n = new Set(s);
+      targets.forEach((m) => n.add(m.id));
+      return n;
+    });
+    try {
+      await Promise.all(
+        targets.map((m) =>
+          updateDoc(doc(db, 'leagues', leagueCode, 'members', m.id), {
+            paid: true,
+            paidAt: serverTimestamp(),
+          })
+        )
+      );
+      showToast(
+        `✓ Marked ${targets.length} player${targets.length === 1 ? '' : 's'} as paid`
+      );
+    } catch (err) {
+      const msg = (err as { message?: string })?.message ?? 'Update failed';
+      showToast(`Some updates failed: ${msg}`);
+    } finally {
+      setSaving((s) => {
+        const n = new Set(s);
+        targets.forEach((m) => n.delete(m.id));
+        return n;
+      });
+    }
+  }
+
   async function markUnpaid(member: MemberWithId) {
     setSaving((s) => new Set(s).add(member.id));
     try {
@@ -168,21 +205,32 @@ export default function PaymentsTab({ leagueCode, league }: Props) {
           </p>
         </div>
 
-        {/* Filter */}
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <label htmlFor="payments-filter" className="text-xs text-slate-500 uppercase tracking-wider">
-            Show
-          </label>
-          <select
-            id="payments-filter"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as FilterKind)}
-            className="bg-navy-950/80 border border-white/10 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-amber-500/40 cursor-pointer"
-          >
-            <option value="all">All ({memberCount})</option>
-            <option value="paid">Paid ({paidCount})</option>
-            <option value="unpaid">Unpaid ({memberCount - paidCount})</option>
-          </select>
+        {/* Bulk + filter controls */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 flex-shrink-0">
+          {memberCount - paidCount > 0 && (
+            <button
+              type="button"
+              onClick={() => void markAllPaid()}
+              className="text-xs font-semibold text-slate-400 hover:text-accent transition-colors underline-offset-2 hover:underline"
+            >
+              Mark All Paid
+            </button>
+          )}
+          <div className="flex items-center gap-2">
+            <label htmlFor="payments-filter" className="text-xs text-slate-500 uppercase tracking-wider">
+              Show
+            </label>
+            <select
+              id="payments-filter"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as FilterKind)}
+              className="bg-navy-950/80 border border-white/10 text-white text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-amber-500/40 cursor-pointer"
+            >
+              <option value="all">All ({memberCount})</option>
+              <option value="paid">Paid ({paidCount})</option>
+              <option value="unpaid">Unpaid ({memberCount - paidCount})</option>
+            </select>
+          </div>
         </div>
       </div>
 
