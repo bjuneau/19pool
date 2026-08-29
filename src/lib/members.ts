@@ -212,10 +212,30 @@ type ClaimArgs = {
 // member doc. Honors capacity for new members but lets pending claims through
 // even when the league is at capacity (the spot was already allocated).
 export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult> {
-  const { leagueCode, league, invitedMember, user, firstName = '', lastName = '' } = args;
+  const { leagueCode, league, invitedMember, user } = args;
+  let { firstName = '', lastName = '' } = args;
   const userEmail = (user.email ?? '').toLowerCase();
   if (!userEmail) {
     return { ok: false, error: 'Your account is missing an email address.' };
+  }
+
+  // If the caller didn't hand us a name (the confirm-join / sign-in-in-Join
+  // paths), read it off the user's own profile doc. This is what keeps the
+  // Case-3 write below from creating a "no-name" member row that then falls
+  // back to the email prefix in Members / Player tabs.
+  if (!firstName && !lastName) {
+    try {
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      const data = userSnap.data() as
+        | { firstName?: string; lastName?: string }
+        | undefined;
+      firstName = (data?.firstName ?? '').trim();
+      lastName = (data?.lastName ?? '').trim();
+    } catch {
+      // Non-fatal — fall through with empty names; downstream renders will
+      // show the "Player" placeholder until the user sets their name in
+      // Account. Better than blocking the join.
+    }
   }
 
   // Hard gate: no joins after the season starts.
@@ -301,7 +321,10 @@ export async function claimOrCreateMember(args: ClaimArgs): Promise<ClaimResult>
     email: userEmail,
     firstName,
     lastName,
-    name: buildDisplayName(firstName, lastName, userEmail.split('@')[0]),
+    // No email-prefix fallback — that leaks the address into the roster
+    // for other members. buildDisplayName returns "Member" if both name
+    // parts are empty; the user can fix it from Account and it syncs.
+    name: buildDisplayName(firstName, lastName),
     phone: '',
     teams: [],
     wins: 0,
