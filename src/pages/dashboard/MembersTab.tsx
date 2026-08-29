@@ -936,11 +936,9 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
           ) : activeTab === 'manual' ? (
             <form onSubmit={handleManualAdd} className="space-y-3">
               <p className="text-sm text-slate-400">
-                Add a player directly. No email is sent by default and no
-                password is created — the row is joined immediately so you
-                can assign teams. If the player later signs up on their
-                own with the same email, their account attaches to this
-                row automatically.
+                Add a player straight to your league. They join
+                immediately so you can assign teams. If they sign up
+                later with the same email, everything stays connected.
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
