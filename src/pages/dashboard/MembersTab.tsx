@@ -276,12 +276,18 @@ export default function MembersTab({ leagueCode, league, commissionerName }: Pro
             doc(db, 'leagues', leagueCode, 'members', member.id),
             { lastInviteSentAt: serverTimestamp() }
           );
-        } catch {
+        } catch (err) {
           // The player is already added — surface as a soft warning
-          // instead of throwing away the successful add.
+          // instead of throwing away the successful add. Include the
+          // underlying reason so a repeat failure is diagnosable
+          // without hunting through server logs.
+          const detail = (err as { message?: string })?.message ?? '';
+          console.warn('Manual-add invite email failed:', err);
           setManualStatus({
             kind: 'error',
-            message: `${member.name} added, but the invite email failed to send.`,
+            message: detail
+              ? `${member.name} added, but the invite email didn't send: ${detail}`
+              : `${member.name} added, but the invite email didn't send.`,
           });
           setManualFirstName('');
           setManualLastName('');
