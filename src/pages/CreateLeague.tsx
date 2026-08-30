@@ -13,6 +13,7 @@ import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
+import { trackEvent } from '../lib/metaPixel';
 import {
   buildDisplayName,
   generateInviteToken,
@@ -120,6 +121,9 @@ export default function CreateLeague() {
 
       await updateDoc(doc(db, 'users', user.uid), { leagueCode: code });
 
+      // Primary conversion: a commissioner stood up a league. This is the
+      // event ad delivery should optimize toward, not raw registrations.
+      trackEvent('StartTrial');
       navigate('/dashboard', { replace: true });
     } catch (err) {
       const message =

@@ -7,6 +7,8 @@ import { Input } from '../components/Input';
 import { PasswordStrengthBar } from '../components/PasswordStrengthBar';
 import { authErrorMessage, useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
+import { recordAttribution } from '../lib/attribution';
+import { trackEvent } from '../lib/metaPixel';
 import {
   getPasswordStrength,
   validatePasswordPair,
@@ -59,6 +61,8 @@ export default function SignUp() {
         acceptedTOSAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       });
+      void recordAttribution(cred.user.uid);
+      trackEvent('CompleteRegistration');
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));

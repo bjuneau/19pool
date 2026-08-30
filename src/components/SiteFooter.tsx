@@ -1,5 +1,6 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import type { ReactNode } from 'react';
+import { AD_LANDING_PATH } from './marketing';
 
 // Site-wide footer, rendered globally in App.tsx below every route.
 // Same layout everywhere so navigation between marketing, dashboard,
@@ -9,6 +10,10 @@ import type { ReactNode } from 'react';
 // Right: legal nav — Terms / Privacy / Contact.
 
 export default function SiteFooter() {
+  // The Venmo donate link is hidden on the paid-acquisition landing page:
+  // a payment link on an ad destination is exactly the money signal that
+  // page exists to avoid. See the compliance note in AdLanding.tsx.
+  const showDonate = useLocation().pathname !== AD_LANDING_PATH;
   return (
     <footer className="bg-paper border-t border-ink-line">
       <div className="mx-auto px-5 sm:px-8 max-w-5xl py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-ink-muted">
@@ -16,7 +21,7 @@ export default function SiteFooter() {
           <p className="uppercase tracking-widest">
             © 2026 19 Pool · Not affiliated with NFL or ESPN
           </p>
-          <DonateLink />
+          {showDonate && <DonateLink />}
         </div>
         <nav className="flex gap-5 uppercase tracking-widest font-semibold">
           <FooterLink to="/terms">Terms</FooterLink>

@@ -2,7 +2,7 @@ import { LegalPage, H2, P, UL, CONTACT_EMAIL } from './LegalPage';
 
 export default function Privacy() {
   return (
-    <LegalPage title="Privacy Policy" effectiveDate="2026-08-28">
+    <LegalPage title="Privacy Policy" effectiveDate="2026-08-30">
       <P>
         This policy explains what 19 Pool collects when you use
         19pool.com (the "Service"), what we do with it, who we share it
@@ -33,6 +33,12 @@ export default function Privacy() {
           commissioner has marked your entry fee as received.
         </li>
         <li>
+          <strong>How you found us</strong> — if you arrive from one of
+          our ads or a link we published, we store the campaign tags on
+          that link (and the site you came from) on your account, so we
+          can tell which campaigns actually bring in players.
+        </li>
+        <li>
           <strong>Authentication metadata</strong> — timestamps of
           sign-in, password reset, and email delivery, kept by Firebase
           Auth.
@@ -40,8 +46,10 @@ export default function Privacy() {
       </UL>
       <P>
         We do not collect a phone number, mailing address, date of
-        birth, IP-based location, browsing history, or payment card
-        details. 19 Pool does not process or handle money — entry fees
+        birth, or payment card details, and we build no profile of your
+        browsing anywhere outside 19pool.com. (Our advertising pixel,
+        described below, does let Meta see your IP address and which
+        19pool.com pages you viewed.) 19 Pool does not process or handle money — entry fees
         and payouts go directly between players via Venmo (see the
         Terms of Service).
       </P>
@@ -53,8 +61,17 @@ export default function Privacy() {
         <li>To debug problems (server logs).</li>
       </UL>
       <P>
-        We don't sell your data. We don't run advertising. We don't
-        track you across other sites. There's no analytics SDK.
+        We advertise 19 Pool on Facebook and Instagram, and we use
+        Meta's advertising pixel on this site to measure whether those
+        ads work. The pixel reports which pages you viewed on
+        19pool.com and whether you created an account. Meta may
+        connect that to your Facebook or Instagram account.
+      </P>
+      <P>
+        We do <strong>not</strong> send Meta your name, email address,
+        or Venmo handle, and we do not upload customer lists to Meta.
+        We don't sell your data for money. We run no other analytics or
+        tracking SDK.
       </P>
 
       <H2>Who we share it with</H2>
@@ -77,6 +94,12 @@ export default function Privacy() {
         <li>
           <strong>Resend</strong> — sends invite and password-reset
           emails. Sees the recipient email address and message body.
+        </li>
+        <li>
+          <strong>Meta Platforms</strong> — advertising measurement.
+          Sees which pages you visited on 19pool.com and whether you
+          created an account, along with your IP address and browser
+          details. Does not receive your name, email, or Venmo handle.
         </li>
         <li>
           <strong>ESPN</strong> — public NFL scores API. We fetch
@@ -112,8 +135,39 @@ export default function Privacy() {
       <P>
         We use browser local storage for a couple of small conveniences
         — remembering which sub-tab you last viewed, keeping you signed
-        in via Firebase's session token. We don't set third-party
-        tracking cookies.
+        in via Firebase's session token.
+      </P>
+      <P>
+        The Meta advertising pixel described above also stores an
+        identifier in your browser so Meta can recognize a return
+        visit. Blocking it (see the next section) stops that.
+      </P>
+
+      <H2>Advertising and your choices</H2>
+      <P>
+        Sharing your activity with Meta for ad measurement counts as
+        "sharing for targeted advertising" under several US state
+        privacy laws, including California's. You can stop it:
+      </P>
+      <UL>
+        <li>
+          Turn on <strong>Global Privacy Control</strong> in your
+          browser, or use any tracker-blocking extension or browser
+          (Firefox, Brave, and Safari block this pixel by default).
+        </li>
+        <li>
+          Adjust ad settings inside Facebook or Instagram directly, under
+          Settings → Ads → Ad preferences.
+        </li>
+        <li>
+          Run <code className="text-amber-400">localStorage.setItem(
+          '19pool.adTrackingOptOut', '1')</code> in your browser console,
+          or email us and we'll walk you through it.
+        </li>
+      </UL>
+      <P>
+        None of this affects your ability to use 19 Pool — the game
+        works identically either way.
       </P>
 
       <H2>Your rights and how to exercise them</H2>

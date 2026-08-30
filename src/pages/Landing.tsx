@@ -1,26 +1,19 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import marketingScoresShot from '../../img/19pool-marketing-scores1.jpg';
 import marketingPhoneHero from '../../img/19pool-marketing-phone-hero1.png';
+import {
+  VOLT,
+  DISPLAY_WIDE,
+  Section,
+  SectionHead,
+  VoltMark,
+} from '../components/marketing';
 
 // Marketing page — dark utility SaaS in the go.amazing.com/challenge-b
 // style. Near-black bg, neon lime accent, chunky uppercase display type,
 // two-tone highlighted headlines, numbered sections, pricing hammer,
 // FAQ, final CTA.
-
-const VOLT = '#C4F82A';
-
-// Inter Tight at heaviest weight for chunky headline display, matches
-// the go.amazing.com/challenge-b reference. Inter Tight is a condensed
-// member of the Inter family — no wdth axis, just the tighter default
-// glyphs. Pair with heavy weight + tight tracking for the industrial
-// utility feel.
-const DISPLAY_WIDE: React.CSSProperties = {
-  fontFamily: '"Inter Tight", Inter, ui-sans-serif, system-ui, sans-serif',
-  fontWeight: 900,
-  letterSpacing: '-0.035em',
-};
 
 export default function Landing() {
   return (
@@ -716,53 +709,5 @@ function FinalCTA() {
         </div>
       </div>
     </section>
-  );
-}
-
-// ─── Building blocks ─────────────────────────────────────────────────
-
-function Section({ children, tint = false }: { children: ReactNode; tint?: boolean }) {
-  return (
-    <section className={tint ? 'border-y border-void-line bg-void-2/40' : ''}>
-      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-16 sm:py-24">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-function SectionHead({
-  title,
-  sub,
-}: {
-  title: ReactNode;
-  sub?: string;
-}) {
-  return (
-    <div className="text-center max-w-3xl mx-auto">
-      <h2
-        className="uppercase text-4xl sm:text-6xl leading-[0.95]"
-        style={DISPLAY_WIDE}
-      >
-        {title}
-      </h2>
-      {sub && (
-        <p className="mt-5 text-white/60 leading-relaxed text-base sm:text-lg">
-          {sub}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// The signature move — highlighter-style volt background behind key words.
-function VoltMark({ children }: { children: ReactNode }) {
-  return (
-    <span
-      className="inline-block px-[0.15em] text-black"
-      style={{ backgroundColor: VOLT, boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone' }}
-    >
-      {children}
-    </span>
   );
 }

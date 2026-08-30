@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { recordAttribution } from '../lib/attribution';
+import { trackEvent } from '../lib/metaPixel';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
 import { PasswordStrengthBar } from '../components/PasswordStrengthBar';
@@ -321,6 +323,8 @@ function JoinAuthFlow({
         acceptedTOSAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       });
+      void recordAttribution(cred.user.uid);
+      trackEvent('CompleteRegistration');
       const result = await claimOrCreateMember({
         leagueCode: invite.leagueCode,
         league: invite.league,
