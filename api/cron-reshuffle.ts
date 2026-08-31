@@ -334,6 +334,14 @@ export default async function handler(req: CronRequest, res: CronResponse) {
             }
         }
 
+        // Scheduled invocations discard the HTTP response, so the runtime log
+        // is the only record of what a nightly run actually did. Without this
+        // a reshuffle, a skip reason, or a no-op are indistinguishable after
+        // the fact.
+        console.log(
+            `[cron-reshuffle] examined=${summary.examined} reshuffled=${summary.reshuffled.length} skipped=${summary.skipped.length} errors=${summary.errors.length} dryRun=${dryRun}`,
+            JSON.stringify({ reshuffled: summary.reshuffled, skipped: summary.skipped })
+        );
         return res.status(200).json(summary);
     } catch (err) {
         console.error('cron-reshuffle error:', err);
