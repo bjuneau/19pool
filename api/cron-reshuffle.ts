@@ -5,8 +5,13 @@
 // fits inside Vercel Hobby's once-per-day cron limit. It is safe to hit
 // repeatedly: reshuffleHistory is checked for the target week before any write.
 //
-// Every decision comes from src/lib/reshuffleCore.js, the same pure module the
+// Every decision comes from src/lib/reshuffleCore, the same pure module the
 // commissioner button uses. This file does IO only.
+//
+// This is the one .ts file in api/. It has to be: Vercel's Node builder does
+// not resolve a relative .ts import from a .js entrypoint (the function fails
+// at module load with FUNCTION_INVOCATION_FAILED), but it does compile and
+// bundle a .ts entrypoint along with its imports. Route path is unchanged.
 //
 // Auth: Authorization: Bearer $CRON_SECRET. Vercel sends this header
 // automatically for cron invocations when CRON_SECRET is set on the project.
@@ -21,13 +26,55 @@ import {
     isInReshuffleWindow,
     planDistribution,
 } from '../src/lib/reshuffleCore';
+import type { ReshuffleMember } from '../src/lib/reshuffleCore';
 import { fetchEspnWeek, getCurrentNFLWeek, getEffectiveSeason } from '../src/lib/espn';
+import type { GameResult } from '../src/lib/types';
 
 const FIREBASE_SERVICE_ACCOUNT_JSON = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 
-function initAdmin() {
+// Minimal structural types for the Vercel Node request and response. Avoids a
+// dependency on @vercel/node just for two shapes.
+type CronRequest = {
+    headers: Record<string, string | string[] | undefined>;
+    query?: Record<string, string | string[] | undefined>;
+};
+type CronResponse = {
+    status: (code: number) => { json: (body: unknown) => void };
+};
+
+type Firestore = admin.firestore.Firestore;
+type LeagueDoc = admin.firestore.QueryDocumentSnapshot;
+type DocRef = admin.firestore.DocumentReference;
+
+type Schedule = {
+    week: number;
+    currentWeekGames: GameResult[];
+    nextWeekGames: GameResult[];
+};
+
+type LeagueResult =
+    | {
+          action: 'reshuffled';
+          week: number;
+          membersReassigned: number;
+          unowned: number;
+          dryRun: boolean;
+      }
+    | { action: 'skipped'; reason: string; details?: string[] };
+
+type LockResult = { ok: true; alreadyLocked: boolean } | { ok: false; reason: string };
+
+type Summary = {
+    examined: number;
+    reshuffled: Array<Record<string, unknown>>;
+    skipped: Array<{ code: string; reason: string }>;
+    errors: Array<{ code: string; message: string }>;
+    dryRun: boolean;
+};
+
+function initAdmin(): Firestore {
     if (!admin.apps.length) {
-        const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON);
+        const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON as string);
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
         });
@@ -41,7 +88,12 @@ function initAdmin() {
  * Returns { action: 'reshuffled' | 'skipped' , ... } or throws. The caller
  * catches per league so one bad league cannot abort the run.
  */
-async function processLeague(db, leagueDoc, schedule, dryRun) {
+async function processLeague(
+    db: Firestore,
+    leagueDoc: LeagueDoc,
+    schedule: Schedule,
+    dryRun: boolean
+): Promise<LeagueResult> {
     const code = leagueDoc.id;
     const league = leagueDoc.data();
     const { week, currentWeekGames, nextWeekGames } = schedule;
@@ -60,7 +112,7 @@ async function processLeague(db, leagueDoc, schedule, dryRun) {
     // 2. Idempotency. The cron runs repeatedly inside the window, so this is
     // what guarantees exactly one reshuffle per week. Checked before preflight
     // so a completed week stays cheap.
-    const history = Array.isArray(league.reshuffleHistory)
+    const history: Array<{ week?: number }> = Array.isArray(league.reshuffleHistory)
         ? league.reshuffleHistory
         : [];
     if (history.some((r) => r && r.week === week)) {
@@ -79,7 +131,7 @@ async function processLeague(db, leagueDoc, schedule, dryRun) {
 
     const leagueRef = db.collection('leagues').doc(code);
     const membersSnap = await leagueRef.collection('members').get();
-    const members = membersSnap.docs.map((d) => ({
+    const members: ReshuffleMember[] = membersSnap.docs.map((d) => ({
         id: d.id,
         joinedAt: d.data().joinedAt ?? null,
     }));
@@ -98,7 +150,7 @@ async function processLeague(db, leagueDoc, schedule, dryRun) {
     // 4a. Freeze the outgoing rosters onto the current week, then hard-abort
     // unless it comes back locked. Without that lock a later refresh could
     // recompute this week's winners against the incoming rosters.
-    const locked = await lockOutgoingWeek(db, leagueRef, code, week, currentWeekGames, members);
+    const locked = await lockOutgoingWeek(leagueRef, week);
     if (!locked.ok) {
         throw new Error(`week ${week} did not lock its ownership snapshot: ${locked.reason}`);
     }
@@ -144,7 +196,7 @@ async function processLeague(db, leagueDoc, schedule, dryRun) {
  * missing, since that means the week was never scored and reshuffling would
  * strand it.
  */
-async function lockOutgoingWeek(db, leagueRef, code, week, currentWeekGames, members) {
+async function lockOutgoingWeek(leagueRef: DocRef, week: number): Promise<LockResult> {
     const weekRef = leagueRef.collection('weeklyResults').doc(String(week).padStart(2, '0'));
     const snap = await weekRef.get();
 
@@ -155,11 +207,12 @@ async function lockOutgoingWeek(db, leagueRef, code, week, currentWeekGames, mem
     const wr = snap.data() ?? {};
     if (wr.ownershipLockedAt) return { ok: true, alreadyLocked: true };
 
+
     // Build the snapshot from the outgoing rosters, exactly as
     // buildOwnershipFromMembers does on the client: members holding no teams
     // are omitted.
     const memberDocs = await leagueRef.collection('members').get();
-    const ownership = {};
+    const ownership: Record<string, string[]> = {};
     for (const d of memberDocs.docs) {
         const teams = d.data().teams;
         if (Array.isArray(teams) && teams.length > 0) ownership[d.id] = [...teams];
@@ -178,7 +231,7 @@ async function lockOutgoingWeek(db, leagueRef, code, week, currentWeekGames, mem
 
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
-export default async function handler(req, res) {
+export default async function handler(req: CronRequest, res: CronResponse) {
     // Auth first. An unset or empty CRON_SECRET must fail closed: comparing
     // against undefined would otherwise let "Bearer undefined" through.
     const secret = process.env.CRON_SECRET;
@@ -194,14 +247,21 @@ export default async function handler(req, res) {
 
     const dryRun = (req.query?.dryRun ?? '').toString() === '1';
 
-    let db;
+
+    let db: Firestore;
     try {
         db = initAdmin();
     } catch (err) {
-        return res.status(500).json({ error: `Init failed: ${err.message}` });
+        return res.status(500).json({ error: `Init failed: ${(err as Error).message}` });
     }
 
-    const summary = { examined: 0, reshuffled: [], skipped: [], errors: [], dryRun };
+    const summary: Summary = {
+        examined: 0,
+        reshuffled: [],
+        skipped: [],
+        errors: [],
+        dryRun,
+    };
 
     try {
         const leaguesSnap = await db
@@ -216,7 +276,9 @@ export default async function handler(req, res) {
         // ESPN is fetched ONCE per run and reused across every league. All
         // in-season leagues share the same real NFL schedule, so a per league
         // fetch would be identical data at N times the cost.
-        const seasons = new Set(leaguesSnap.docs.map((d) => d.data().season));
+        const seasons = new Set<number>(
+            leaguesSnap.docs.map((d) => d.data().season as number)
+        );
         if (seasons.size > 1) {
             summary.errors.push({
                 code: '*',
@@ -257,13 +319,16 @@ export default async function handler(req, res) {
                 }
             } catch (err) {
                 console.error(`cron-reshuffle: league ${leagueDoc.id} failed`, err);
-                summary.errors.push({ code: leagueDoc.id, message: err.message });
+                summary.errors.push({
+                    code: leagueDoc.id,
+                    message: (err as Error).message,
+                });
             }
         }
 
         return res.status(200).json(summary);
     } catch (err) {
         console.error('cron-reshuffle error:', err);
-        return res.status(500).json({ error: err.message, ...summary });
+        return res.status(500).json({ error: (err as Error).message, ...summary });
     }
 }
