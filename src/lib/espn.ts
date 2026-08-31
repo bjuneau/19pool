@@ -7,9 +7,23 @@ import type { GameResult, GameStatus } from './types';
 // games exist. VITE_TEST_CURRENT_WEEK pins the "current week" so we can
 // simulate any week mid-season. Both leave unset = normal behavior.
 
+type ViteEnv = {
+  VITE_TEST_SEASON?: string;
+  VITE_TEST_CURRENT_WEEK?: string;
+};
+
+// Vite injects import.meta.env into the browser bundle. The reshuffle cron
+// bundles this module for Node, where import.meta.env does not exist at all,
+// and a bare property read would throw on the first call. Read it defensively
+// so the same module is safe in both runtimes. Server side there are no VITE_
+// vars by design, so test mode is simply off there.
+function viteEnv(): ViteEnv {
+  return (import.meta as unknown as { env?: ViteEnv }).env ?? {};
+}
+
 /** Returns the overridden season year, or null when unset/invalid. */
 export function getTestSeason(): number | null {
-  const raw = import.meta.env.VITE_TEST_SEASON;
+  const raw = viteEnv().VITE_TEST_SEASON;
   if (!raw) return null;
   const year = parseInt(raw, 10);
   return Number.isFinite(year) && year > 2000 ? year : null;
@@ -17,7 +31,7 @@ export function getTestSeason(): number | null {
 
 /** Returns the pinned "current week", or null when unset/invalid. */
 export function getTestCurrentWeek(): number | null {
-  const raw = import.meta.env.VITE_TEST_CURRENT_WEEK;
+  const raw = viteEnv().VITE_TEST_CURRENT_WEEK;
   if (!raw) return null;
   const week = parseInt(raw, 10);
   return Number.isFinite(week) && week >= 1 && week <= 18 ? week : null;
@@ -163,13 +177,20 @@ function normalizeEvent(ev: EspnEvent): GameResult | null {
 
 /**
  * Fetch and normalize ESPN scoreboard for a given week.
- * Routes through /api/espn-scores (Vercel proxy) to bypass browser CORS.
+ * Routes through /api/espn-scores (Vercel proxy), which bypasses browser CORS
+ * and hydrates the upstream response into the shape this normalizer expects.
+ *
+ * baseUrl is empty in the browser, where a relative URL is correct. The
+ * reshuffle cron runs in Node, where fetch cannot parse a relative URL, so it
+ * passes its own origin. Going through the proxy rather than straight to ESPN
+ * keeps the hydration logic in one place.
  */
 export async function fetchEspnWeek(
   season: number,
-  week: number
+  week: number,
+  baseUrl = ''
 ): Promise<GameResult[]> {
-  const url = `/api/espn-scores?season=${season}&week=${week}`;
+  const url = `${baseUrl}/api/espn-scores?season=${season}&week=${week}`;
 
   let response: Response;
   try {

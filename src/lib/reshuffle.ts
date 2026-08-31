@@ -1,45 +1,27 @@
 /**
  * Commissioner-triggered manual reshuffle for Roulette leagues.
  *
- * Client-side only: it reuses the existing /api/espn-scores proxy and the
- * existing crypto shuffle, and adds no serverless function.
- *
- * The ordering below is the whole safety story. The outgoing rosters must be
- * frozen onto the current week's weeklyResults doc BEFORE anyone's teams
- * change, otherwise that week's winner detection would silently be recomputed
- * against the incoming rosters.
+ * Firestore IO and ESPN fetching live here. Every decision is delegated to
+ * reshuffleCore so the cron endpoint, which runs on firebase-admin, makes
+ * byte-identical choices without the logic being written twice.
  */
-import {
-  Timestamp,
-  arrayUnion,
-  doc,
-  writeBatch,
-} from 'firebase/firestore';
+import { Timestamp, arrayUnion, doc, writeBatch } from 'firebase/firestore';
 import { db } from './firebase';
 import { fetchEspnWeek, getCurrentNFLWeek, getEffectiveSeason } from './espn';
+import { evaluatePreflight, planDistribution } from './reshuffleCore';
+import type { PreflightResult } from './reshuffleCore';
 import { refreshWeek } from './scoringWriter';
-import { distributeTeams } from './teamAssignment';
-import { TEAM_BY_ABBR } from './teams';
 import type { League, ReshuffleRecord } from './types';
 import type { MemberWithId } from './members';
 
+export type { PreflightResult } from './reshuffleCore';
+
 // ─── Preflight ────────────────────────────────────────────────────────────────
 
-export type PreflightResult =
-  | { ok: true; week: number }
-  | { ok: false; week: number | null; reason: string; details: string[] };
-
-const matchupLabel = (awayAbbr: string, homeAbbr: string): string => {
-  const away = TEAM_BY_ABBR[awayAbbr]?.name ?? awayAbbr;
-  const home = TEAM_BY_ABBR[homeAbbr]?.name ?? homeAbbr;
-  return `${away} at ${home}`;
-};
-
 /**
- * A reshuffle is only safe in the gap between weeks: after every game of the
- * current week has finished, and before the first game of the next week has
- * kicked off. Reshuffling inside either window would change ownership while a
- * week is live.
+ * Fetches the schedule this decision needs, then hands off to the pure
+ * evaluator. Week 18 has no next week, so an empty list is passed and the
+ * next-week check is skipped.
  */
 export async function preflightReshuffle(
   league: League
@@ -56,9 +38,19 @@ export async function preflightReshuffle(
 
   const season = getEffectiveSeason(league.season);
 
-  let games;
   try {
-    games = await fetchEspnWeek(season, week);
+    const currentWeekGames = await fetchEspnWeek(season, week);
+    // Fetch next week only when it can actually matter. evaluatePreflight
+    // returns on the current-week check before it looks at nextWeekGames, so
+    // passing [] here cannot change the verdict, and it saves a proxy round
+    // trip on the common blocked path. The cron does not do this: it fetches
+    // both weeks once and reuses them across every league.
+    const allFinal =
+      currentWeekGames.length > 0 &&
+      currentWeekGames.every((g) => g.status === 'final');
+    const nextWeekGames =
+      allFinal && week < 18 ? await fetchEspnWeek(season, week + 1) : [];
+    return evaluatePreflight(currentWeekGames, nextWeekGames, week);
   } catch (err) {
     return {
       ok: false,
@@ -67,76 +59,6 @@ export async function preflightReshuffle(
       details: [(err as Error).message],
     };
   }
-
-  if (games.length === 0) {
-    return {
-      ok: false,
-      week,
-      reason: `ESPN returned no games for Week ${week}, so the week cannot be verified as finished.`,
-      details: [],
-    };
-  }
-
-  // Check 1: every game of the current week is final.
-  const unfinished = games.filter((g) => g.status !== 'final');
-  if (unfinished.length > 0) {
-    return {
-      ok: false,
-      week,
-      reason: `Week ${week} is not finished. ${unfinished.length} game${
-        unfinished.length === 1 ? '' : 's'
-      } still to settle.`,
-      details: unfinished.map(
-        (g) =>
-          `${matchupLabel(g.awayAbbr, g.homeAbbr)} (${
-            g.status === 'in_progress' ? 'live now' : 'not started'
-          })`
-      ),
-    };
-  }
-
-  // Check 2: the next week has not kicked off. Week 18 has no next week, so
-  // there is nothing left to protect.
-  if (week < 18) {
-    let nextGames;
-    try {
-      nextGames = await fetchEspnWeek(season, week + 1);
-    } catch (err) {
-      return {
-        ok: false,
-        week,
-        reason: 'Could not reach ESPN to verify next week has not started.',
-        details: [(err as Error).message],
-      };
-    }
-
-    const started = nextGames.filter((g) => g.status !== 'scheduled');
-    if (started.length > 0) {
-      return {
-        ok: false,
-        week,
-        reason: `Week ${week + 1} has already kicked off. Reshuffling now would change ownership mid week.`,
-        details: started.map((g) => matchupLabel(g.awayAbbr, g.homeAbbr)),
-      };
-    }
-
-    const kickoffs = nextGames
-      .map((g) => new Date(g.startsAt).getTime())
-      .filter((t) => Number.isFinite(t));
-    if (kickoffs.length > 0) {
-      const earliest = Math.min(...kickoffs);
-      if (Date.now() >= earliest) {
-        return {
-          ok: false,
-          week,
-          reason: `Week ${week + 1} has already kicked off. Reshuffling now would change ownership mid week.`,
-          details: [`First kickoff was ${new Date(earliest).toLocaleString()}.`],
-        };
-      }
-    }
-  }
-
-  return { ok: true, week };
 }
 
 // ─── Execution ────────────────────────────────────────────────────────────────
@@ -155,8 +77,8 @@ export type ReshuffleOutcome =
  *  2. Redistribute the 32 teams with the same crypto shuffle used for the
  *     initial assignment.
  *  3. Write every member's new teams, the league's new unowned pool, and the
- *     reshuffleHistory entry in a single batch, so steps 3 and 4 cannot land
- *     half applied.
+ *     reshuffleHistory entry in a single batch, so they cannot land half
+ *     applied.
  *
  * If the batch fails, the lock from step 1 still protects the completed week.
  */
@@ -196,33 +118,23 @@ export async function executeReshuffle(
   }
 
   // ── Step 2: redistribute ─────────────────────────────────────────────────
-  // Same rule as the initial assignment: only joined members receive teams.
-  const joinedMembers = members.filter((m) => m.joinedAt != null);
-  const { assignments, unowned } = distributeTeams(joinedMembers.map((m) => m.id));
+  const plan = planDistribution(members);
 
   // ── Steps 3 and 4: one batch so they cannot land half applied ────────────
-  const record: ReshuffleRecord = {
-    week,
-    at: Timestamp.now(),
-    byUserId,
-  };
+  const record: ReshuffleRecord = { week, at: Timestamp.now(), byUserId };
 
   try {
     const batch = writeBatch(db);
-    for (const m of joinedMembers) {
-      batch.update(doc(db, 'leagues', leagueCode, 'members', m.id), {
-        teams: assignments[m.id] ?? [],
+    for (const id of plan.joinedIds) {
+      batch.update(doc(db, 'leagues', leagueCode, 'members', id), {
+        teams: plan.assignments[id] ?? [],
       });
     }
-    // Clear anyone who has not joined yet. distributeTeams only deals to
-    // joined members, so a pending invite still holding teams from a previous
-    // deal would own teams that were just handed to someone else. Same guard
-    // the pre-lock reroll uses.
-    for (const m of members.filter((m) => m.joinedAt == null)) {
-      batch.update(doc(db, 'leagues', leagueCode, 'members', m.id), { teams: [] });
+    for (const id of plan.pendingIds) {
+      batch.update(doc(db, 'leagues', leagueCode, 'members', id), { teams: [] });
     }
     batch.update(doc(db, 'leagues', leagueCode), {
-      unownedTeams: unowned,
+      unownedTeams: plan.unowned,
       teamsAssignedAt: Timestamp.now(),
       reshuffleHistory: arrayUnion(record),
     });
@@ -241,7 +153,7 @@ export async function executeReshuffle(
   return {
     ok: true,
     week,
-    membersReassigned: joinedMembers.length,
-    unowned,
+    membersReassigned: plan.joinedIds.length,
+    unowned: plan.unowned,
   };
 }
