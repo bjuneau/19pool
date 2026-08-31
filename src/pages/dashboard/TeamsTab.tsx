@@ -656,13 +656,24 @@ export default function TeamsTab({ leagueCode, league }: Props) {
         <ConfirmModal
           title="Lock the league and start the season?"
           body={
-            <ul className="list-disc list-inside text-slate-300 text-sm space-y-1 mt-2">
-              <li>Add or remove players</li>
-              <li>Change team assignments</li>
-              <li>Send new invites</li>
-            </ul>
+            <div className="mt-2 space-y-3">
+              <div>
+                <p className="text-slate-400 text-sm mb-1">Once locked, you can't:</p>
+                <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+                  <li>Add players or send new invites</li>
+                  <li>Change the league mode</li>
+                  <li>Unlock the league</li>
+                </ul>
+              </div>
+              <div>
+                <p className="text-slate-400 text-sm mb-1">You can still:</p>
+                <ul className="list-disc list-inside text-slate-300 text-sm space-y-1">
+                  <li>Remove a player, sending their teams to the unowned pool</li>
+                  <li>Adjust team assignments, which affects future weeks only</li>
+                </ul>
+              </div>
+            </div>
           }
-          bodyPrefix="Once locked, you can't:"
           confirmLabel="Lock League"
           danger
           onConfirm={handleLockLeague}
@@ -1060,7 +1071,6 @@ function TeamChip({
 function ConfirmModal({
   title,
   body,
-  bodyPrefix,
   confirmLabel,
   danger = false,
   onConfirm,
@@ -1068,7 +1078,6 @@ function ConfirmModal({
 }: {
   title: string;
   body: React.ReactNode;
-  bodyPrefix?: string;
   confirmLabel: string;
   danger?: boolean;
   onConfirm: () => void;
@@ -1084,9 +1093,6 @@ function ConfirmModal({
       {/* Panel */}
       <div className="relative z-50 w-full max-w-sm bg-navy-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
         <h2 className="text-white font-bold text-lg mb-3">{title}</h2>
-        {bodyPrefix && (
-          <p className="text-slate-400 text-sm mb-1">{bodyPrefix}</p>
-        )}
         {typeof body === 'string' ? (
           <p className="text-slate-400 text-sm mb-6">{body}</p>
         ) : (
