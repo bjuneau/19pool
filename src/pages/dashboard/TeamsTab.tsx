@@ -7,7 +7,10 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { LeagueModeModal, MODE_COPY } from '../../components/LeagueMode';
+import { useAuth } from '../../lib/auth';
 import { db } from '../../lib/firebase';
+import { executeReshuffle, preflightReshuffle } from '../../lib/reshuffle';
+import type { PreflightResult } from '../../lib/reshuffle';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
 import { TEAM_BY_ABBR, TEAM_COUNT } from '../../lib/teams';
@@ -31,6 +34,7 @@ type DragPayload = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function TeamsTab({ leagueCode, league }: Props) {
+  const { user } = useAuth();
   const [members, setMembers] = useState<MemberWithId[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(true);
   const [modal, setModal] = useState<ModalKind>('none');
@@ -42,6 +46,12 @@ export default function TeamsTab({ leagueCode, league }: Props) {
   const [modeModalOpen, setModeModalOpen] = useState(false);
   const [savingMode, setSavingMode] = useState(false);
   const [modeError, setModeError] = useState('');
+
+  // Roulette reshuffle.
+  const [reshuffleOpen, setReshuffleOpen] = useState(false);
+  const [preflight, setPreflight] = useState<PreflightResult | null>(null);
+  const [checkingPreflight, setCheckingPreflight] = useState(false);
+  const [reshuffling, setReshuffling] = useState(false);
 
   // Drag state
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
@@ -233,6 +243,54 @@ export default function TeamsTab({ leagueCode, league }: Props) {
     }
   }
 
+  // ── Roulette reshuffle ────────────────────────────────────────────────────
+
+  async function openReshuffle() {
+    setReshuffleOpen(true);
+    setPreflight(null);
+    setCheckingPreflight(true);
+    try {
+      setPreflight(await preflightReshuffle(league));
+    } catch (err) {
+      setPreflight({
+        ok: false,
+        week: null,
+        reason: 'Could not verify the schedule.',
+        details: [(err as Error).message],
+      });
+    } finally {
+      setCheckingPreflight(false);
+    }
+  }
+
+  async function handleReshuffle() {
+    if (!preflight?.ok || !user) return;
+    setReshuffling(true);
+    setWriteError('');
+    try {
+      const outcome = await executeReshuffle(
+        leagueCode,
+        league,
+        members,
+        preflight.week,
+        user.uid
+      );
+      if (outcome.ok) {
+        setReshuffleOpen(false);
+        showToast(
+          `🎲 Teams reshuffled for ${outcome.membersReassigned} player${
+            outcome.membersReassigned === 1 ? '' : 's'
+          }`
+        );
+      } else {
+        setReshuffleOpen(false);
+        setWriteError(outcome.message);
+      }
+    } finally {
+      setReshuffling(false);
+    }
+  }
+
   // ── Move commit (shared by drag-and-drop and tap-to-move) ─────────────────
 
   async function commitMove(
@@ -311,6 +369,14 @@ export default function TeamsTab({ leagueCode, league }: Props) {
   // Editing is enabled for assigned/in_season/complete. Only recruiting is
   // the empty pre-assignment state.
   const isPostLock = isLocked || isComplete;
+  // Reshuffle is a Roulette-only, in-season, commissioner-only action. Super
+  // users are deliberately excluded: this rewrites every roster in someone
+  // else's league and should be the commissioner's own call.
+  const canReshuffle =
+    league.mode === 'roulette' &&
+    isLocked &&
+    !!user &&
+    user.uid === league.commissionerId;
 
   return (
     <div className="space-y-6 relative">
@@ -528,10 +594,22 @@ export default function TeamsTab({ leagueCode, league }: Props) {
                 )}
               </div>
             </div>
-            <p className="text-slate-400 text-sm">
-              {joinedMembers.length} member{joinedMembers.length === 1 ? '' : 's'} ·{' '}
-              {unownedTeams.length} unowned
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-slate-400 text-sm">
+                {joinedMembers.length} member{joinedMembers.length === 1 ? '' : 's'} ·{' '}
+                {unownedTeams.length} unowned
+              </p>
+              {canReshuffle && (
+                <button
+                  type="button"
+                  onClick={openReshuffle}
+                  disabled={writing || reshuffling}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-amber-500 hover:bg-amber-400 text-navy-950 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Reshuffle Teams
+                </button>
+              )}
+            </div>
           </div>
 
           {writing && (
@@ -577,6 +655,16 @@ export default function TeamsTab({ leagueCode, league }: Props) {
       )}
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
+      {reshuffleOpen && (
+        <ReshuffleModal
+          checking={checkingPreflight}
+          preflight={preflight}
+          reshuffling={reshuffling}
+          memberCount={joinedMembers.length}
+          onConfirm={handleReshuffle}
+          onCancel={() => setReshuffleOpen(false)}
+        />
+      )}
       {modeModalOpen && (
         <LeagueModeModal
           current={league.mode}
@@ -623,6 +711,107 @@ export default function TeamsTab({ leagueCode, league }: Props) {
           onCancel={() => setModal('none')}
         />
       )}
+    </div>
+  );
+}
+
+// ─── Reshuffle modal ──────────────────────────────────────────────────────────
+
+function ReshuffleModal({
+  checking,
+  preflight,
+  reshuffling,
+  memberCount,
+  onConfirm,
+  onCancel,
+}: {
+  checking: boolean;
+  preflight: PreflightResult | null;
+  reshuffling: boolean;
+  memberCount: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const blocked = preflight !== null && !preflight.ok;
+  const ready = preflight !== null && preflight.ok;
+
+  return (
+    <div className="fixed inset-0 z-40 flex items-start justify-center px-4 pt-16 sm:pt-24">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={reshuffling ? undefined : onCancel}
+      />
+      <div className="relative z-50 w-full max-w-md bg-navy-900 border border-white/10 rounded-2xl p-6 shadow-2xl">
+        <h2 className="text-white font-bold text-lg mb-3">
+          {ready ? `Reshuffle teams for Week ${preflight.week}?` : 'Reshuffle teams'}
+        </h2>
+
+        {checking && (
+          <p className="text-slate-400 text-sm mb-2 flex items-center gap-2">
+            <span className="inline-block w-3 h-3 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+            Checking the schedule with ESPN…
+          </p>
+        )}
+
+        {blocked && !preflight.ok && (
+          <div className="mb-2">
+            <p className="text-hot font-semibold text-sm mb-2">
+              Cannot reshuffle right now
+            </p>
+            <p className="text-slate-400 text-sm leading-relaxed">
+              {preflight.reason}
+            </p>
+            {preflight.details.length > 0 && (
+              <ul className="list-disc list-inside text-slate-500 text-xs mt-2 space-y-1">
+                {preflight.details.map((d, i) => (
+                  <li key={i}>{d}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {ready && (
+          <div className="text-slate-400 text-sm leading-relaxed space-y-2 mb-2">
+            <p>
+              Week {preflight.week} is final and next week has not kicked off, so
+              this is a safe moment to reshuffle.
+            </p>
+            <p>
+              All 32 NFL teams get redealt across{' '}
+              <span className="text-amber-400 font-semibold">
+                {memberCount} player{memberCount === 1 ? '' : 's'}
+              </span>
+              . Everyone gets a new set of teams, and nobody keeps what they had.
+            </p>
+            <p>
+              Week {preflight.week} results and payouts are locked first, so past
+              weeks are not affected. This cannot be undone.
+            </p>
+          </div>
+        )}
+
+        <div className="flex gap-3 mt-6">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={reshuffling}
+            className="flex-1 py-2.5 rounded-xl border border-white/10 text-slate-300 text-sm font-semibold hover:text-white transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {blocked ? 'Close' : 'Cancel'}
+          </button>
+          {!blocked && (
+            <button
+              type="button"
+              onClick={onConfirm}
+              disabled={!ready || reshuffling}
+              className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-navy-950 text-sm font-bold transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {reshuffling ? 'Reshuffling…' : 'Reshuffle Teams'}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

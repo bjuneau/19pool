@@ -8,6 +8,15 @@ export type LeagueStatus = 'recruiting' | 'assigned' | 'in_season' | 'complete';
 // season; 'roulette' reshuffles every week. Locked once the season starts.
 export type LeagueMode = 'classic' | 'roulette';
 
+// One entry per completed Roulette reshuffle. The authoritative record of who
+// owned what is the per-week `ownership` snapshot on weeklyResults; this array
+// is just an audit trail of when reshuffles ran and who ran them.
+export type ReshuffleRecord = {
+  week: number;
+  at: Timestamp;
+  byUserId: string;
+};
+
 export type League = {
   name: string;
   code: string;
@@ -27,6 +36,9 @@ export type League = {
   // Defaults to 'classic' so leagues created before Roulette shipped read
   // as the behavior they already have.
   mode: LeagueMode;
+  // Audit trail of Roulette reshuffles. Absent on leagues that have never
+  // reshuffled.
+  reshuffleHistory?: ReshuffleRecord[];
   // Team assignment fields (populated when status moves to 'assigned')
   unownedTeams: string[];
   teamsAssignedAt: Timestamp | null;
@@ -54,6 +66,9 @@ export function normalizeLeague(raw: Record<string, unknown>): League {
     memberCount: (raw.memberCount as number) ?? 0,
     status: (raw.status as LeagueStatus) ?? 'recruiting',
     mode: raw.mode === 'roulette' ? 'roulette' : 'classic',
+    reshuffleHistory: Array.isArray(raw.reshuffleHistory)
+      ? (raw.reshuffleHistory as ReshuffleRecord[])
+      : [],
     unownedTeams: (raw.unownedTeams as string[]) ?? [],
     teamsAssignedAt: (raw.teamsAssignedAt as Timestamp) ?? null,
     lockedAt: (raw.lockedAt as Timestamp) ?? null,
