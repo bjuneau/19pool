@@ -64,12 +64,24 @@ type LeagueResult =
 
 type LockResult = { ok: true; alreadyLocked: boolean } | { ok: false; reason: string };
 
+type ScheduleProbe =
+    | {
+          ok: true;
+          season: number;
+          weekProbed: number;
+          currentWeekGames: number;
+          nextWeekGames: number;
+          note?: string;
+      }
+    | { ok: false; error: string };
+
 type Summary = {
     examined: number;
     reshuffled: Array<Record<string, unknown>>;
     skipped: Array<{ code: string; reason: string }>;
     errors: Array<{ code: string; message: string }>;
     dryRun: boolean;
+    scheduleProbe?: ScheduleProbe;
 };
 
 function initAdmin(): Firestore {
@@ -229,6 +241,47 @@ async function lockOutgoingWeek(leagueRef: DocRef, week: number): Promise<LockRe
     return { ok: true, alreadyLocked: false };
 }
 
+/** Node's fetch cannot parse a relative URL, so the proxy is called on this
+ * deployment's own origin. */
+function originOf(req: CronRequest): string {
+    const proto = req.headers['x-forwarded-proto'] ?? 'https';
+    const host = req.headers['x-forwarded-host'] ?? req.headers.host;
+    return `${proto}://${host}`;
+}
+
+/**
+ * Dry-run only. With no roulette in-season leagues the handler returns before
+ * it ever touches ESPN, so a clean examined:0 would say nothing about the
+ * fetch path. Both crash bugs this endpoint has had (import.meta.env being
+ * absent in Node, and Node's fetch rejecting a relative URL) live on exactly
+ * that path, so a dry run probes it deliberately.
+ */
+async function probeSchedule(req: CronRequest, season: number): Promise<ScheduleProbe> {
+    try {
+        const effective = getEffectiveSeason(season);
+        const live = getCurrentNFLWeek(season);
+        // Out of season there is no current week, so probe week 1 purely to
+        // exercise the fetch rather than to make a decision from it.
+        const weekProbed = live ?? 1;
+        const baseUrl = originOf(req);
+        const currentWeekGames = await fetchEspnWeek(effective, weekProbed, baseUrl);
+        const nextWeekGames =
+            weekProbed < 18 ? await fetchEspnWeek(effective, weekProbed + 1, baseUrl) : [];
+        return {
+            ok: true,
+            season: effective,
+            weekProbed,
+            currentWeekGames: currentWeekGames.length,
+            nextWeekGames: nextWeekGames.length,
+            ...(live === null
+                ? { note: 'no active NFL week, probed week 1 to exercise the fetch' }
+                : {}),
+        };
+    } catch (err) {
+        return { ok: false, error: (err as Error).message };
+    }
+}
+
 // ─── Handler ─────────────────────────────────────────────────────────────────
 
 export default async function handler(req: CronRequest, res: CronResponse) {
@@ -279,7 +332,15 @@ export default async function handler(req: CronRequest, res: CronResponse) {
             .get();
 
         summary.examined = leaguesSnap.size;
-        if (leaguesSnap.empty) return res.status(200).json(summary);
+        if (leaguesSnap.empty) {
+            if (dryRun) {
+                summary.scheduleProbe = await probeSchedule(
+                    req,
+                    new Date().getFullYear()
+                );
+            }
+            return res.status(200).json(summary);
+        }
 
         // ESPN is fetched ONCE per run and reused across every league. All
         // in-season leagues share the same real NFL schedule, so a per league
@@ -302,12 +363,7 @@ export default async function handler(req: CronRequest, res: CronResponse) {
             return res.status(200).json(summary);
         }
 
-        // Node's fetch cannot parse a relative URL, so the proxy is called on
-        // this deployment's own origin.
-        const proto = req.headers['x-forwarded-proto'] ?? 'https';
-        const host = req.headers['x-forwarded-host'] ?? req.headers.host;
-        const baseUrl = `${proto}://${host}`;
-
+        const baseUrl = originOf(req);
         const season = getEffectiveSeason(declaredSeason);
         const currentWeekGames = await fetchEspnWeek(season, week, baseUrl);
         const nextWeekGames =
