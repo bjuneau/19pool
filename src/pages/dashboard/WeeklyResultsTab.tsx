@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { LeagueModePill } from '../../components/LeagueMode';
 import { db } from '../../lib/firebase';
 import { getCurrentNFLWeek } from '../../lib/espn';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
@@ -242,8 +243,9 @@ export default function WeeklyResultsTab({
           <h1 className="text-3xl font-extrabold text-white leading-tight">
             Weekly Results
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            {league.season} Season
+          <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-2">
+            <span>{league.season} Season</span>
+            <LeagueModePill mode={league.mode} />
           </p>
         </div>
         <div className="text-right">
@@ -383,7 +385,9 @@ function PreSeasonOverview({
 
       <div className="bg-navy-950/60 border border-amber-500/20 rounded-2xl p-6">
         <p className="text-xs text-slate-500 uppercase tracking-widest mb-1">Your League</p>
-        <p className="text-xl font-bold text-white mb-1">{league.name}</p>
+        <p className="text-xl font-bold text-white mb-1">
+          {league.name} <LeagueModePill mode={league.mode} />
+        </p>
         <p className="font-mono text-amber-400 tracking-[0.3em] text-sm mb-3">
           {leagueCode}
         </p>

@@ -6,12 +6,13 @@ import {
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
+import { LeagueModeModal, MODE_COPY } from '../../components/LeagueMode';
 import { db } from '../../lib/firebase';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
 import { TEAM_BY_ABBR, TEAM_COUNT } from '../../lib/teams';
 import { distributeTeams, swapTeams } from '../../lib/teamAssignment';
-import type { League } from '../../lib/types';
+import type { League, LeagueMode } from '../../lib/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,11 @@ export default function TeamsTab({ leagueCode, league }: Props) {
   const [writing, setWriting] = useState(false);
   const [writeError, setWriteError] = useState('');
   const [lockError, setLockError] = useState('');
+
+  // League mode ("how teams get assigned"). Editable until the season starts.
+  const [modeModalOpen, setModeModalOpen] = useState(false);
+  const [savingMode, setSavingMode] = useState(false);
+  const [modeError, setModeError] = useState('');
 
   // Drag state
   const [dragPayload, setDragPayload] = useState<DragPayload | null>(null);
@@ -209,6 +215,24 @@ export default function TeamsTab({ leagueCode, league }: Props) {
     }
   }
 
+  // ── League mode ───────────────────────────────────────────────────────────
+
+  async function handleSaveMode(next: LeagueMode) {
+    setSavingMode(true);
+    setModeError('');
+    try {
+      await updateDoc(doc(db, 'leagues', leagueCode), { mode: next });
+      setModeModalOpen(false);
+      showToast(`Mode set to ${MODE_COPY[next].label}`);
+    } catch (err) {
+      setModeError(
+        (err as { message?: string })?.message ?? 'Could not save mode. Try again.'
+      );
+    } finally {
+      setSavingMode(false);
+    }
+  }
+
   // ── Move commit (shared by drag-and-drop and tap-to-move) ─────────────────
 
   async function commitMove(
@@ -331,6 +355,14 @@ export default function TeamsTab({ leagueCode, league }: Props) {
           </button>
         </div>
       )}
+
+      {/* League mode. Commissioner-only by virtue of where this tab lives.
+          Editable pre-lock; frozen once the season starts. */}
+      <LeagueModeSection
+        mode={league.mode}
+        locked={isPostLock}
+        onChange={() => { setModeError(''); setModeModalOpen(true); }}
+      />
 
       {/* ── STATUS: recruiting ───────────────────────────────────────────── */}
       {league.status === 'recruiting' && (
@@ -545,6 +577,16 @@ export default function TeamsTab({ leagueCode, league }: Props) {
       )}
 
       {/* ── Modals ──────────────────────────────────────────────────────── */}
+      {modeModalOpen && (
+        <LeagueModeModal
+          current={league.mode}
+          status={league.status}
+          saving={savingMode}
+          error={modeError}
+          onSave={handleSaveMode}
+          onCancel={() => setModeModalOpen(false)}
+        />
+      )}
       {modal === 'assign' && (
         <ConfirmModal
           title="Assign teams?"
@@ -581,6 +623,45 @@ export default function TeamsTab({ leagueCode, league }: Props) {
           onCancel={() => setModal('none')}
         />
       )}
+    </div>
+  );
+}
+
+// ─── League mode section ──────────────────────────────────────────────────────
+
+function LeagueModeSection({
+  mode,
+  locked,
+  onChange,
+}: {
+  mode: LeagueMode;
+  locked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <div className="bg-navy-950/60 border border-white/10 rounded-2xl px-4 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-white font-bold text-sm">
+          League Mode:{' '}
+          <span className="text-amber-400">{MODE_COPY[mode].label}</span>
+        </p>
+        {locked ? (
+          <p className="text-slate-500 text-xs italic">
+            Mode is locked once the season starts.
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={onChange}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-white/10 text-slate-300 hover:text-white hover:border-white/30 transition-all"
+          >
+            Change
+          </button>
+        )}
+      </div>
+      <p className="text-slate-400 text-xs mt-1 leading-relaxed">
+        {MODE_COPY[mode].short}
+      </p>
     </div>
   );
 }

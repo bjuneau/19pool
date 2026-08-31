@@ -4,6 +4,10 @@ export const LEAGUE_CAPACITY = 32;
 
 export type LeagueStatus = 'recruiting' | 'assigned' | 'in_season' | 'complete';
 
+// How teams get assigned. 'classic' keeps each player's teams for the whole
+// season; 'roulette' reshuffles every week. Locked once the season starts.
+export type LeagueMode = 'classic' | 'roulette';
+
 export type League = {
   name: string;
   code: string;
@@ -20,6 +24,9 @@ export type League = {
   createdAt: Timestamp | null;
   memberCount: number;
   status: LeagueStatus;
+  // Defaults to 'classic' so leagues created before Roulette shipped read
+  // as the behavior they already have.
+  mode: LeagueMode;
   // Team assignment fields (populated when status moves to 'assigned')
   unownedTeams: string[];
   teamsAssignedAt: Timestamp | null;
@@ -46,6 +53,7 @@ export function normalizeLeague(raw: Record<string, unknown>): League {
     createdAt: (raw.createdAt as Timestamp) ?? null,
     memberCount: (raw.memberCount as number) ?? 0,
     status: (raw.status as LeagueStatus) ?? 'recruiting',
+    mode: raw.mode === 'roulette' ? 'roulette' : 'classic',
     unownedTeams: (raw.unownedTeams as string[]) ?? [],
     teamsAssignedAt: (raw.teamsAssignedAt as Timestamp) ?? null,
     lockedAt: (raw.lockedAt as Timestamp) ?? null,

@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore';
 import { Card } from '../components/Card';
 import { Input } from '../components/Input';
+import { LeagueModeCards } from '../components/LeagueMode';
 import { useAuth } from '../lib/auth';
 import { db } from '../lib/firebase';
 import { trackEvent } from '../lib/metaPixel';
@@ -20,7 +21,7 @@ import {
 } from '../lib/members';
 import { computeWeeklyShareFromPot } from '../lib/scoring';
 import { LEAGUE_CAPACITY } from '../lib/types';
-import type { League, Member } from '../lib/types';
+import type { League, LeagueMode, Member } from '../lib/types';
 
 // Same algorithm as legacy generateCode() in 19pool_15.html.
 function generateLeagueCode(): string {
@@ -38,6 +39,7 @@ export default function CreateLeague() {
   const navigate = useNavigate();
 
   const [leagueName, setLeagueName] = useState('');
+  const [mode, setMode] = useState<LeagueMode>('classic');
   const [seasonEntry, setSeasonEntry] = useState('');
   const [venmo, setVenmo] = useState('');
   const [error, setError] = useState('');
@@ -88,6 +90,7 @@ export default function CreateLeague() {
         season: new Date().getFullYear(),
         memberCount: 1,
         status: 'recruiting',
+        mode,
         unownedTeams: [],
         teamsAssignedAt: null,
         lockedAt: null,
@@ -160,6 +163,12 @@ export default function CreateLeague() {
             value={leagueName}
             onChange={(e) => setLeagueName(e.target.value)}
           />
+          <div>
+            <p className="block text-sm font-semibold text-slate-300 mb-2">
+              How teams get assigned
+            </p>
+            <LeagueModeCards value={mode} onChange={setMode} />
+          </div>
           <div>
             <Input
               label="Per-Player Entry Fee (Optional)"
