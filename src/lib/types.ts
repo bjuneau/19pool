@@ -111,9 +111,9 @@ export type WeeklyResult = {
   payoutPerWinner: number;
   status: WeeklyResultStatus;
   settledAt: Timestamp | null;
-  // Who owned what while this week was being played. Empty for docs written
-  // before snapshots shipped; see normalizeWeeklyResult and the
-  // admin-backfill-ownership endpoint.
+  // Who owned what while this week was being played. Every week written since
+  // snapshots shipped fills this at refresh time; normalizeWeeklyResult
+  // defaults it to {} for anything older.
   ownership: OwnershipSnapshot;
   // Null while the snapshot can still be refreshed (no game final yet).
   // Set once the first game of the week finalizes, after which the snapshot

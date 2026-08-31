@@ -1,6 +1,5 @@
 // Read-only diagnostics for one league. Two endpoints were merged into this
-// one to stay under Vercel Hobby's 12-function cap when
-// admin-backfill-ownership.js was added:
+// one to stay under Vercel Hobby's 12-function cap:
 //
 //   ?action=members         (default) former /api/admin-inspect-members
 //   ?action=weekly-results            former /api/admin-list-weekly-results
