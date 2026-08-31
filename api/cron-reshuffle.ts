@@ -25,10 +25,10 @@ import {
     evaluatePreflight,
     isInReshuffleWindow,
     planDistribution,
-} from '../src/lib/reshuffleCore';
-import type { ReshuffleMember } from '../src/lib/reshuffleCore';
-import { fetchEspnWeek, getCurrentNFLWeek, getEffectiveSeason } from '../src/lib/espn';
-import type { GameResult } from '../src/lib/types';
+} from '../src/lib/reshuffleCore.js';
+import type { ReshuffleMember } from '../src/lib/reshuffleCore.js';
+import { fetchEspnWeek, getCurrentNFLWeek, getEffectiveSeason } from '../src/lib/espn.js';
+import type { GameResult } from '../src/lib/types.js';
 
 const FIREBASE_SERVICE_ACCOUNT_JSON = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
 

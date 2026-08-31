@@ -1,4 +1,4 @@
-import { NFL_TEAMS, TEAM_COUNT } from './teams';
+import { NFL_TEAMS, TEAM_COUNT } from './teams.js';
 
 export type TeamAssignmentState = {
   assignments: Record<string, string[]>; // memberId → team abbrs

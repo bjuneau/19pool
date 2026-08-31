@@ -1,5 +1,5 @@
-import { TEAM_BY_ABBR, ESPN_ID_TO_ABBR } from './teams';
-import type { GameResult, GameStatus } from './types';
+import { TEAM_BY_ABBR, ESPN_ID_TO_ABBR } from './teams.js';
+import type { GameResult, GameStatus } from './types.js';
 
 // ─── Test-mode overrides ──────────────────────────────────────────────────────
 // Set VITE_TEST_SEASON (e.g. "2025") to fetch historical ESPN data instead of

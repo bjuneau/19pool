@@ -7,9 +7,9 @@
  * returns decisions. Both callers do their own IO. That is the only way the
  * two paths can be guaranteed to make identical decisions.
  */
-import { distributeTeams } from './teamAssignment';
-import { TEAM_BY_ABBR } from './teams';
-import type { GameResult } from './types';
+import { distributeTeams } from './teamAssignment.js';
+import { TEAM_BY_ABBR } from './teams.js';
+import type { GameResult } from './types.js';
 
 // ─── Preflight ────────────────────────────────────────────────────────────────
 
