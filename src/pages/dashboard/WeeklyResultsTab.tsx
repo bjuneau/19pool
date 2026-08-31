@@ -11,7 +11,13 @@ import {
 } from '../../lib/scoring';
 import { refreshWeek } from '../../lib/scoringWriter';
 import { TEAM_BY_ABBR } from '../../lib/teams';
-import type { GameResult, League, WeeklyResult } from '../../lib/types';
+import { normalizeWeeklyResult } from '../../lib/types';
+import type {
+  GameResult,
+  League,
+  OwnershipSnapshot,
+  WeeklyResult,
+} from '../../lib/types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -130,7 +136,11 @@ export default function WeeklyResultsTab({
     const unsub = onSnapshot(
       q,
       (snap) => {
-        setWeeklyResults(snap.docs.map((d) => d.data() as WeeklyResult));
+        setWeeklyResults(
+          snap.docs.map((d) =>
+            normalizeWeeklyResult(d.data() as Record<string, unknown>)
+          )
+        );
         setLoadingResults(false);
       },
       () => setLoadingResults(false)
@@ -482,6 +492,37 @@ function MyTeamsCard({
   );
 }
 
+// ─── Owner lookup ─────────────────────────────────────────────────────────────
+
+/**
+ * Resolve a team's owner for a given week. Prefers the week's frozen ownership
+ * snapshot so a past week keeps showing who actually held the team then, even
+ * after a roster change or a Roulette reshuffle. Falls back to live ownership
+ * when the snapshot is empty, which covers docs written before snapshots
+ * shipped and weeks that have not been refreshed yet.
+ */
+function makeOwnerLookup(
+  ownership: OwnershipSnapshot,
+  members: MemberWithId[]
+): (abbr: string) => string | null {
+  const hasSnapshot = Object.keys(ownership).length > 0;
+
+  if (!hasSnapshot) {
+    return (abbr) => members.find((m) => m.teams.includes(abbr))?.name ?? null;
+  }
+
+  const nameById = new Map(members.map((m) => [m.id, m.name || m.email]));
+  const ownerByTeam = new Map<string, string>();
+  for (const [memberId, teams] of Object.entries(ownership)) {
+    for (const abbr of teams) {
+      // A snapshotted member who has since been removed no longer resolves to
+      // a name, so label the slot rather than showing the team as unowned.
+      ownerByTeam.set(abbr, nameById.get(memberId) ?? 'Former player');
+    }
+  }
+  return (abbr) => ownerByTeam.get(abbr) ?? null;
+}
+
 // ─── This Week ────────────────────────────────────────────────────────────────
 
 function ThisWeekCard({
@@ -536,7 +577,11 @@ function ThisWeekCard({
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {result.games.map((game) => (
-                <GameCard key={game.espnGameId} game={game} members={members} />
+                <GameCard
+                  key={game.espnGameId}
+                  game={game}
+                  ownerFor={makeOwnerLookup(result.ownership, members)}
+                />
               ))}
             </div>
           </div>
@@ -602,16 +647,16 @@ function WinnerBanner({
 
 function GameCard({
   game,
-  members,
+  ownerFor,
 }: {
   game: GameResult;
-  members: MemberWithId[];
+  ownerFor: (abbr: string) => string | null;
 }) {
   const homeIs19 = game.status === 'final' && game.homeScore === 19;
   const awayIs19 = game.status === 'final' && game.awayScore === 19;
 
-  const homeOwner = members.find((m) => m.teams.includes(game.homeAbbr));
-  const awayOwner = members.find((m) => m.teams.includes(game.awayAbbr));
+  const homeOwner = ownerFor(game.homeAbbr);
+  const awayOwner = ownerFor(game.awayAbbr);
 
   const statusLabel =
     game.status === 'final'
@@ -673,7 +718,7 @@ function TeamScoreRow({
   abbr: string;
   score: number;
   is19: boolean;
-  owner: MemberWithId | undefined;
+  owner: string | null;
   showScore: boolean;
 }) {
   const team = TEAM_BY_ABBR[abbr];
@@ -685,8 +730,8 @@ function TeamScoreRow({
         {team?.name ?? abbr}
       </span>
       {owner ? (
-        <span className="text-xs text-slate-500 truncate max-w-[5rem]" title={owner.name}>
-          {owner.name.split(' ')[0]}
+        <span className="text-xs text-slate-500 truncate max-w-[5rem]" title={owner}>
+          {owner.split(' ')[0]}
         </span>
       ) : (
         <span className="text-xs text-slate-700 italic">unowned</span>

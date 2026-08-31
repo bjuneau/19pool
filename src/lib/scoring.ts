@@ -2,7 +2,12 @@
  * Pure scoring math — no Firestore, no side effects.
  * All functions are deterministic given the same inputs.
  */
-import type { GameResult, League, WeeklyResultStatus } from './types';
+import type {
+  GameResult,
+  League,
+  OwnershipSnapshot,
+  WeeklyResultStatus,
+} from './types';
 
 // ─── Winner detection ─────────────────────────────────────────────────────────
 
@@ -35,6 +40,42 @@ export function computeWinningMembers(
       if (teamsAt19.has(abbr)) {
         winningMemberIds.add(member.id);
         break; // First match suffices — can't win twice.
+      }
+    }
+  }
+
+  return {
+    teamsAt19: Array.from(teamsAt19),
+    winningMemberIds: Array.from(winningMemberIds),
+  };
+}
+
+/**
+ * Same winner detection as computeWinningMembers, but sourced from a frozen
+ * per-week ownership snapshot instead of the live members list. This is what
+ * scoringWriter uses, so a roster change or a Roulette reshuffle after the
+ * fact can never rewrite who won a past week.
+ *
+ * computeWinningMembers is kept for callers that legitimately want live
+ * ownership.
+ */
+export function computeWinningMembersFromOwnership(
+  games: GameResult[],
+  ownership: OwnershipSnapshot
+): { teamsAt19: string[]; winningMemberIds: string[] } {
+  const teamsAt19 = new Set<string>();
+  for (const game of games) {
+    if (game.status !== 'final') continue;
+    if (game.homeScore === 19) teamsAt19.add(game.homeAbbr);
+    if (game.awayScore === 19) teamsAt19.add(game.awayAbbr);
+  }
+
+  const winningMemberIds = new Set<string>();
+  for (const [memberId, teams] of Object.entries(ownership)) {
+    for (const abbr of teams) {
+      if (teamsAt19.has(abbr)) {
+        winningMemberIds.add(memberId);
+        break; // First match suffices, a member can't win twice.
       }
     }
   }

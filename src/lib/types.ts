@@ -79,6 +79,11 @@ export type GameResult = {
 
 export type WeeklyResultStatus = 'in_progress' | 'final' | 'rolled_over';
 
+// memberId -> team abbreviations that member owned during a given week.
+// Snapshotted per week so winner detection and historical display survive
+// roster changes and (in Roulette mode) the weekly reshuffle.
+export type OwnershipSnapshot = Record<string, string[]>;
+
 export type WeeklyResult = {
   week: number;
   season: number;
@@ -91,7 +96,49 @@ export type WeeklyResult = {
   payoutPerWinner: number;
   status: WeeklyResultStatus;
   settledAt: Timestamp | null;
+  // Who owned what while this week was being played. Empty for docs written
+  // before snapshots shipped; see normalizeWeeklyResult and the
+  // admin-backfill-ownership endpoint.
+  ownership: OwnershipSnapshot;
+  // Null while the snapshot can still be refreshed (no game final yet).
+  // Set once the first game of the week finalizes, after which the snapshot
+  // is frozen.
+  ownershipLockedAt: Timestamp | null;
 };
+
+// Safe defaults for reading weeklyResults docs that predate the ownership
+// snapshot fields. Mirrors normalizeLeague.
+export function normalizeWeeklyResult(raw: Record<string, unknown>): WeeklyResult {
+  const rawOwnership = raw.ownership;
+  const ownership: OwnershipSnapshot = {};
+  if (rawOwnership && typeof rawOwnership === 'object') {
+    for (const [memberId, teams] of Object.entries(
+      rawOwnership as Record<string, unknown>
+    )) {
+      if (Array.isArray(teams)) {
+        ownership[memberId] = teams.filter(
+          (t): t is string => typeof t === 'string'
+        );
+      }
+    }
+  }
+
+  return {
+    week: (raw.week as number) ?? 0,
+    season: (raw.season as number) ?? new Date().getFullYear(),
+    fetchedAt: raw.fetchedAt as Timestamp,
+    games: (raw.games as GameResult[]) ?? [],
+    teamsAt19: (raw.teamsAt19 as string[]) ?? [],
+    winningMemberIds: (raw.winningMemberIds as string[]) ?? [],
+    weeklyShare: (raw.weeklyShare as number) ?? 0,
+    rolloverFrom: (raw.rolloverFrom as number) ?? 0,
+    payoutPerWinner: (raw.payoutPerWinner as number) ?? 0,
+    status: (raw.status as WeeklyResultStatus) ?? 'in_progress',
+    settledAt: (raw.settledAt as Timestamp) ?? null,
+    ownership,
+    ownershipLockedAt: (raw.ownershipLockedAt as Timestamp) ?? null,
+  };
+}
 
 // ─── Member ───────────────────────────────────────────────────────────────────
 

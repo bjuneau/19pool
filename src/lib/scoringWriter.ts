@@ -16,10 +16,11 @@ import {
   computePot,
   computeStatus,
   computeWeeklyShareFromPot,
-  computeWinningMembers,
+  computeWinningMembersFromOwnership,
   getSeasonPot,
 } from './scoring';
-import type { League, WeeklyResult } from './types';
+import { normalizeWeeklyResult } from './types';
+import type { League, OwnershipSnapshot, WeeklyResult } from './types';
 import type { MemberWithId } from './members';
 
 // Zero-padded week ID for Firestore document names ('01' … '18').
@@ -28,6 +29,23 @@ const weekDocId = (week: number) => String(week).padStart(2, '0');
 
 // Skip re-fetching ESPN for settled weeks cached within the last 24 h.
 const SETTLED_CACHE_AGE_MS = 24 * 60 * 60 * 1000;
+
+// ─── Ownership snapshot ───────────────────────────────────────────────────────
+
+/**
+ * Freeze the current roster into a memberId -> teams map. Members holding no
+ * teams are omitted so the snapshot stays a record of actual ownership rather
+ * than a roster listing.
+ */
+function buildOwnershipFromMembers(members: MemberWithId[]): OwnershipSnapshot {
+  const snapshot: OwnershipSnapshot = {};
+  for (const m of members) {
+    if (m.teams && m.teams.length > 0) {
+      snapshot[m.id] = [...m.teams];
+    }
+  }
+  return snapshot;
+}
 
 // ─── Rollover computation ─────────────────────────────────────────────────────
 
@@ -81,7 +99,9 @@ export async function refreshWeek(
 
   // Check whether we can use the cached result.
   const existing = await getDoc(weekRef);
-  const existingData = existing.exists() ? (existing.data() as WeeklyResult) : null;
+  const existingData = existing.exists()
+    ? normalizeWeeklyResult(existing.data() as Record<string, unknown>)
+    : null;
 
   if (existingData) {
     const isSettled =
@@ -113,7 +133,7 @@ export async function refreshWeek(
   );
   const allResults = new Map<number, WeeklyResult>();
   for (const d of collSnap.docs) {
-    const wr = d.data() as WeeklyResult;
+    const wr = normalizeWeeklyResult(d.data() as Record<string, unknown>);
     allResults.set(wr.week, wr);
   }
 
@@ -121,7 +141,33 @@ export async function refreshWeek(
   // so a manual pot flows through to per-week payouts.
   const weeklyShare = computeWeeklyShareFromPot(getSeasonPot(league));
   const rollover = rolloverFrom(allResults, week);
-  const { teamsAt19, winningMemberIds } = computeWinningMembers(games, members);
+
+  // Ownership snapshot. The window for updating it closes the moment any game
+  // in the week goes final: from then on, who owned what is history and a
+  // later roster change or Roulette reshuffle must not rewrite it.
+  const nowTs = Timestamp.now();
+  const hasAnyFinal = games.some((g) => g.status === 'final');
+  let ownership: OwnershipSnapshot;
+  let ownershipLockedAt: Timestamp | null;
+  if (existingData?.ownershipLockedAt) {
+    // Already locked by an earlier refresh. Keep it verbatim.
+    ownership = existingData.ownership;
+    ownershipLockedAt = existingData.ownershipLockedAt;
+  } else if (hasAnyFinal) {
+    // First refresh that sees a final game. Snapshot now, then lock.
+    ownership = buildOwnershipFromMembers(members);
+    ownershipLockedAt = nowTs;
+  } else {
+    // Nothing final yet, so the snapshot stays fresh on every refresh.
+    ownership = buildOwnershipFromMembers(members);
+    ownershipLockedAt = null;
+  }
+
+  // Winners come from the snapshot, never from the live members list.
+  const { teamsAt19, winningMemberIds } = computeWinningMembersFromOwnership(
+    games,
+    ownership
+  );
   const status = computeStatus(games, winningMemberIds);
   const totalPot = computePot(weeklyShare, rollover);
   const payoutPerWinner =
@@ -133,7 +179,6 @@ export async function refreshWeek(
     existingData?.status === 'final' || existingData?.status === 'rolled_over';
   const nowSettled = status === 'final' || status === 'rolled_over';
 
-  const nowTs = Timestamp.now();
   const result: WeeklyResult = {
     week,
     // Store the season actually fetched — not the league's declared year —
@@ -152,6 +197,8 @@ export async function refreshWeek(
       nowSettled && !wasSettled
         ? nowTs
         : (existingData?.settledAt ?? null),
+    ownership,
+    ownershipLockedAt,
   };
 
   await setDoc(weekRef, result);

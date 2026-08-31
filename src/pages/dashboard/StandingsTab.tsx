@@ -8,6 +8,7 @@ import {
   computeWeeklyShareFromPot,
   getSeasonPot,
 } from '../../lib/scoring';
+import { normalizeWeeklyResult } from '../../lib/types';
 import type { League, WeeklyResult } from '../../lib/types';
 
 type Props = {
@@ -79,7 +80,11 @@ export default function StandingsTab({ league, leagueCode }: Props) {
         orderBy('week', 'asc')
       ),
       (snap) => {
-        setWeeklyResults(snap.docs.map((d) => d.data() as WeeklyResult));
+        setWeeklyResults(
+          snap.docs.map((d) =>
+            normalizeWeeklyResult(d.data() as Record<string, unknown>)
+          )
+        );
       }
     );
     return unsub;
