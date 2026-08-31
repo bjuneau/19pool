@@ -236,6 +236,17 @@ export default async function handler(req: CronRequest, res: CronResponse) {
     // against undefined would otherwise let "Bearer undefined" through.
     const secret = process.env.CRON_SECRET;
     if (!secret || secret.length === 0) {
+        // TEMPORARY DIAGNOSTIC. Names and lengths only, never values, and only
+        // to the private runtime log rather than the HTTP response. Remove once
+        // the CRON_SECRET visibility question is settled.
+        console.log('[cron-reshuffle] CRON_SECRET unavailable', {
+            keyPresent: 'CRON_SECRET' in process.env,
+            valueLength: (process.env.CRON_SECRET ?? '').length,
+            visibleKeys: Object.keys(process.env)
+                .filter((k) => !k.startsWith('AWS_') && !k.startsWith('LAMBDA_'))
+                .sort()
+                .join(','),
+        });
         return res.status(401).json({ error: 'CRON_SECRET is not configured' });
     }
     if (req.headers.authorization !== `Bearer ${secret}`) {
