@@ -1,5 +1,8 @@
 import { useState } from 'react';
-import type { LeagueMode, LeagueStatus } from '../lib/types';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Card } from './Card';
+import { db } from '../lib/firebase';
+import type { League, LeagueMode, LeagueStatus } from '../lib/types';
 
 // Shared UI for the league mode ("how teams get assigned") setting.
 // CreateLeague mounts the radio cards inline; the Teams tab mounts them
@@ -102,6 +105,96 @@ export function LeagueModePill({ mode }: { mode: LeagueMode }) {
     <span className="inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/15 text-amber-400 text-[10px] font-semibold uppercase tracking-widest px-2 py-0.5 align-middle">
       Roulette
     </span>
+  );
+}
+
+// ─── League mode card ─────────────────────────────────────────────────────────
+
+/**
+ * Commissioner-facing "how teams get assigned" setting. Lives on the League
+ * tab alongside the other league-level settings rather than on Teams, which
+ * is about who holds which franchise.
+ *
+ * Self-contained: owns its modal state and its own write, so the host tab just
+ * drops it in.
+ */
+export function LeagueModeCard({
+  league,
+  leagueCode,
+  onToast,
+}: {
+  league: League;
+  leagueCode: string;
+  onToast?: (msg: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  // Irreversible once the season starts: past weeks are scored against the
+  // ownership they were played under.
+  const locked = league.status === 'in_season' || league.status === 'complete';
+
+  async function handleSave(next: LeagueMode) {
+    setSaving(true);
+    setError('');
+    try {
+      await updateDoc(doc(db, 'leagues', leagueCode), { mode: next });
+      setOpen(false);
+      onToast?.(`Mode set to ${MODE_COPY[next].label}`);
+    } catch (err) {
+      setError(
+        (err as { message?: string })?.message ?? 'Could not save mode. Try again.'
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <>
+      <Card>
+        <h2 className="text-xl font-bold text-white mb-6">League Mode</h2>
+
+        <div className="bg-navy-950/60 border border-white/10 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <p className="text-white font-bold text-lg flex-1 min-w-0">
+              {MODE_COPY[league.mode].label}
+            </p>
+            {locked ? (
+              <p className="text-slate-500 text-xs italic flex-shrink-0">
+                Locked once the season starts
+              </p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setError('');
+                  setOpen(true);
+                }}
+                className="text-xs text-slate-400 hover:text-amber-400 transition-colors font-semibold flex-shrink-0"
+              >
+                Change
+              </button>
+            )}
+          </div>
+          <p className="text-slate-400 text-sm mt-1 leading-relaxed">
+            {MODE_COPY[league.mode].short}
+          </p>
+        </div>
+      </Card>
+
+      {open && (
+        <LeagueModeModal
+          current={league.mode}
+          status={league.status}
+          saving={saving}
+          error={error}
+          onSave={handleSave}
+          onCancel={() => setOpen(false)}
+        />
+      )}
+    </>
   );
 }
 

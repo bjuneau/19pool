@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Card } from '../../components/Card';
 import { EntryFeeCard } from '../../components/EntryFeeCard';
+import { LeagueModeCard } from '../../components/LeagueMode';
 import { Modal, ModalCancel, ModalDestructive } from '../../components/Modal';
 import { db } from '../../lib/firebase';
 import { deleteLeague as deleteLeagueHelper } from '../../lib/members';
@@ -140,6 +141,14 @@ export default function LeagueAdminTab({
         league={league}
         leagueCode={leagueCode}
         isCommissioner={true}
+        onToast={showToast}
+      />
+
+      {/* How teams get assigned. Grouped with the entry fee as a league
+          level setting rather than living on the Teams tab. */}
+      <LeagueModeCard
+        league={league}
+        leagueCode={leagueCode}
         onToast={showToast}
       />
 
