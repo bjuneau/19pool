@@ -92,7 +92,13 @@ export function evaluatePreflight(
 
 // ─── Reshuffle window ─────────────────────────────────────────────────────────
 
-const WINDOW_MS = 48 * 60 * 60 * 1000;
+// 60 hours, not 48. The cron fires daily at 02:00 UTC, which is Tuesday
+// 9pm EST / 10pm EDT. Against a Thursday 8:15pm kickoff that Tuesday run sits
+// at 47.25h in winter, clearing a 48h threshold by only 45 minutes, so
+// Vercel's 1 hour flexible cron window could push it outside and defer the
+// reshuffle to Wednesday. 60h gives that run real margin while still leaving
+// the Monday firing (70h+, during Monday Night Football) safely outside.
+const WINDOW_MS = 60 * 60 * 60 * 1000;
 
 export type ReshuffleWindow = {
   inWindow: boolean;
@@ -108,7 +114,7 @@ export function earliestKickoffMs(games: GameResult[]): number | null {
 }
 
 /**
- * True when `now` sits inside the 48 hours immediately before the next week's
+ * True when `now` sits inside the 60 hours immediately before the next week's
  * first kickoff. Used only by the cron, to decide whether this is a run worth
  * acting on. The button does not gate on this: a commissioner clicking the
  * button has already chosen their moment, and preflight is what keeps them
