@@ -230,6 +230,33 @@ export async function fetchEspnWeek(
  * Season start dates are hardcoded. 2026: Thursday September 10, 2026.
  * Week advances every 7 days from the season start date.
  */
+const SEASON_STARTS: Record<number, string> = {
+  2024: '2024-09-05',
+  2025: '2025-09-04',
+  2026: '2026-09-10',
+};
+
+// Noon ET on the start date, which sidesteps timezone edge cases.
+function seasonStartDate(season: number): Date | null {
+  const startStr = SEASON_STARTS[season];
+  return startStr ? new Date(`${startStr}T12:00:00-05:00`) : null;
+}
+
+/**
+ * True when the season has not kicked off yet.
+ *
+ * getCurrentNFLWeek returns null in two opposite situations, before a season
+ * starts and after it ends, and callers that display stored results need to
+ * tell them apart: after the season, every week has been played and should be
+ * shown; before it, none have. Test mode counts as in season, since the whole
+ * point is to simulate a week that is underway.
+ */
+export function isBeforeSeasonStart(season: number, now = new Date()): boolean {
+  if (getTestCurrentWeek() !== null && isTestMode()) return false;
+  const start = seasonStartDate(season);
+  return start !== null && now < start;
+}
+
 export function getCurrentNFLWeek(season: number, now = new Date()): number | null {
   // Test-mode short-circuit: if both season and week overrides are set, honor
   // the pinned week directly. Ignore the caller's season here — the test week
@@ -237,17 +264,8 @@ export function getCurrentNFLWeek(season: number, now = new Date()): number | nu
   const testWeek = getTestCurrentWeek();
   if (testWeek !== null && isTestMode()) return testWeek;
 
-  const SEASON_STARTS: Record<number, string> = {
-    2024: '2024-09-05',
-    2025: '2025-09-04',
-    2026: '2026-09-10',
-  };
-
-  const startStr = SEASON_STARTS[season];
-  if (!startStr) return null;
-
-  // Use noon ET on the start date to handle timezone edge cases.
-  const seasonStart = new Date(`${startStr}T12:00:00-05:00`);
+  const seasonStart = seasonStartDate(season);
+  if (!seasonStart) return null;
   const seasonEnd = new Date(
     seasonStart.getTime() + 18 * 7 * 24 * 60 * 60 * 1000
   );

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { LeagueModePill } from '../../components/LeagueMode';
 import { db } from '../../lib/firebase';
-import { getCurrentNFLWeek } from '../../lib/espn';
+import { getCurrentNFLWeek, isBeforeSeasonStart } from '../../lib/espn';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
 import {
@@ -242,7 +242,12 @@ export default function WeeklyResultsTab({
   }
 
   // In-season.
-  const winCounts = teamWinCounts(weeklyResults);
+  // Same pre-kickoff clip Standings applies. A league locked before the season
+  // starts can already hold stored results, from an early lock or from test
+  // data, and none of those weeks have actually been played yet.
+  const winCounts = isBeforeSeasonStart(league.season)
+    ? {}
+    : teamWinCounts(weeklyResults);
   const seasonNotStarted = currentWeek === null;
 
   return (

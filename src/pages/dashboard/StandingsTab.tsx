@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import { getCurrentNFLWeek } from '../../lib/espn';
+import { getCurrentNFLWeek, isBeforeSeasonStart } from '../../lib/espn';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
 import {
@@ -92,13 +92,20 @@ export default function StandingsTab({ league, leagueCode }: Props) {
 
   // Clip to weeks that have actually happened. "Refresh All Weeks" is a
   // simple 1..18 loop, so on a fully-played historical season the collection
-  // holds every week — but the standings should only reflect what's happened
+  // holds every week, but the standings should only reflect what has happened
   // through today (or, in test mode, through the pinned test week).
-  // For 'complete' leagues, currentNFLWeek is null → keep everything.
+  //
+  // getCurrentNFLWeek returns null both before a season starts and after it
+  // ends, so null alone cannot decide this. After the season, and for
+  // 'complete' leagues, every stored week counts. Before kickoff none do, even
+  // if results are already stored, which happens to a league locked early or
+  // seeded with test data. Showing them there would contradict the Results
+  // tab, which correctly reports the season has not started.
   const currentWeek = getCurrentNFLWeek(league.season);
-  const upToNow = weeklyResults.filter(
-    (r) => currentWeek === null || r.week <= currentWeek
-  );
+  const preSeason = isBeforeSeasonStart(league.season);
+  const upToNow = preSeason
+    ? []
+    : weeklyResults.filter((r) => currentWeek === null || r.week <= currentWeek);
 
   const standings = computeStandings(members, upToNow);
   const completedResults = [...upToNow]
