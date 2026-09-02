@@ -230,10 +230,15 @@ export async function fetchEspnWeek(
  * Season start dates are hardcoded. 2026: Thursday September 10, 2026.
  * Week advances every 7 days from the season start date.
  */
+// Date of each season's FIRST game, which anchors the week boundaries. 2026
+// opens on a Wednesday (Sep 9, 8:20pm ET) with a second prime-time game on the
+// Thursday, so anchoring on the Thursday would leave the opener outside week 1
+// and blind the app to it for roughly 17 hours. Verified against ESPN's 2026
+// week 1 schedule.
 const SEASON_STARTS: Record<number, string> = {
   2024: '2024-09-05',
   2025: '2025-09-04',
-  2026: '2026-09-10',
+  2026: '2026-09-09',
 };
 
 // Noon ET on the start date, which sidesteps timezone edge cases.

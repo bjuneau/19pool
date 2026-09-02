@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { collection, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { LeagueModePill } from '../../components/LeagueMode';
 import { db } from '../../lib/firebase';
-import { getCurrentNFLWeek, isBeforeSeasonStart } from '../../lib/espn';
+import {
+  fetchEspnWeek,
+  getCurrentNFLWeek,
+  getEffectiveSeason,
+  isBeforeSeasonStart,
+} from '../../lib/espn';
+import { earliestKickoffMs } from '../../lib/reshuffleCore';
 import { membersCollectionRef, sortMembers } from '../../lib/members';
 import type { MemberWithId } from '../../lib/members';
 import {
@@ -61,6 +67,130 @@ function fmtGameTime(isoStr: string): string {
   }
 }
 
+/**
+ * Kickoff time of the season's first game, taken from ESPN week 1. Only
+ * fetched before the season starts, which is the only time a countdown makes
+ * sense. A failure leaves the countdown hidden rather than blocking the view.
+ */
+function useFirstKickoff(season: number, enabled: boolean): number | null {
+  const [ms, setMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!enabled) {
+      setMs(null);
+      return;
+    }
+    let cancelled = false;
+    fetchEspnWeek(getEffectiveSeason(season), 1)
+      .then((games) => {
+        if (!cancelled) setMs(earliestKickoffMs(games));
+      })
+      .catch(() => {
+        // Non-critical. No countdown beats an error banner here.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [season, enabled]);
+
+  return ms;
+}
+
+// ─── Kickoff countdown ────────────────────────────────────────────────────────
+
+function KickoffCountdown({ kickoffMs }: { kickoffMs: number }) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const remaining = kickoffMs - now;
+  if (remaining <= 0) return null;
+
+  const totalSeconds = Math.floor(remaining / 1000);
+  const parts = [
+    { label: 'days', value: Math.floor(totalSeconds / 86400) },
+    { label: 'hrs', value: Math.floor((totalSeconds % 86400) / 3600) },
+    { label: 'min', value: Math.floor((totalSeconds % 3600) / 60) },
+    { label: 'sec', value: totalSeconds % 60 },
+  ];
+
+  return (
+    <div>
+      <div className="flex items-center justify-center gap-4 sm:gap-6">
+        {parts.map((p) => (
+          <div key={p.label} className="text-center">
+            {/* tabular-nums keeps the digits from jittering as they tick. */}
+            <p className="font-mono text-2xl sm:text-3xl font-extrabold text-amber-400 tabular-nums leading-none">
+              {String(p.value).padStart(2, '0')}
+            </p>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 mt-1.5">
+              {p.label}
+            </p>
+          </div>
+        ))}
+      </div>
+      <p className="text-xs text-slate-500 mt-4">
+        First kickoff{' '}
+        {new Date(kickoffMs).toLocaleString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        })}
+      </p>
+    </div>
+  );
+}
+
+// ─── Season underway but unlocked ─────────────────────────────────────────────
+
+/**
+ * The failure this exists for: a commissioner never locks, the season starts,
+ * and nothing is scored. Both scoringWriter and the Firestore rules refuse to
+ * write weeklyResults outside 'in_season', so the pool silently does not run.
+ * Without this the dashboard kept saying "Season hasn't started yet", which is
+ * false once kickoff has passed.
+ */
+function UnlockedSeasonWarning({
+  week,
+  isCommissioner,
+}: {
+  week: number;
+  isCommissioner: boolean;
+}) {
+  const finished = week - 1;
+
+  return (
+    <div className="bg-hot-dim border border-hot/40 rounded-2xl p-6">
+      <p className="text-hot font-semibold mb-2">
+        ⚠️ The season is underway and this league is not locked
+      </p>
+      <p className="text-ink-dim text-sm leading-relaxed">
+        Week {week} is in progress. Results are only recorded once the league is
+        locked, so nothing from this season has been scored.
+        {finished > 0 && (
+          <>
+            {' '}
+            {finished === 1
+              ? 'Week 1 has already finished'
+              : `Weeks 1 through ${finished} have already finished`}{' '}
+            without being recorded.
+          </>
+        )}
+      </p>
+      <p className="text-ink-dim text-sm leading-relaxed mt-3">
+        {isCommissioner
+          ? 'Lock the league on the Teams tab to start recording results. You can refresh past weeks afterward, but they would be scored against rosters assigned after those games were played.'
+          : 'Your commissioner needs to lock the league before any results are recorded.'}
+      </p>
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function WeeklyResultsTab({
@@ -82,6 +212,11 @@ export default function WeeklyResultsTab({
   // Stable ref so poll closure doesn't capture stale members.
   const membersRef = useRef<MemberWithId[]>([]);
   membersRef.current = members;
+
+  // Countdown for a locked league still waiting on kickoff. Declared here with
+  // the other hooks because the render below returns early in several places.
+  const beforeKickoff = !!league && isBeforeSeasonStart(league.season);
+  const firstKickoffMs = useFirstKickoff(league?.season ?? 0, beforeKickoff);
 
   const isInSeason = league?.status === 'in_season';
   const currentWeek = league ? getCurrentNFLWeek(league.season) : null;
@@ -342,9 +477,13 @@ export default function WeeklyResultsTab({
         <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-6 text-center">
           <p className="text-white font-semibold mb-1">Season locked ✓</p>
           <p className="text-slate-400 text-sm">
-            Scores will appear here when Week 1 kicks off
-            {league.season === 2026 ? ' (September 10, 2026)' : ''}.
+            Scores will appear here when Week 1 kicks off.
           </p>
+          {beforeKickoff && firstKickoffMs !== null && (
+            <div className="mt-5 pt-5 border-t border-white/5">
+              <KickoffCountdown kickoffMs={firstKickoffMs} />
+            </div>
+          )}
         </div>
       )}
 
@@ -392,6 +531,13 @@ function PreSeasonOverview({
       ? 'Teams assigned — ready to lock'
       : 'Recruiting players';
 
+  // getCurrentNFLWeek returns null both before a season starts and after it
+  // ends, so isBeforeSeasonStart is what separates "not yet" from "underway".
+  const preSeason = isBeforeSeasonStart(league.season);
+  const currentWeek = getCurrentNFLWeek(league.season);
+  const seasonUnderway = !preSeason && currentWeek !== null;
+  const firstKickoffMs = useFirstKickoff(league.season, preSeason);
+
   return (
     <div className="space-y-5">
       <h1 className="text-2xl font-extrabold text-white">
@@ -420,9 +566,15 @@ function PreSeasonOverview({
         </div>
       </div>
 
+      {seasonUnderway && currentWeek !== null ? (
+        <UnlockedSeasonWarning week={currentWeek} isCommissioner={isCommissioner} />
+      ) : null}
+
       <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-6 text-center">
         <p className="text-2xl mb-2">🏈</p>
-        <p className="text-white font-semibold mb-1">Season hasn't started yet</p>
+        <p className="text-white font-semibold mb-1">
+          {seasonUnderway ? 'This league is not scoring' : "Season hasn't started yet"}
+        </p>
         <p className="text-slate-400 text-sm leading-relaxed">
           {isCommissioner
             ? league.status === 'recruiting'
@@ -430,6 +582,12 @@ function PreSeasonOverview({
               : 'Teams are assigned. Head to the Teams tab to make adjustments, then lock the league to begin the season.'
             : 'Hang tight — the commissioner will lock the league and start the season soon.'}
         </p>
+
+        {preSeason && firstKickoffMs !== null && (
+          <div className="mt-5 pt-5 border-t border-white/5">
+            <KickoffCountdown kickoffMs={firstKickoffMs} />
+          </div>
+        )}
         {isCommissioner && league.status === 'recruiting' && onGoToMembers && (
           <button
             type="button"
