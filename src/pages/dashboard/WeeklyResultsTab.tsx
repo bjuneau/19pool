@@ -98,14 +98,24 @@ function useFirstKickoff(season: number, enabled: boolean): number | null {
 
 // ─── Kickoff countdown ────────────────────────────────────────────────────────
 
-function KickoffCountdown({ kickoffMs }: { kickoffMs: number }) {
+/**
+ * Ticking clock. Lives in the parent rather than inside the countdown so the
+ * surrounding view can flip from "counting down" to "underway" on the same
+ * tick, instead of the countdown vanishing while the copy around it goes
+ * stale until the next unrelated render.
+ */
+function useNow(intervalMs = 1000): number {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => setNow(Date.now()), intervalMs);
     return () => clearInterval(id);
-  }, []);
+  }, [intervalMs]);
 
+  return now;
+}
+
+function KickoffCountdown({ kickoffMs, now }: { kickoffMs: number; now: number }) {
   const remaining = kickoffMs - now;
   if (remaining <= 0) return null;
 
@@ -215,11 +225,18 @@ export default function WeeklyResultsTab({
 
   // Countdown for a locked league still waiting on kickoff. Declared here with
   // the other hooks because the render below returns early in several places.
-  const beforeKickoff = !!league && isBeforeSeasonStart(league.season);
-  const firstKickoffMs = useFirstKickoff(league?.season ?? 0, beforeKickoff);
-
   const isInSeason = league?.status === 'in_season';
   const currentWeek = league ? getCurrentNFLWeek(league.season) : null;
+
+  // Countdown runs on ESPN's real first-kickoff time, not the season-start
+  // anchor. The anchor is noon ET on opening day, which is hours before the
+  // first game, so gating on it would cut the countdown off early. Week 1 is
+  // included in the fetch condition for exactly that window.
+  const now = useNow();
+  const needKickoff =
+    !!league && (isBeforeSeasonStart(league.season) || currentWeek === 1);
+  const firstKickoffMs = useFirstKickoff(league?.season ?? 0, needKickoff);
+  const awaitingKickoff = firstKickoffMs !== null && now < firstKickoffMs;
   const currentResult = weeklyResults.find((r) => r.week === currentWeek) ?? null;
   const myMember = members.find((m) => m.uid === userId) ?? null;
 
@@ -473,15 +490,15 @@ export default function WeeklyResultsTab({
       )}
 
       {/* ── Season hasn't started yet (locked but pre-kickoff) ── */}
-      {seasonNotStarted && (
+      {(seasonNotStarted || awaitingKickoff) && (
         <div className="bg-navy-950/60 border border-white/10 rounded-2xl p-6 text-center">
           <p className="text-white font-semibold mb-1">Season locked ✓</p>
           <p className="text-slate-400 text-sm">
             Scores will appear here when Week 1 kicks off.
           </p>
-          {beforeKickoff && firstKickoffMs !== null && (
+          {awaitingKickoff && firstKickoffMs !== null && (
             <div className="mt-5 pt-5 border-t border-white/5">
-              <KickoffCountdown kickoffMs={firstKickoffMs} />
+              <KickoffCountdown kickoffMs={firstKickoffMs} now={now} />
             </div>
           )}
         </div>
@@ -533,10 +550,18 @@ function PreSeasonOverview({
 
   // getCurrentNFLWeek returns null both before a season starts and after it
   // ends, so isBeforeSeasonStart is what separates "not yet" from "underway".
-  const preSeason = isBeforeSeasonStart(league.season);
   const currentWeek = getCurrentNFLWeek(league.season);
-  const seasonUnderway = !preSeason && currentWeek !== null;
-  const firstKickoffMs = useFirstKickoff(league.season, preSeason);
+  const now = useNow();
+  // Fetch the real kickoff for the pre-season view and through opening week,
+  // since the season-start anchor flips hours before the first game.
+  const needKickoff = isBeforeSeasonStart(league.season) || currentWeek === 1;
+  const firstKickoffMs = useFirstKickoff(league.season, needKickoff);
+  const awaitingKickoff = firstKickoffMs !== null && now < firstKickoffMs;
+  // "Underway" means a game has actually kicked off, not that the calendar
+  // anchor has passed. Falls back to the anchor if ESPN is unreachable.
+  const seasonUnderway = awaitingKickoff
+    ? false
+    : !isBeforeSeasonStart(league.season) && currentWeek !== null;
 
   return (
     <div className="space-y-5">
@@ -583,9 +608,9 @@ function PreSeasonOverview({
             : 'Hang tight — the commissioner will lock the league and start the season soon.'}
         </p>
 
-        {preSeason && firstKickoffMs !== null && (
+        {awaitingKickoff && firstKickoffMs !== null && (
           <div className="mt-5 pt-5 border-t border-white/5">
-            <KickoffCountdown kickoffMs={firstKickoffMs} />
+            <KickoffCountdown kickoffMs={firstKickoffMs} now={now} />
           </div>
         )}
         {isCommissioner && league.status === 'recruiting' && onGoToMembers && (
