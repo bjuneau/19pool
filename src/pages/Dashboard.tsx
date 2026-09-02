@@ -123,8 +123,8 @@ export default function Dashboard() {
           onClick={goToLockTeams}
           className="w-full bg-accent hover:bg-accent-bright text-paper text-xs sm:text-sm font-bold px-4 py-2 transition-colors text-center"
         >
-          Be sure to lock your league before the season starts
-          <span className="font-semibold"> · Lock it now →</span>
+          Lock your league before the season starts.
+          <span className="font-semibold"> Lock it now &gt;</span>
         </button>
       )}
       {isSuper && (
