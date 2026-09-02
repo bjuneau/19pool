@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../lib/auth';
+import { isBeforeSeasonStart } from '../lib/espn';
 import { db } from '../lib/firebase';
 import { buildDisplayName } from '../lib/members';
 import { normalizeLeague } from '../lib/types';
@@ -97,8 +98,35 @@ export default function Dashboard() {
     setAdminSubTab('members');
   }
 
+  // Prevention, not a postmortem. Once kickoff passes, an unlocked league
+  // stops being fixable: nothing is scored, and catching up later means
+  // scoring past weeks against rosters set after those games were played.
+  // The red banner on Results reports that damage; this one is here to stop
+  // it happening, so it only runs while there is still time to act.
+  const needsLockReminder =
+    !!league &&
+    isCommissioner &&
+    league.status !== 'in_season' &&
+    league.status !== 'complete' &&
+    isBeforeSeasonStart(league.season);
+
+  function goToLockTeams() {
+    setActiveTab('admin');
+    setAdminSubTab('teams');
+  }
+
   return (
     <div className="bg-paper flex-1">
+      {needsLockReminder && (
+        <button
+          type="button"
+          onClick={goToLockTeams}
+          className="w-full bg-accent hover:bg-accent-bright text-paper text-xs sm:text-sm font-bold px-4 py-2 transition-colors text-center"
+        >
+          Be sure to lock your league before the season starts
+          <span className="font-semibold"> · Lock it now →</span>
+        </button>
+      )}
       {isSuper && (
         <SuperBar selectedCode={superLeagueCode} onSelect={handleSuperSelect} />
       )}
